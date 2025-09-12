@@ -1,0 +1,325 @@
+/* General Body and Background */
+body {
+    font-family: 'Georgia', serif; /* Storybook feel */
+    background-color: #1a0f2b; /* Deep, dark purple/indigo */
+    color: #e6e0f3; /* Soft off-white for main text */
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center; /* Center content horizontally */
+    justify-content: center; /* Center content vertically */
+}
+
+/* Header Styling */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+.logo {
+    width: 70px; /* Slightly larger logo */
+    height: auto;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); /* Subtle glow */
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-family: 'Playfair Display', serif; /* Elegant title font */
+    font-size: 3em; /* Larger title */
+    color: #e6e0f3; /* Lighter white for title */
+    margin: 0;
+    text-shadow: 3px 3px 8px rgba(0,0,0,0.6); /* More prominent shadow */
+    letter-spacing: 2px;
+}
+
+/* Main Content Area (The "Storybook" Form) */
+main {
+    max-width: 750px; /* Wider form for better readability */
+    width: 90%;
+    background-color: #3b2a52; /* Lighter, but still dark, purple */
+    padding: 40px 50px;
+    border-radius: 25px; /* More rounded corners */
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4), /* Deeper shadow for "book" effect */
+                0 0 0 5px rgba(255, 255, 255, 0.1); /* Subtle outer glow */
+    position: relative;
+    z-index: 1;
+    border: 1px solid #5a427d; /* A subtle purple border */
+}
+
+/* Form Elements */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-family: 'Times New Roman', serif; /* Classic label font */
+    font-weight: bold;
+    margin-top: 18px;
+    margin-bottom: 7px;
+    color: #a081c7; /* A subtle purple for labels */
+    font-size: 1.1em;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+input[type="text"],
+select {
+    font-family: 'Arial', sans-serif; /* Clean font for inputs */
+    padding: 14px;
+    border: 1px solid #5a427d; /* Soft indigo border */
+    border-radius: 10px; /* Rounded inputs */
+    font-size: 1em;
+    transition: all 0.3s ease-in-out;
+    background-color: #2b1d44; /* Darker input background */
+    color: #e6e0f3; /* Light text in inputs */
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+    -webkit-appearance: none; /* Remove default select styling */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23a081c7" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Custom arrow for select */
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 20px auto;
+}
+
+input[type="text"]::placeholder {
+    color: #7b5b9c; /* Lighter placeholder text */
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #a081c7; /* Brighter purple focus */
+    outline: none;
+    box-shadow: 0 0 12px rgba(160, 129, 199, 0.6); /* Glowing focus effect */
+}
+
+/* Image Upload Area */
+#image-upload-area {
+    border: 2px dashed #5a427d; /* Soft dashed border */
+    border-radius: 12px; /* Rounded corners */
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s ease-in-out;
+    background-color: rgba(43, 29, 68, 0.5); /* Light, transparent background */
+    color: #e6e0f3; /* Light text */
+    font-size: 0.95em;
+}
+
+#image-upload-area:hover {
+    border-color: #a081c7; /* Indigo hover effect */
+    background-color: rgba(43, 29, 68, 0.8);
+}
+
+.hidden-input {
+    display: none;
+}
+
+#image-upload-area button {
+    background-color: #a081c7; /* A subtle purple for button */
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-bottom: 12px;
+    display: block;
+    width: 100%;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#image-upload-area button:hover {
+    background-color: #7b5b9c; /* Darker purple on hover */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+#image-upload-area.drag-over {
+    border-color: #a081c7;
+    background-color: rgba(43, 29, 68, 0.9);
+}
+
+#image-preview {
+    width: 100%;
+    height: 160px; /* Slightly taller preview */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-top: 15px;
+    border-radius: 8px; /* Rounded preview */
+    border: 1px solid #5a427d; /* Border to match theme */
+}
+
+/* Submit Button */
+button[type="submit"] {
+    background-color: #e6e0f3; /* Light, contrasting colour */
+    color: #3b2a52; /* Dark text */
+    padding: 16px;
+    border: none;
+    border-radius: 10px; /* Rounded button */
+    font-size: 1.2em; /* Larger text */
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-top: 25px;
+    font-weight: bold;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+}
+
+button[type="submit"]:hover {
+    background-color: #c0a8e0; /* A darker, purplish white on hover */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+}
+
+/* Story Output Area */
+#story-output {
+    margin-top: 40px;
+    border-top: 1px solid #5a427d; /* Soft separator */
+    padding-top: 30px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 5px solid rgba(160, 129, 199, 0.2); /* Soft indigo spinner */
+    width: 40px; /* Larger spinner */
+    height: 40px;
+    border-radius: 50%;
+    border-left-color: #a081c7; /* Glowing part of spinner */
+    animation: spin 1s infinite linear;
+    margin: 25px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#story-text {
+    text-align: left;
+    white-space: pre-wrap;
+    max-height: 450px; /* Taller story text area */
+    overflow-y: auto;
+    padding: 25px;
+    border: 1px solid #5a427d; /* Storybook page border */
+    border-radius: 15px; /* Rounded story text area */
+    background-color: #3b2a52; /* Lighter purple for text area */
+    color: #e6e0f3; /* Light text for readability */
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+    line-height: 1.8; /* Increased line spacing */
+    font-size: 1.1em;
+}
+
+#story-text h2 {
+    text-align: center;
+    color: #e6e0f3;
+    margin-bottom: 20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8em;
+}
+
+/* Audio Player and Play Button */
+#story-audio-player {
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+#upload-to-yoto-button {
+    background-color: #a081c7; /* Matching purple button */
+    color: #fff;
+    margin-top: 15px;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    padding: 14px 25px;
+    font-size: 1.1em;
+}
+
+#upload-to-yoto-button:hover {
+    background-color: #7b5b9c;
+    box-shadow: 0 7px 18px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
+}
+
+.login-btn, .logout-btn {
+    background-color: #e6e0f3;
+    color: #3b2a52;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease-in-out;
+}
+
+.login-btn:hover, .logout-btn:hover {
+    background-color: #c0a8e0;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+}
+
+/* Modal Styling */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #3b2a52;
+    color: #e6e0f3;
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    max-width: 450px;
+    position: relative;
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.close-button {
+    color: #7b5b9c;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #c0a8e0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}

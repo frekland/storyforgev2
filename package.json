@@ -1,0 +1,20 @@
+{
+  "name": "storyforge",
+  "version": "1.0.0",
+  "description": "An app that generates personalised Yoto stories using AI.",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite --open"
+  },
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^6.3.0",
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.2.1",
+    "jwt-decode": "^4.0.0",
+    "pkce-challenge": "^5.0.0",
+    "howler": "^2.2.4",
+    "vite": "^6.3.5"
+  },
+  "author": "Yoto",
+  "license": "MIT"
+}

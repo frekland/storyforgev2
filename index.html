@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Storyforge</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/jwt-decode/build/jwt-decode.js"></script>
+</head>
+<body>
+    <header>
+        <img src="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png" alt="Yoto Logo" class="logo">
+        <h1>The Storyforge</h1>
+    </header>
+
+    <main>
+        <!-- The login button is shown when not authenticated -->
+        <button id="login-button" class="login-btn">Authorise Yoto Account</button>
+        <button id="logout-button" class="logout-btn hidden">Logout</button>
+
+        <!-- The main application UI is hidden until authenticated -->
+        <div id="app-content" class="hidden">
+            <form id="quest-form">
+                <label for="heroName">Hero's Name</label>
+                <input type="text" id="heroName" placeholder="e.g., Captain Comet">
+
+                <label for="promptSetup">The Beginning</label>
+                <input type="text" id="promptSetup" placeholder="e.g., a magical forest made of ice cream">
+                
+                <label for="promptRising">The Challenge</label>
+                <input type="text" id="promptRising" placeholder="e.g., a grumpy dragon stole the sprinkles">
+
+                <label for="promptClimax">The Climax</label>
+                <input type="text" id="promptClimax" placeholder="e.g., the dragon was tickled until it laughed">
+                
+                <label for="heroImage">Upload an Image of a Hero or Monster</label>
+                <div id="image-upload-area">
+                    <input type="file" id="heroImage" accept="image/*" class="hidden-input">
+                    <button type="button" onclick="document.getElementById('heroImage').click()">Select a File</button>
+                    <p>or drag and drop here</p>
+                    <div id="image-preview" class="hidden"></div>
+                </div>
+
+                <label for="story-age">Story Length (by age)</label>
+                <select id="story-age" required>
+                    <option value="3">3-6 Years Old (approx. 150 words)</option>
+                    <option value="6" selected>6-8 Years Old (approx. 500 words)</option>
+                    <option value="9">8-12 Years Old (approx. 1000 words)</option>
+                    <option value="12">13+ Years Old (approx. 2000 words)</option>
+                </select>
+
+                <button type="submit">Forge Story!</button>
+            </form>
+        
+            <div id="story-output" class="hidden">
+                <h2>Your Epic Tale!</h2>
+                <div id="loading-spinner" class="spinner"></div>
+                <p id="story-text"></p>
+                
+                <audio id="story-audio-player" controls class="hidden"></audio>
+                <button id="upload-to-yoto-button" class="hidden">Upload to Yoto</button>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Custom alert modal -->
+    <div id="alert-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="alert-message"></p>
+        </div>
+    </div>
+    
+    <script type="module" src="script.js"></script>
+    <script type="module" src="tokens.js"></script>
+    <script type="module" src="api/generate-story.js"></script>
+</body>
+</html>
