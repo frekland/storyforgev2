@@ -1,3 +1,4 @@
+// script.js
 import { getStoredTokens, storeTokens, clearTokens, isTokenExpired, refreshTokens } from "./tokens.js";
 import pkceChallenge from "pkce-challenge";
 import { jwtDecode } from "jwt-decode";
@@ -14,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButton = document.getElementById("logout-button");
     const appContent = document.getElementById("app-content");
     const audioPlayer = document.getElementById('story-audio-player');
-    const playButton = document.getElementById('play-story-button');
     const uploadToYotoButton = document.getElementById('upload-to-yoto-button');
     const alertModal = document.getElementById('alert-modal');
     const alertMessage = document.getElementById('alert-message');
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let heroImageBase64 = null;
     let accessToken = null;
     let refreshToken = null;
+    let storyAudioUrl = null; // We'll store the public audio URL here
 
     const clientId = import.meta.env.VITE_CLIENT_ID;
 
@@ -223,12 +224,17 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.src = audioBlobUrl;
             audioPlayer.classList.remove('hidden');
 
+            // NEW CODE: We now need to use the public API endpoint as the trackUrl
+            // which is the same endpoint that we just called to generate the story.
+            storyAudioUrl = `${window.location.origin}/api/generate-story?heroName=${encodeURIComponent(heroName)}&promptSetup=${encodeURIComponent(promptSetup)}&promptRising=${encodeURIComponent(promptRising)}&promptClimax=${encodeURIComponent(promptClimax)}&age=${encodeURIComponent(storyAge)}&audioOnly=true`;
+
+
             // Now, integrate with Yoto API
             uploadToYotoButton.onclick = async () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
                 try {
-                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlobUrl, accessToken);
+                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, storyAudioUrl, accessToken);
                     showAlert('Story successfully added to a new Yoto playlist!');
                     console.log('New Yoto Playlist:', myoContent);
                 } catch (e) {
@@ -284,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tracks: [{
                 key: "01",
                 title: "Chapter One",
-                trackUrl: audioUrl,
+                trackUrl: audioUrl, // THIS IS THE NEW PART
                 type: "stream",
                 format: "mp3",
                 display: { icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" }

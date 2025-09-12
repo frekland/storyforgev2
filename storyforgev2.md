@@ -1,0 +1,980 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+api/
+  generate-story.js
+index.html
+package.json
+script.js
+styles.css
+tokens.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="api/generate-story.js">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import textToSpeech from '@google-cloud/text-to-speech';
+import 'dotenv/config';
+import fs from 'fs/promises';
+import path from 'path';
+
+// --- Set up Google AI (Gemini) Client ---
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// --- Set up Google Cloud (TTS) Client using environment variables ---
+const ttsClient = new textToSpeech.TextToSpeechClient({
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+});
+
+// Helper function for Gemini image processing
+function fileToGenerativePart(base64Data, mimeType) {
+  return { inlineData: { data: base64Data.split(',')[1], mimeType } };
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  try {
+    const { heroName, promptSetup, promptRising, promptClimax, heroImage, age } = req.body;
+
+    // Determine the story length and reading level based on the age
+    let storyLength = 150;
+    let readingLevel = "a simple, conversational style for young children";
+    switch (age) {
+        case '6':
+            storyLength = 500;
+            readingLevel = "a slightly more detailed, engaging style for emerging readers";
+            break;
+        case '9':
+            storyLength = 1000;
+            readingLevel = "a captivating narrative with more complex vocabulary and sentence structures for confident readers";
+            break;
+        case '12':
+            storyLength = 2000;
+            readingLevel = "a rich, descriptive, and mature style suitable for young adult readers";
+            break;
+    }
+
+    // --- Part 1: Generate Story with Gemini ---
+    const textPrompt = `
+      You are a master storyteller for children. Write a short, exciting, and fun story (around ${storyLength} words) based on the following prompts. Write in ${readingLevel}. If a prompt is empty, invent that part of the story yourself.
+
+      - Hero's Name: ${heroName || 'a mysterious hero'}
+      - The Beginning: ${promptSetup || 'a surprising place'}
+      - The Challenge: ${promptRising || 'an unexpected problem'}
+      - The Climax: ${promptClimax || 'a clever solution'}
+      - The Hero/Monster in the Story: Incorporate the creature or character from the accompanying image into the story. Describe it concisely. The description of the creature should be woven naturally into the narrative and should not be a long, separate paragraph. Let the image drive a key character or element.
+    `;
+    
+    const promptParts = [
+        { text: textPrompt },
+    ];
+
+    if (heroImage) {
+        console.log("Analyzing user's drawing...");
+        const mimeType = heroImage.substring(heroImage.indexOf(":") + 1, heroImage.indexOf(";"));
+        const imagePart = fileToGenerativePart(heroImage, mimeType);
+        promptParts.push(imagePart);
+    }
+    
+    console.log("Generating story with Gemini...");
+    const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
+    const storyText = (await result.response).text();
+    console.log("Story generated successfully.");
+
+    // --- Part 2: Convert Story Text to Speech ---
+    console.log("Converting story text to audio...");
+    const ttsRequest = {
+      input: { text: storyText },
+      voice: { languageCode: 'en-GB', name: 'en-GB-Chirp3-HD-Gacrux', ssmlGender: 'FEMALE' },
+      audioConfig: { audioEncoding: 'MP3' },
+    };
+    const [ttsResponse] = await ttsClient.synthesizeSpeech(ttsRequest);
+    const audioContent = ttsResponse.audioContent.toString('base64');
+    console.log("Audio created successfully.");
+    
+    // --- Part 3: Send Both Text and Audio to the Front-End ---
+    res.status(200).json({ 
+      story: storyText,
+      audio: audioContent 
+    });
+
+  } catch (error) {
+    console.error("Error during API call:", error);
+    res.status(500).json({ message: "Error generating story or audio" });
+  }
+}
+</file>
+
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Storyforge</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/jwt-decode/build/jwt-decode.js"></script>
+</head>
+<body>
+    <header>
+        <img src="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png" alt="Yoto Logo" class="logo">
+        <h1>The Storyforge</h1>
+    </header>
+
+    <main>
+        <!-- The login button is shown when not authenticated -->
+        <button id="login-button" class="login-btn">Authorise Yoto Account</button>
+        <button id="logout-button" class="logout-btn hidden">Logout</button>
+
+        <!-- The main application UI is hidden until authenticated -->
+        <div id="app-content" class="hidden">
+            <form id="quest-form">
+                <label for="heroName">Hero's Name</label>
+                <input type="text" id="heroName" placeholder="e.g., Captain Comet">
+
+                <label for="promptSetup">The Beginning</label>
+                <input type="text" id="promptSetup" placeholder="e.g., a magical forest made of ice cream">
+                
+                <label for="promptRising">The Challenge</label>
+                <input type="text" id="promptRising" placeholder="e.g., a grumpy dragon stole the sprinkles">
+
+                <label for="promptClimax">The Climax</label>
+                <input type="text" id="promptClimax" placeholder="e.g., the dragon was tickled until it laughed">
+                
+                <label for="heroImage">Upload an Image of a Hero or Monster</label>
+                <div id="image-upload-area">
+                    <input type="file" id="heroImage" accept="image/*" class="hidden-input">
+                    <button type="button" onclick="document.getElementById('heroImage').click()">Select a File</button>
+                    <p>or drag and drop here</p>
+                    <div id="image-preview" class="hidden"></div>
+                </div>
+
+                <label for="story-age">Story Length (by age)</label>
+                <select id="story-age" required>
+                    <option value="3">3-6 Years Old (approx. 150 words)</option>
+                    <option value="6" selected>6-8 Years Old (approx. 500 words)</option>
+                    <option value="9">8-12 Years Old (approx. 1000 words)</option>
+                    <option value="12">13+ Years Old (approx. 2000 words)</option>
+                </select>
+
+                <button type="submit">Forge Story!</button>
+            </form>
+        
+            <div id="story-output" class="hidden">
+                <h2>Your Epic Tale!</h2>
+                <div id="loading-spinner" class="spinner"></div>
+                <p id="story-text"></p>
+                
+                <audio id="story-audio-player" controls class="hidden"></audio>
+                <button id="upload-to-yoto-button" class="hidden">Upload to Yoto</button>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Custom alert modal -->
+    <div id="alert-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="alert-message"></p>
+        </div>
+    </div>
+    
+    <script type="module" src="script.js"></script>
+    <script type="module" src="tokens.js"></script>
+    <script type="module" src="api/generate-story.js"></script>
+</body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "storyforge",
+  "version": "1.0.0",
+  "description": "An app that generates personalised Yoto stories using AI.",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite --open"
+  },
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^6.3.0",
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.2.1",
+    "jwt-decode": "^4.0.0",
+    "pkce-challenge": "^5.0.0",
+    "howler": "^2.2.4",
+    "vite": "^6.3.5"
+  },
+  "author": "Yoto",
+  "license": "MIT"
+}
+</file>
+
+<file path="script.js">
+import { getStoredTokens, storeTokens, clearTokens, isTokenExpired, refreshTokens } from "./tokens.js";
+import pkceChallenge from "pkce-challenge";
+import { jwtDecode } from "jwt-decode";
+
+document.addEventListener('DOMContentLoaded', () => {
+    const questForm = document.getElementById('quest-form');
+    const storyOutput = document.getElementById('story-output');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const storyText = document.getElementById('story-text');
+    const heroImageInput = document.getElementById('heroImage');
+    const imagePreview = document.getElementById('image-preview');
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const loginButton = document.getElementById("login-button");
+    const logoutButton = document.getElementById("logout-button");
+    const appContent = document.getElementById("app-content");
+    const audioPlayer = document.getElementById('story-audio-player');
+    const playButton = document.getElementById('play-story-button');
+    const uploadToYotoButton = document.getElementById('upload-to-yoto-button');
+    const alertModal = document.getElementById('alert-modal');
+    const alertMessage = document.getElementById('alert-message');
+    const closeButton = document.querySelector('.close-button');
+    
+    let heroImageBase64 = null;
+    let accessToken = null;
+    let refreshToken = null;
+
+    const clientId = import.meta.env.VITE_CLIENT_ID;
+
+    // --- Modal Functionality ---
+    const showAlert = (message) => {
+        alertMessage.textContent = message;
+        alertModal.classList.remove('hidden');
+    };
+    closeButton.onclick = () => alertModal.classList.add('hidden');
+    window.onclick = (event) => {
+        if (event.target === alertModal) {
+            alertModal.classList.add('hidden');
+        }
+    };
+
+    // --- Part 1: Authentication Logic ---
+    const handleLogin = async () => {
+        try {
+            const { code_verifier, code_challenge } = await pkceChallenge();
+            sessionStorage.setItem('pkce_code_verifier', code_verifier);
+            const authUrl = new URL("https://login.yotoplay.com/authorize");
+            authUrl.search = new URLSearchParams({
+                audience: "https://api.yotoplay.com",
+                scope: "offline_access write:myo", // 'write:myo' scope is crucial for creating content
+                response_type: "code",
+                client_id: clientId,
+                code_challenge: code_challenge,
+                code_challenge_method: "S256",
+                redirect_uri: window.location.origin,
+            }).toString();
+            window.location.href = authUrl.toString();
+        } catch (error) {
+            console.error("Error generating PKCE:", error);
+            showAlert("An error occurred during login setup.");
+        }
+    };
+
+    const handleLogout = () => {
+        clearTokens();
+        appContent.classList.add('hidden');
+        loginButton.classList.remove('hidden');
+        logoutButton.classList.add('hidden');
+    };
+
+    const checkAuthentication = async () => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const error = params.get("error");
+        
+        if (error) {
+            console.error("Authentication error:", error);
+            showAlert("Authentication failed. Please try logging in again.");
+            loginButton.classList.remove('hidden');
+            return;
+        }
+
+        if (code) {
+            try {
+                const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
+                if (!codeVerifier) throw new Error("No PKCE code verifier found");
+
+                const res = await fetch("https://login.yotoplay.com/oauth/token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        grant_type: "authorization_code",
+                        client_id: clientId,
+                        code_verifier: codeVerifier,
+                        code,
+                        redirect_uri: window.location.origin,
+                    }).toString(),
+                });
+
+                if (!res.ok) {
+                    const errorResult = await res.json();
+                    throw new Error(`Token exchange failed: ${errorResult.error_description || res.statusText}`);
+                }
+
+                const json = await res.json();
+                accessToken = json.access_token;
+                refreshToken = json.refresh_token;
+                storeTokens(accessToken, refreshToken);
+                
+                sessionStorage.removeItem('pkce_code_verifier');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showAppUI();
+            } catch (e) {
+                console.error(e);
+                showAlert(e.message);
+                loginButton.classList.remove('hidden');
+            }
+        } else {
+            const stored = getStoredTokens();
+            if (stored?.accessToken && !isTokenExpired(stored.accessToken)) {
+                accessToken = stored.accessToken;
+                refreshToken = stored.refreshToken;
+                showAppUI();
+            } else if (stored?.refreshToken) {
+                 try {
+                    const newTokens = await refreshTokens(stored.refreshToken);
+                    accessToken = newTokens.accessToken;
+                    refreshToken = newTokens.refreshToken;
+                    showAppUI();
+                 } catch (e) {
+                     console.error("Failed to refresh token:", e);
+                     showAlert("Session expired. Please log in again.");
+                     clearTokens();
+                     loginButton.classList.remove('hidden');
+                 }
+            } else {
+                loginButton.classList.remove('hidden');
+            }
+        }
+    };
+
+    const showAppUI = () => {
+        loginButton.classList.add('hidden');
+        logoutButton.classList.remove('hidden');
+        appContent.classList.remove('hidden');
+    };
+
+    loginButton.addEventListener('click', handleLogin);
+    logoutButton.addEventListener('click', handleLogout);
+
+    // --- Part 2: Form & Drag-and-Drop Image Logic ---
+    const handleFile = (file) => {
+        if (file && file.type.startsWith('image/')) {
+            imagePreview.classList.remove('hidden');
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                heroImageBase64 = reader.result;
+                imagePreview.style.backgroundImage = `url(${heroImageBase64})`;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.classList.add('hidden');
+            heroImageBase64 = null;
+        }
+    };
+
+    heroImageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    imageUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); imageUploadArea.classList.add('drag-over'); });
+    imageUploadArea.addEventListener('dragleave', () => imageUploadArea.classList.remove('drag-over'));
+    imageUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        imageUploadArea.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+        heroImageInput.files = e.dataTransfer.files;
+    });
+
+    // --- Part 3: Story Generation and Yoto API Integration ---
+    questForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        storyOutput.classList.remove('hidden');
+        loadingSpinner.classList.remove('hidden');
+        storyText.textContent = '';
+        uploadToYotoButton.classList.add('hidden');
+
+        const heroName = document.getElementById('heroName').value;
+        const promptSetup = document.getElementById('promptSetup').value;
+        const promptRising = document.getElementById('promptRising').value;
+        const promptClimax = document.getElementById('promptClimax').value;
+        const storyAge = document.getElementById('story-age').value;
+
+        const storyData = { heroName, promptSetup, promptRising, promptClimax, heroImage: heroImageBase64, age: storyAge };
+
+        try {
+            // Your existing AI and TTS logic
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(storyData),
+            });
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.message || 'The storyforge is having trouble.');
+            }
+
+            const result = await response.json();
+            
+            loadingSpinner.classList.add('hidden');
+            storyText.textContent = result.story;
+
+            // Display audio player for preview
+            const audioSrc = `data:audio/mp3;base64,${result.audio}`;
+            const base64toBlob = (base64) => {
+                const byteString = atob(base64.split(',')[1]);
+                const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+                return new Blob([ab], { type: mimeString });
+            };
+            const audioBlob = base64toBlob(audioSrc);
+            const audioBlobUrl = URL.createObjectURL(audioBlob);
+            audioPlayer.src = audioBlobUrl;
+            audioPlayer.classList.remove('hidden');
+
+            // Now, integrate with Yoto API
+            uploadToYotoButton.onclick = async () => {
+                uploadToYotoButton.disabled = true;
+                uploadToYotoButton.textContent = 'Forging Yoto Card...';
+                try {
+                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlobUrl, accessToken);
+                    showAlert('Story successfully added to a new Yoto playlist!');
+                    console.log('New Yoto Playlist:', myoContent);
+                } catch (e) {
+                    console.error("Failed to create Yoto playlist:", e);
+                    showAlert("Error creating Yoto playlist. Please check the console.");
+                } finally {
+                    uploadToYotoButton.disabled = false;
+                    uploadToYotoButton.textContent = 'Upload to Yoto';
+                }
+            };
+            uploadToYotoButton.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Error:', error);
+            loadingSpinner.classList.add('hidden');
+            storyText.textContent = `Oh no! The storyforge has run out of magic. Error: ${error.message}`;
+            showAlert(error.message);
+        }
+    });
+
+    // Function to create a new playlist on Yoto
+    const createYotoPlaylist = async (storyText, imageBase64, audioUrl, token) => {
+        // Step 1: Upload custom icon or cover image if provided
+        let coverImageUrl = null;
+        if (imageBase64) {
+            const mimeType = imageBase64.substring(imageBase64.indexOf(":") + 1, imageBase64.indexOf(";"));
+            const imageFile = new Blob([new Uint8Array(atob(imageBase64.split(',')[1]).split('').map(char => char.charCodeAt(0)))], { type: mimeType });
+
+            const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
+            uploadUrl.searchParams.set("autoconvert", "true");
+
+            const uploadResponse = await fetch(uploadUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": mimeType,
+                },
+                body: imageFile,
+            });
+
+            if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                throw new Error(`Failed to upload cover image: ${errorText}`);
+            }
+            const uploadResult = await uploadResponse.json();
+            coverImageUrl = uploadResult.coverImage.mediaUrl;
+        }
+
+        // Step 2: Create the playlist content body
+        const chapters = [{
+            key: "01",
+            title: "Your Epic Tale",
+            tracks: [{
+                key: "01",
+                title: "Chapter One",
+                trackUrl: audioUrl,
+                type: "stream",
+                format: "mp3",
+                display: { icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" }
+            }],
+            display: { icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" }
+        }];
+
+        const contentBody = {
+            title: document.getElementById('heroName').value || 'New Storyforge Tale',
+            content: { chapters },
+            metadata: {
+                description: storyText.substring(0, 100) + '...',
+            },
+        };
+
+        if (coverImageUrl) {
+            contentBody.metadata.cover = { imageL: coverImageUrl };
+        }
+
+        // Step 3: Send the final POST request to create the playlist
+        const createResponse = await fetch("https://api.yotoplay.com/content", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(contentBody),
+        });
+
+        if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            throw new Error(`Failed to create playlist: ${errorText}`);
+        }
+
+        return await createResponse.json();
+    };
+
+    // Initial check on page load
+    checkAuthentication();
+});
+</file>
+
+<file path="styles.css">
+/* General Body and Background */
+body {
+    font-family: 'Georgia', serif; /* Storybook feel */
+    background-color: #1a0f2b; /* Deep, dark purple/indigo */
+    color: #e6e0f3; /* Soft off-white for main text */
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center; /* Center content horizontally */
+    justify-content: center; /* Center content vertically */
+}
+
+/* Header Styling */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+.logo {
+    width: 70px; /* Slightly larger logo */
+    height: auto;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); /* Subtle glow */
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-family: 'Playfair Display', serif; /* Elegant title font */
+    font-size: 3em; /* Larger title */
+    color: #e6e0f3; /* Lighter white for title */
+    margin: 0;
+    text-shadow: 3px 3px 8px rgba(0,0,0,0.6); /* More prominent shadow */
+    letter-spacing: 2px;
+}
+
+/* Main Content Area (The "Storybook" Form) */
+main {
+    max-width: 750px; /* Wider form for better readability */
+    width: 90%;
+    background-color: #3b2a52; /* Lighter, but still dark, purple */
+    padding: 40px 50px;
+    border-radius: 25px; /* More rounded corners */
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4), /* Deeper shadow for "book" effect */
+                0 0 0 5px rgba(255, 255, 255, 0.1); /* Subtle outer glow */
+    position: relative;
+    z-index: 1;
+    border: 1px solid #5a427d; /* A subtle purple border */
+}
+
+/* Form Elements */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-family: 'Times New Roman', serif; /* Classic label font */
+    font-weight: bold;
+    margin-top: 18px;
+    margin-bottom: 7px;
+    color: #a081c7; /* A subtle purple for labels */
+    font-size: 1.1em;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+input[type="text"],
+select {
+    font-family: 'Arial', sans-serif; /* Clean font for inputs */
+    padding: 14px;
+    border: 1px solid #5a427d; /* Soft indigo border */
+    border-radius: 10px; /* Rounded inputs */
+    font-size: 1em;
+    transition: all 0.3s ease-in-out;
+    background-color: #2b1d44; /* Darker input background */
+    color: #e6e0f3; /* Light text in inputs */
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+    -webkit-appearance: none; /* Remove default select styling */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23a081c7" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Custom arrow for select */
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 20px auto;
+}
+
+input[type="text"]::placeholder {
+    color: #7b5b9c; /* Lighter placeholder text */
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #a081c7; /* Brighter purple focus */
+    outline: none;
+    box-shadow: 0 0 12px rgba(160, 129, 199, 0.6); /* Glowing focus effect */
+}
+
+/* Image Upload Area */
+#image-upload-area {
+    border: 2px dashed #5a427d; /* Soft dashed border */
+    border-radius: 12px; /* Rounded corners */
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s ease-in-out;
+    background-color: rgba(43, 29, 68, 0.5); /* Light, transparent background */
+    color: #e6e0f3; /* Light text */
+    font-size: 0.95em;
+}
+
+#image-upload-area:hover {
+    border-color: #a081c7; /* Indigo hover effect */
+    background-color: rgba(43, 29, 68, 0.8);
+}
+
+.hidden-input {
+    display: none;
+}
+
+#image-upload-area button {
+    background-color: #a081c7; /* A subtle purple for button */
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-bottom: 12px;
+    display: block;
+    width: 100%;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#image-upload-area button:hover {
+    background-color: #7b5b9c; /* Darker purple on hover */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+#image-upload-area.drag-over {
+    border-color: #a081c7;
+    background-color: rgba(43, 29, 68, 0.9);
+}
+
+#image-preview {
+    width: 100%;
+    height: 160px; /* Slightly taller preview */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-top: 15px;
+    border-radius: 8px; /* Rounded preview */
+    border: 1px solid #5a427d; /* Border to match theme */
+}
+
+/* Submit Button */
+button[type="submit"] {
+    background-color: #e6e0f3; /* Light, contrasting colour */
+    color: #3b2a52; /* Dark text */
+    padding: 16px;
+    border: none;
+    border-radius: 10px; /* Rounded button */
+    font-size: 1.2em; /* Larger text */
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-top: 25px;
+    font-weight: bold;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+}
+
+button[type="submit"]:hover {
+    background-color: #c0a8e0; /* A darker, purplish white on hover */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+}
+
+/* Story Output Area */
+#story-output {
+    margin-top: 40px;
+    border-top: 1px solid #5a427d; /* Soft separator */
+    padding-top: 30px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 5px solid rgba(160, 129, 199, 0.2); /* Soft indigo spinner */
+    width: 40px; /* Larger spinner */
+    height: 40px;
+    border-radius: 50%;
+    border-left-color: #a081c7; /* Glowing part of spinner */
+    animation: spin 1s infinite linear;
+    margin: 25px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#story-text {
+    text-align: left;
+    white-space: pre-wrap;
+    max-height: 450px; /* Taller story text area */
+    overflow-y: auto;
+    padding: 25px;
+    border: 1px solid #5a427d; /* Storybook page border */
+    border-radius: 15px; /* Rounded story text area */
+    background-color: #3b2a52; /* Lighter purple for text area */
+    color: #e6e0f3; /* Light text for readability */
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+    line-height: 1.8; /* Increased line spacing */
+    font-size: 1.1em;
+}
+
+#story-text h2 {
+    text-align: center;
+    color: #e6e0f3;
+    margin-bottom: 20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8em;
+}
+
+/* Audio Player and Play Button */
+#story-audio-player {
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+#upload-to-yoto-button {
+    background-color: #a081c7; /* Matching purple button */
+    color: #fff;
+    margin-top: 15px;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    padding: 14px 25px;
+    font-size: 1.1em;
+}
+
+#upload-to-yoto-button:hover {
+    background-color: #7b5b9c;
+    box-shadow: 0 7px 18px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
+}
+
+.login-btn, .logout-btn {
+    background-color: #e6e0f3;
+    color: #3b2a52;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease-in-out;
+}
+
+.login-btn:hover, .logout-btn:hover {
+    background-color: #c0a8e0;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+}
+
+/* Modal Styling */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #3b2a52;
+    color: #e6e0f3;
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    max-width: 450px;
+    position: relative;
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.close-button {
+    color: #7b5b9c;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #c0a8e0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+</file>
+
+<file path="tokens.js">
+// token-utils.js
+import { jwtDecode } from "jwt-decode";
+import pkceChallenge from "pkce-challenge";
+
+// A unique key for storing tokens in localStorage
+export const storageKey = "YOTO_STORYFORGE_TOKENS";
+
+const clientId = import.meta.env.VITE_CLIENT_ID;
+const tokenUrl = "https://login.yotoplay.com/oauth/token";
+
+export const getStoredTokens = () => {
+    const tokensRaw = localStorage.getItem(storageKey);
+    return tokensRaw ? JSON.parse(tokensRaw) : null;
+};
+
+export const storeTokens = (accessToken, refreshToken) => {
+    localStorage.setItem(storageKey, JSON.stringify({ accessToken, refreshToken }));
+};
+
+export const clearTokens = () => {
+    localStorage.removeItem(storageKey);
+};
+
+export const isTokenExpired = (token) => {
+    if (!token) return true;
+    try {
+        const decodedToken = jwtDecode(token);
+        return Date.now() >= (decodedToken.exp ?? 0) * 1000;
+    } catch (error) {
+        return true;
+    }
+};
+
+export const refreshTokens = async (refreshToken) => {
+    const tokenResponse = await fetch(tokenUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            grant_type: "refresh_token",
+            client_id: clientId,
+            refresh_token: refreshToken,
+            audience: "https://api.yotoplay.com",
+        }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error("Refresh token request failed:", tokenResponse.status, errorText);
+        throw new Error("Failed to refresh token");
+    }
+    
+    const tokenData = await tokenResponse.json();
+    return {
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token || refreshToken,
+    };
+};
+</file>
+
+</files>
