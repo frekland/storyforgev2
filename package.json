@@ -14,7 +14,7 @@
     "dotenv": "^17.2.1",
     "jwt-decode": "^4.0.0",
     "pkce-challenge": "^5.0.0",
-    "vite": "^5.2.0"
+    "vite": "^7.1.5"
   },
   "author": "Yoto",
   "license": "MIT"
