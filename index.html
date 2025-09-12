@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/x-icon" href="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/jwt-decode/build/jwt-decode.js"></script>
 </head>
 <body>
     <header>
@@ -16,11 +15,9 @@
     </header>
 
     <main>
-        <!-- The login button is shown when not authenticated -->
         <button id="login-button" class="login-btn">Authorise Yoto Account</button>
         <button id="logout-button" class="logout-btn hidden">Logout</button>
 
-        <!-- The main application UI is hidden until authenticated -->
         <div id="app-content" class="hidden">
             <form id="quest-form">
                 <label for="heroName">Hero's Name</label>
@@ -65,7 +62,6 @@
         </div>
     </main>
     
-    <!-- Custom alert modal -->
     <div id="alert-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -75,6 +71,5 @@
     
     <script type="module" src="script.js"></script>
     <script type="module" src="tokens.js"></script>
-    <script type="module" src="api/generate-story.js"></script>
 </body>
 </html>
