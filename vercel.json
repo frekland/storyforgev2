@@ -1,0 +1,23 @@
+{
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "functions": {
+    "api/generate-story.js": {
+      "runtime": "@vercel/node@3.0.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/generate-story",
+      "dest": "/api/generate-story.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ]
+}
