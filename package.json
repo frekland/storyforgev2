@@ -4,7 +4,9 @@
   "description": "An app that generates personalised Yoto stories using AI.",
   "main": "index.js",
   "scripts": {
-    "start": "vite --open"
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
