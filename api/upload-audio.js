@@ -14,9 +14,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { audioBlob } = req.body;
+    const { audioBlob } = req.body; // Remove token from destructuring
 
-    if (!audioBlob) {
+    if (!audioBlob) { // Change condition to only check for audioBlob
         return res.status(400).json({ message: 'Missing audioBlob' });
     }
 
