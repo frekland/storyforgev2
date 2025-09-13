@@ -229,7 +229,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
                 try {
-                    // Pass the audio base64 and accessToken to the new proxy function
+                    // Check if token is expired, if so, refresh it
+                    if (isTokenExpired(accessToken)) {
+                        const newTokens = await refreshTokens(refreshToken);
+                        accessToken = newTokens.accessToken;
+                        refreshToken = newTokens.refreshToken;
+                    }
                     const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioSrc, accessToken);
                     showAlert('Story successfully added to a new Yoto playlist!');
                     console.log('New Yoto Playlist:', myoContent);
@@ -250,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showAlert(error.message);
         }
     });
-
+    
     // We'll now use our own proxy endpoint to upload the audio
     const uploadAudioFile = async (audioBase64, token) => {
         const response = await fetch('/api/upload-audio', {
