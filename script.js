@@ -191,14 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const storyData = { heroName, promptSetup, promptRising, promptClimax, heroImage: heroImageBase64, age: storyAge };
 
         try {
-            // Your existing AI and TTS logic
             const response = await fetch('/api/generate-story', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(storyData),
             });
             
-            // Check for a bad HTTP status code and manually throw an error
             if (!response.ok) {
                 const errorResult = await response.json();
                 throw new Error(errorResult.message || `HTTP Error! Status: ${response.status}`);
@@ -209,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingSpinner.classList.add('hidden');
             storyText.textContent = result.story;
 
-            // Display audio player for preview
             const audioSrc = `data:audio/mp3;base64,${result.audio}`;
             const base64toBlob = (base64) => {
                 const byteString = atob(base64.split(',')[1]);
@@ -224,12 +221,16 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.src = audioBlobUrl;
             audioPlayer.classList.remove('hidden');
 
-            // Now, integrate with Yoto API
             uploadToYotoButton.onclick = async () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
                 try {
-                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlobUrl, accessToken);
+                    if (isTokenExpired(accessToken)) {
+                        const newTokens = await refreshTokens(refreshToken);
+                        accessToken = newTokens.accessToken;
+                        refreshToken = newTokens.refreshToken;
+                    }
+                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioSrc, accessToken);
                     showAlert('Story successfully added to a new Yoto playlist!');
                     console.log('New Yoto Playlist:', myoContent);
                 } catch (e) {
@@ -249,9 +250,26 @@ document.addEventListener('DOMContentLoaded', () => {
             showAlert(error.message);
         }
     });
+    
+    // We'll now use our own proxy endpoint to upload the audio
+    const uploadAudioFile = async (audioBase64) => {
+        const response = await fetch('/api/upload-audio', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audioBlob: audioBase64 }),
+        });
 
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.message);
+        }
+
+        const result = await response.json();
+        return result.mediaUrl;
+    };
+    
     // Function to create a new playlist on Yoto
-    const createYotoPlaylist = async (storyText, imageBase64, audioUrl, token) => {
+    const createYotoPlaylist = async (storyText, imageBase64, audioBase64, token) => {
         // Step 1: Upload custom icon or cover image if provided
         let coverImageUrl = null;
         if (imageBase64) {
@@ -278,7 +296,10 @@ document.addEventListener('DOMContentLoaded', () => {
             coverImageUrl = uploadResult.coverImage.mediaUrl;
         }
 
-        // Step 2: Create the playlist content body
+        // Step 2: Upload the audio using our new proxy endpoint
+        const audioUrl = await uploadAudioFile(audioBase64);
+
+        // Step 3: Create the playlist content body
         const chapters = [{
             key: "01",
             title: "Your Epic Tale",
@@ -305,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentBody.metadata.cover = { imageL: coverImageUrl };
         }
 
-        // Step 3: Send the final POST request to create the playlist
+        // Step 4: Send the final POST request to create the playlist
         const createResponse = await fetch("https://api.yotoplay.com/content", {
             method: "POST",
             headers: {
