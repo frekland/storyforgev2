@@ -229,8 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
                 try {
-                    // Pass the audio base64 and accessToken to the new proxy function
-                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioSrc, accessToken);
+                    // Pass the audio blob instead of the temporary URL
+                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlob, accessToken);
                     showAlert('Story successfully added to a new Yoto playlist!');
                     console.log('New Yoto Playlist:', myoContent);
                 } catch (e) {
@@ -251,25 +251,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // We'll now use our own proxy endpoint to upload the audio
-    const uploadAudioFile = async (audioBase64, token) => {
-        const response = await fetch('/api/upload-audio', {
+    // New helper function to upload audio to Yoto
+    const uploadAudioFile = async (audioBlob, token) => {
+        const uploadUrl = new URL("https://api.yotoplay.com/media/audioFile/user/me/upload");
+        uploadUrl.searchParams.set("autoconvert", "true");
+
+        const uploadResponse = await fetch(uploadUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ audioBlob: audioBase64, token }),
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "audio/mp3",
+            },
+            body: audioBlob,
         });
 
-        if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(errorResult.message);
+        if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`Failed to upload audio file: ${errorText}`);
         }
-
-        const result = await response.json();
-        return result.audioFile.mediaUrl;
+        
+        const uploadResult = await uploadResponse.json();
+        return uploadResult.audioFile.mediaUrl;
     };
     
     // Function to create a new playlist on Yoto
-    const createYotoPlaylist = async (storyText, imageBase64, audioBase64, token) => {
+    const createYotoPlaylist = async (storyText, imageBase64, audioBlob, token) => {
         // Step 1: Upload custom icon or cover image if provided
         let coverImageUrl = null;
         if (imageBase64) {
@@ -296,8 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
             coverImageUrl = uploadResult.coverImage.mediaUrl;
         }
 
-        // Step 2: Upload the audio using our new proxy endpoint
-        const audioUrl = await uploadAudioFile(audioBase64, token);
+        // Step 2: Upload the audio and get its public URL
+        const audioUrl = await uploadAudioFile(audioBlob, token);
 
         // Step 3: Create the playlist content body
         const chapters = [{
