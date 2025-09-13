@@ -229,8 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
                 try {
-                    // Pass the audio blob instead of the temporary URL
-                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlob, accessToken);
+                    const myoContent = await createYotoPlaylist(result.story, heroImageBase64, audioBlobUrl, accessToken);
                     showAlert('Story successfully added to a new Yoto playlist!');
                     console.log('New Yoto Playlist:', myoContent);
                 } catch (e) {
@@ -251,31 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // New helper function to upload audio to Yoto
-    const uploadAudioFile = async (audioBlob, token) => {
-        const uploadUrl = new URL("https://api.yotoplay.com/media/audioFile/user/me/upload");
-        uploadUrl.searchParams.set("autoconvert", "true");
-
-        const uploadResponse = await fetch(uploadUrl, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "audio/mp3",
-            },
-            body: audioBlob,
-        });
-
-        if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            throw new Error(`Failed to upload audio file: ${errorText}`);
-        }
-        
-        const uploadResult = await uploadResponse.json();
-        return uploadResult.audioFile.mediaUrl;
-    };
-    
     // Function to create a new playlist on Yoto
-    const createYotoPlaylist = async (storyText, imageBase64, audioBlob, token) => {
+    const createYotoPlaylist = async (storyText, imageBase64, audioUrl, token) => {
         // Step 1: Upload custom icon or cover image if provided
         let coverImageUrl = null;
         if (imageBase64) {
@@ -302,10 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             coverImageUrl = uploadResult.coverImage.mediaUrl;
         }
 
-        // Step 2: Upload the audio and get its public URL
-        const audioUrl = await uploadAudioFile(audioBlob, token);
-
-        // Step 3: Create the playlist content body
+        // Step 2: Create the playlist content body
         const chapters = [{
             key: "01",
             title: "Your Epic Tale",
@@ -332,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contentBody.metadata.cover = { imageL: coverImageUrl };
         }
 
-        // Step 4: Send the final POST request to create the playlist
+        // Step 3: Send the final POST request to create the playlist
         const createResponse = await fetch("https://api.yotoplay.com/content", {
             method: "POST",
             headers: {
