@@ -1,13 +1,10 @@
 import 'dotenv/config';
 import cloudinary from 'cloudinary';
 
-// Explicitly configure Cloudinary with environment variables
-// This is the fix to ensure the SDK can find the credentials
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
 });
 
 export default async function handler(req, res) {
