@@ -1,4 +1,12 @@
 import 'dotenv/config';
+import cloudinary from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,43 +14,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { audioBlob, token } = req.body;
+    const { audioBlob } = req.body; // Remove token from destructuring
 
-    if (!audioBlob || !token) {
-        return res.status(400).json({ message: 'Missing audioBlob or token' });
+    if (!audioBlob) { // Change condition to only check for audioBlob
+        return res.status(400).json({ message: 'Missing audioBlob' });
     }
 
-    const uploadUrl = new URL("https://api.yotoplay.com/media/audioFile/user/me/upload");
-    uploadUrl.searchParams.set("autoconvert", "true");
-
-    // Convert the base64 audio string to a buffer
-    const base64Data = audioBlob.split(',')[1];
-    const audioBuffer = Buffer.from(base64Data, 'base64');
-    
-    // Pass the buffer directly to the fetch body
-    const uploadResponse = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        // Here is the fix: Prepend 'Bearer ' to the token
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "audio/mp3",
-      },
-      body: audioBuffer,
+    const result = await cloudinary.v2.uploader.upload(audioBlob, {
+      resource_type: "video",
+      folder: "yoto_storyforge",
+      format: "mp3"
     });
 
-    if (!uploadResponse.ok) {
-        // Attempt to parse the error response from Yoto API
-        const errorText = await uploadResponse.text();
-        console.error("Yoto API upload failed:", errorText);
-        // This line is also corrected to return a more useful error message
-        return res.status(uploadResponse.status).json({ message: `Failed to upload audio: ${errorText}` });
-    }
-
-    const uploadResult = await uploadResponse.json();
-    res.status(200).json(uploadResult);
+    res.status(200).json({ mediaUrl: result.secure_url });
 
   } catch (error) {
-    console.error("Error during audio upload proxy:", error);
-    res.status(500).json({ message: "An error occurred during audio upload." });
+    console.error("Error during Cloudinary upload:", error);
+    res.status(500).json({ message: "An error occurred during audio upload to Cloudinary." });
   }
 }
