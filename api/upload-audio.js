@@ -23,6 +23,7 @@ export default async function handler(req, res) {
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
       headers: {
+        // Here is the fix: Prepend 'Bearer ' to the token
         "Authorization": `Bearer ${token}`,
         "Content-Type": "audio/mp3",
       },
