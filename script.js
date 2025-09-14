@@ -1,6 +1,7 @@
 import { getStoredTokens, storeTokens, clearTokens, isTokenExpired, refreshTokens } from "./tokens.js";
 import pkceChallenge from "pkce-challenge";
 import { jwtDecode } from "jwt-decode";
+import { Howl } from 'howler'; // import Howl
 
 document.addEventListener('DOMContentLoaded', () => {
     const questForm = document.getElementById('quest-form');
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const authUrl = new URL("https://login.yotoplay.com/authorize");
             authUrl.search = new URLSearchParams({
                 audience: "https://api.yotoplay.com",
-                scope: "offline_access write:myo", // 'write:myo' scope is crucial for creating content
+                scope: "offline_access write:myo",
                 response_type: "code",
                 client_id: clientId,
                 code_challenge: code_challenge,
@@ -221,6 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
             audioPlayer.src = audioBlobUrl;
             audioPlayer.classList.remove('hidden');
 
+            // --- New: Use Howler.js to verify audio duration
+            const audioHowl = new Howl({
+                src: [audioBlobUrl],
+                format: ['mp3']
+            });
+            audioHowl.on('load', () => {
+                console.log(`Audio file loaded. Duration: ${audioHowl.duration()} seconds.`);
+            });
+            audioHowl.on('loaderror', (id, err) => {
+                console.error("Howler.js audio load error:", err);
+                showAlert("Error loading audio file for preview.");
+            });
+
             uploadToYotoButton.onclick = async () => {
                 uploadToYotoButton.disabled = true;
                 uploadToYotoButton.textContent = 'Forging Yoto Card...';
@@ -250,51 +264,77 @@ document.addEventListener('DOMContentLoaded', () => {
             showAlert(error.message);
         }
     });
-    
-    // We will now use an S3 pre-signed URL to upload audio
-    const uploadAudioFileToS3 = async (audioBlob) => {
-        // Step 1: Request a signed URL from our backend
-        const fileName = `storyforge-audio-${Date.now()}.mp3`;
-        const fileType = 'audio/mp3';
-        
-        const signedUrlResponse = await fetch('/api/upload-audio', {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fileName, fileType }),
-        });
 
-        if (!signedUrlResponse.ok) {
-            const errorResult = await signedUrlResponse.json();
-            throw new Error(errorResult.message);
-        }
+    // The Yoto native audio upload and transcoding workflow
+    const uploadAudioFileToYoto = async (audioBlob, accessToken) => {
+        const apiBaseUrl = "https://api.yotoplay.com";
 
-        const { signedUrl, key } = await signedUrlResponse.json();
-
-        // Step 2: Upload the audio file directly to S3 using the signed URL
-        const s3UploadResponse = await fetch(signedUrl, {
-            method: 'PUT',
+        // Step 1: Get a secure upload URL from Yoto's API
+        const uploadUrlResponse = await fetch(`${apiBaseUrl}/media/transcode/audio/uploadUrl`, {
+            method: "GET",
             headers: {
-                'Content-Type': fileType,
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/json",
             },
-            body: audioBlob,
         });
-        
-        if (!s3UploadResponse.ok) {
-            throw new Error("Failed to upload file to S3.");
+
+        if (!uploadUrlResponse.ok) {
+            throw new Error(`Failed to get upload URL: ${await uploadUrlResponse.text()}`);
         }
 
-        // Step 3: Return the public S3 URL
-        const s3BucketUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-        return s3BucketUrl;
+        const { upload: { uploadUrl: audioUploadUrl, uploadId } } = await uploadUrlResponse.json();
+        if (!audioUploadUrl) {
+            throw new Error("Failed to get upload URL");
+        }
+
+        // Step 2: Upload the raw audio file to the temporary URL
+        await fetch(audioUploadUrl, {
+            method: "PUT",
+            body: audioBlob,
+            headers: {
+                "Content-Type": audioBlob.type,
+            },
+        });
+
+        // Step 3: Poll for transcoding status until complete
+        let transcodedAudio = null;
+        let attempts = 0;
+        const maxAttempts = 30; // Poll for up to a minute
+
+        while (attempts < maxAttempts) {
+            const transcodeResponse = await fetch(`${apiBaseUrl}/media/upload/${uploadId}/transcoded?loudnorm=false`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: "application/json",
+                },
+            });
+
+            if (transcodeResponse.ok) {
+                const data = await transcodeResponse.json();
+                if (data.transcode.transcodedSha256) {
+                    transcodedAudio = data.transcode;
+                    break;
+                }
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            attempts++;
+        }
+
+        if (!transcodedAudio) {
+            throw new Error("Transcoding timed out");
+        }
+
+        return transcodedAudio;
     };
     
     // Function to create a new playlist on Yoto
-    const createYotoPlaylist = async (storyText, imageBase64, audioBlob, token) => {
+    const createYotoPlaylist = async (storyText, heroImageBase64, audioBlob, accessToken) => {
         // Step 1: Upload custom icon or cover image if provided
         let coverImageUrl = null;
-        if (imageBase64) {
-            const mimeType = imageBase64.substring(imageBase64.indexOf(":") + 1, imageBase64.indexOf(";"));
-            const imageFile = new Blob([new Uint8Array(atob(imageBase64.split(',')[1]).split('').map(char => char.charCodeAt(0)))], { type: mimeType });
+        if (heroImageBase64) {
+            const mimeType = heroImageBase64.substring(heroImageBase64.indexOf(":") + 1, heroImageBase64.indexOf(";"));
+            const imageFile = new Blob([new Uint8Array(atob(heroImageBase64.split(',')[1]).split('').map(char => char.charCodeAt(0)))], { type: mimeType });
 
             const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
             uploadUrl.searchParams.set("autoconvert", "true");
@@ -302,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const uploadResponse = await fetch(uploadUrl, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${accessToken}`,
                     "Content-Type": mimeType,
                 },
                 body: imageFile,
@@ -316,8 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
             coverImageUrl = uploadResult.coverImage.mediaUrl;
         }
 
-        // Step 2: Upload the audio using our new S3 upload function
-        const audioUrl = await uploadAudioFileToS3(audioBlob);
+        // Step 2: Upload and transcode the audio file
+        const transcodedAudio = await uploadAudioFileToYoto(audioBlob, accessToken);
+        const mediaInfo = transcodedAudio.transcodedInfo;
 
         // Step 3: Create the playlist content body
         const chapters = [{
@@ -326,9 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tracks: [{
                 key: "01",
                 title: "Chapter One",
-                trackUrl: audioUrl,
-                type: "stream",
-                format: "mp3",
+                trackUrl: `yoto:#${transcodedAudio.transcodedSha256}`,
+                type: "audio",
+                format: mediaInfo?.format,
+                duration: mediaInfo?.duration,
+                fileSize: mediaInfo?.fileSize,
+                channels: mediaInfo?.channels,
                 display: { icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" }
             }],
             display: { icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" }
@@ -339,6 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
             content: { chapters },
             metadata: {
                 description: storyText.substring(0, 100) + '...',
+                media: {
+                    duration: mediaInfo?.duration,
+                    fileSize: mediaInfo?.fileSize,
+                }
             },
         };
 
@@ -350,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const createResponse = await fetch("https://api.yotoplay.com/content", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(contentBody),
