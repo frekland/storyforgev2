@@ -330,9 +330,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 if (!fullResponse.ok) {
-                    throw new Error(`Failed to fetch full content for cardId ${cardId}.`);
+                    const errorText = await fullResponse.text();
+                    console.error(`Failed to fetch full content for cardId ${cardId}:`, {
+                        status: fullResponse.status,
+                        statusText: fullResponse.statusText,
+                        error: errorText
+                    });
+                    throw new Error(`Failed to fetch full content for cardId ${cardId}: ${errorText}`);
                 }
                 playlist = await fullResponse.json();
+                console.log('Fetched existing playlist structure:', {
+                    title: playlist?.title,
+                    hasContent: !!playlist?.content,
+                    hasChapters: !!playlist?.content?.chapters,
+                    chaptersCount: playlist?.content?.chapters?.length || 0,
+                    hasMetadata: !!playlist?.metadata,
+                    cardId: playlist?.cardId,
+                    keys: Object.keys(playlist || {})
+                });
             } else {
                 console.log("No existing StoryForge playlist found. Creating a new one.");
                 // Create new playlist structure
@@ -457,32 +472,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 playlist.metadata.cover = { imageL: coverImageUrl };
             }
             
-            // Include cardId for updates
-            if (cardId) {
-                playlist.cardId = cardId;
-            }
+            // Step 6: Create clean payload without cardId and send to appropriate endpoint
+            const cleanPlaylist = {
+                title: playlist.title,
+                content: playlist.content,
+                metadata: playlist.metadata
+            };
             
-            // Step 6: POST complete playlist (Get-Modify-Post pattern)
             console.log(cardId ? "Updating existing playlist..." : "Creating new playlist...");
-            console.log('Playlist payload:', JSON.stringify(playlist, null, 2));
+            console.log('Clean playlist payload:', JSON.stringify(cleanPlaylist, null, 2));
             
-            const response = await fetch("https://api.yotoplay.com/content", {
-                method: "POST",
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(playlist)
-            });
+            // Use different endpoints for create vs update
+            let response;
+            if (cardId) {
+                // Update existing playlist using PUT with cardId in URL
+                response = await fetch(`https://api.yotoplay.com/content/${cardId}`, {
+                    method: "PUT",
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cleanPlaylist)
+                });
+            } else {
+                // Create new playlist using POST
+                response = await fetch("https://api.yotoplay.com/content", {
+                    method: "POST",
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cleanPlaylist)
+                });
+            }
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Yoto API Error:", errorText);
-                throw new Error(`Failed to create or update playlist: ${errorText}`);
+                console.error("Yoto API Error Details:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    operation: cardId ? 'UPDATE' : 'CREATE',
+                    endpoint: cardId ? `/content/${cardId}` : '/content',
+                    method: cardId ? 'PUT' : 'POST',
+                    errorBody: errorText
+                });
+                
+                // Try to parse error as JSON for better debugging
+                let parsedError;
+                try {
+                    parsedError = JSON.parse(errorText);
+                    console.error("Parsed error:", parsedError);
+                } catch (e) {
+                    console.error("Could not parse error as JSON:", errorText);
+                }
+                
+                throw new Error(`Failed to ${cardId ? 'update' : 'create'} playlist: ${errorText}`);
             }
             
-            console.log("Playlist successfully created/updated!");
-            return await response.json();
+            console.log(`Playlist successfully ${cardId ? 'updated' : 'created'}!`);
+            const result = await response.json();
+            console.log('API Response:', result);
+            return result;
             
         } catch (error) {
             console.error("Error in createOrUpdateStoryForgePlaylist:", error);
