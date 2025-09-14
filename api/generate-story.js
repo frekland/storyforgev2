@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import textToSpeech from '@google-cloud/text-to-speech';
-import 'dotenv/config';
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const textToSpeech = require('@google-cloud/text-to-speech');
+require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
@@ -74,7 +74,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
 }
 
 // ✅ DUAL-MODE SERVERLESS FUNCTION - CRITICAL FOR STREAMING WORKFLOW
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     // Mode 1: Client requests story generation
     try {
@@ -136,16 +136,4 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-}
-    } else {
-        res.status(200).json({ 
-          story: storyText,
-          audio: audioContent 
-        });
-    }
-
-  } catch (error) {
-    console.error("Error during API call:", error);
-    res.status(500).json({ message: "Error generating story or audio" });
-  }
-}
+};
