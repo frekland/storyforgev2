@@ -287,14 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         age: storyAge,
                         heroImage: heroImageBase64
                     }, accessToken);
-                    showAlert('Surprise story successfully added to StoryForge playlist!');
+                    showAlert('Surprise story successfully uploaded as individual Yoto card!');
                     console.log('StoryForge Playlist Updated:', myoContent);
                 } catch (e) {
                     console.error("Failed to create/update StoryForge playlist:", e);
                     showAlert("Error updating StoryForge playlist. Please check the console.");
                 } finally {
                     uploadToYotoButton.disabled = false;
-                    uploadToYotoButton.textContent = 'Add to StoryForge Playlist';
+                    uploadToYotoButton.textContent = 'Upload to Yoto';
                 }
             };
             uploadToYotoButton.classList.remove('hidden');
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         age: storyAge,
                         heroImage: heroImageBase64
                     }, accessToken);
-                    showAlert('Story successfully added to StoryForge playlist!');
+                    showAlert('Story successfully uploaded as individual Yoto card!');
                     console.log('StoryForge Playlist Updated:', myoContent);
                 } catch (e) {
                     console.error("Failed to create/update StoryForge playlist:", e);
@@ -516,39 +516,44 @@ document.addEventListener('DOMContentLoaded', () => {
             if (storyData.heroImage) {
                 console.log("🖼️ Uploading new cover image...");
                 try {
-                    const mimeType = storyData.heroImage.substring(
-                        storyData.heroImage.indexOf(":") + 1, 
-                        storyData.heroImage.indexOf(";")
-                    );
-                    const imageBytes = atob(storyData.heroImage.split(',')[1]);
-                    const imageArray = new Uint8Array(imageBytes.length);
-                    for (let i = 0; i < imageBytes.length; i++) {
-                        imageArray[i] = imageBytes.charCodeAt(i);
-                    }
-                    const imageFile = new Blob([imageArray], { type: mimeType });
-                    
-                    const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
-                    uploadUrl.searchParams.set("autoconvert", "true");
-                    
-                    const uploadResponse = await fetch(uploadUrl, {
-                        method: "POST",
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                            'Content-Type': mimeType,
-                        },
-                        body: imageFile,
-                    });
-                    
-                    if (uploadResponse.ok) {
-                        const uploadResult = await uploadResponse.json();
-                        coverImageUrl = uploadResult.coverImage.mediaUrl;
-                        console.log("✅ Cover image uploaded:", coverImageUrl);
+                    // Skip SVG images as they're not supported by Yoto API
+                    if (storyData.heroImage.includes('image/svg+xml')) {
+                        console.log('📝 Skipping SVG image upload (not supported by Yoto API)');
                     } else {
-                        const uploadError = await uploadResponse.text();
-                        console.warn("⚠️ Cover image upload failed:", {
-                            status: uploadResponse.status,
-                            error: uploadError
+                        const mimeType = storyData.heroImage.substring(
+                            storyData.heroImage.indexOf(":") + 1, 
+                            storyData.heroImage.indexOf(";")
+                        );
+                        const imageBytes = atob(storyData.heroImage.split(',')[1]);
+                        const imageArray = new Uint8Array(imageBytes.length);
+                        for (let i = 0; i < imageBytes.length; i++) {
+                            imageArray[i] = imageBytes.charCodeAt(i);
+                        }
+                        const imageFile = new Blob([imageArray], { type: mimeType });
+                    
+                        const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
+                        uploadUrl.searchParams.set("autoconvert", "true");
+                        
+                        const uploadResponse = await fetch(uploadUrl, {
+                            method: "POST",
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': mimeType,
+                            },
+                            body: imageFile,
                         });
+                        
+                        if (uploadResponse.ok) {
+                            const uploadResult = await uploadResponse.json();
+                            coverImageUrl = uploadResult.coverImage.mediaUrl;
+                            console.log("✅ Cover image uploaded:", coverImageUrl);
+                        } else {
+                            const uploadError = await uploadResponse.text();
+                            console.warn("⚠️ Cover image upload failed:", {
+                                status: uploadResponse.status,
+                                error: uploadError
+                            });
+                        }
                     }
                 } catch (imageError) {
                     console.warn("⚠️ Cover image upload error:", imageError);
@@ -691,35 +696,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Step 5: Submit to Yoto API
-            let apiResponse;
-            if (cardId) {
-                console.log(`🔄 Updating existing playlist (PUT /content/${cardId})...`);
-                apiResponse = await fetch(`https://api.yotoplay.com/content/${cardId}`, {
-                    method: "PUT",
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(finalPlaylist)
-                });
-            } else {
-                console.log('🆕 Creating new playlist (POST /content)...');
-                apiResponse = await fetch('https://api.yotoplay.com/content', {
-                    method: "POST",
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(finalPlaylist)
-                });
-            }
+            // Note: Due to CORS restrictions, we'll always create new content instead of updating
+            // This means each story becomes a separate card rather than chapters in one playlist
+            
+            // Create a unique title for each story to avoid conflicts
+            const uniqueTitle = cardId ? 
+                `${PLAYLIST_TITLE} - ${storyData.heroName || 'Story'}` : 
+                PLAYLIST_TITLE;
+                
+            finalPlaylist.title = uniqueTitle;
+            
+            console.log(`🆕 Creating new content: "${uniqueTitle}" (CORS workaround)...`);
+            const apiResponse = await fetch('https://api.yotoplay.com/content', {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(finalPlaylist)
+            });
             
             if (!apiResponse.ok) {
                 const errorText = await apiResponse.text();
                 console.error('❌ Yoto API Error:', {
-                    operation: cardId ? 'UPDATE' : 'CREATE',
-                    endpoint: cardId ? `/content/${cardId}` : '/content',
-                    method: cardId ? 'PUT' : 'POST',
+                    operation: 'CREATE',
+                    endpoint: '/content',
+                    method: 'POST',
                     status: apiResponse.status,
                     statusText: apiResponse.statusText,
                     errorBody: errorText,
@@ -733,13 +735,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Error is not JSON
                 }
                 
-                throw new Error(`Yoto API ${cardId ? 'update' : 'creation'} failed: ${errorText}`);
+                throw new Error(`Yoto API content creation failed: ${errorText}`);
             }
             
             const result = await apiResponse.json();
-            console.log('✅ Success! StoryForge playlist updated:', {
-                operation: cardId ? 'UPDATED' : 'CREATED',
-                cardId: result.cardId || cardId,
+            console.log('✅ Success! StoryForge content created:', {
+                operation: 'CREATED',
+                cardId: result.cardId,
                 title: result.title,
                 chapters: result.content?.chapters?.length || 'unknown'
             });
