@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/generate-story.js": {
+      "maxDuration": 60
+    }
+  },
+  "buildCommand": "npx vite build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}
