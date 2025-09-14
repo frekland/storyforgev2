@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         accessToken = newTokens.accessToken;
                         refreshToken = newTokens.refreshToken;
                     }
-                    const myoContent = await createOrUpdateStoryForgePlaylist({
+                    const myoContent = await createSimpleYotoStory({
                         heroName: document.getElementById('heroName').value,
                         storyText: result.story,
                         duration: result.duration,
@@ -264,11 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         age: storyAge,
                         heroImage: heroImageBase64
                     }, accessToken);
-                    showAlert('Story successfully added to StoryForge playlist!');
-                    console.log('New Yoto Playlist:', myoContent);
+                    showAlert('Story successfully uploaded to Yoto!');
+                    console.log('New Yoto Content:', myoContent);
                 } catch (e) {
-                    console.error("Failed to create Yoto playlist:", e);
-                    showAlert("Error creating Yoto playlist. Please check the console.");
+                    console.error("Failed to create Yoto content:", e);
+                    showAlert("Error creating Yoto content. Please check the console.");
                 } finally {
                     uploadToYotoButton.disabled = false;
                     uploadToYotoButton.textContent = 'Upload to Yoto';
@@ -284,140 +284,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // ✅ CORRECTED: createOrUpdateStoryForgePlaylist with Get-Modify-Post pattern and streaming workflow
-    async function createOrUpdateStoryForgePlaylist(storyData, accessToken) {
-        const PLAYLIST_TITLE = "StoryForge";
-        
+    // ✅ SIMPLE: Create individual Yoto story (no complex playlist management)
+    async function createSimpleYotoStory(storyData, accessToken) {
         try {
-            // Step 1: Find existing playlist
-            console.log("Searching for existing StoryForge playlist...");
-            const myoResponse = await fetch("https://api.yotoplay.com/content/mine", {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
+            console.log("Creating new Yoto story...");
             
-            if (!myoResponse.ok) {
-                const errorText = await myoResponse.text();
-                console.error('Failed to fetch MYO cards:', myoResponse.status, errorText);
-                throw new Error(`Failed to fetch user's MYO cards. Status: ${myoResponse.status}`);
-            }
-            
-            const myoCards = await myoResponse.json();
-            console.log('MYO Cards response:', myoCards);
-            
-            // Handle different response formats from Yoto API
-            let cardsArray = myoCards;
-            if (myoCards && myoCards.cards && Array.isArray(myoCards.cards)) {
-                cardsArray = myoCards.cards;
-            } else if (myoCards && myoCards.content && Array.isArray(myoCards.content)) {
-                cardsArray = myoCards.content;
-            } else if (!Array.isArray(myoCards)) {
-                console.warn('Unexpected response format from /content/mine:', myoCards);
-                cardsArray = [];
-            }
-            
-            const existing = cardsArray.length > 0 ? cardsArray.find(card => card && card.title === PLAYLIST_TITLE) : null;
-            
-            let playlist = null;
-            let cardId = null;
-            
-            if (existing) {
-                // Step 2: Fetch full content of existing playlist
-                cardId = existing.cardId;
-                console.log(`Found existing playlist with cardId: ${cardId}. Fetching full content...`);
-                
-                const fullResponse = await fetch(`https://api.yotoplay.com/content/${cardId}`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                
-                if (!fullResponse.ok) {
-                    const errorText = await fullResponse.text();
-                    console.error(`Failed to fetch full content for cardId ${cardId}:`, {
-                        status: fullResponse.status,
-                        statusText: fullResponse.statusText,
-                        error: errorText
-                    });
-                    throw new Error(`Failed to fetch full content for cardId ${cardId}: ${errorText}`);
-                }
-                playlist = await fullResponse.json();
-                console.log('Fetched existing playlist structure:', {
-                    title: playlist?.title,
-                    hasContent: !!playlist?.content,
-                    hasChapters: !!playlist?.content?.chapters,
-                    chaptersCount: playlist?.content?.chapters?.length || 0,
-                    hasMetadata: !!playlist?.metadata,
-                    cardId: playlist?.cardId,
-                    keys: Object.keys(playlist || {})
-                });
-            } else {
-                console.log("No existing StoryForge playlist found. Creating a new one.");
-                // Create new playlist structure
-                playlist = {
-                    title: PLAYLIST_TITLE,
-                    content: { chapters: [] },
-                    metadata: {
-                        description: "AI-generated stories from The Storyforge",
-                        media: { duration: 0, fileSize: 0 }
-                    }
-                };
-            }
-            
-            // ✅ CRITICAL FIX: Ensure playlist has proper structure
-            if (!playlist) {
-                throw new Error("Failed to load or create playlist structure");
-            }
-            if (!playlist.content) {
-                playlist.content = {};
-            }
-            if (!playlist.content.chapters) {
-                playlist.content.chapters = [];
-            }
-            if (!playlist.metadata) {
-                playlist.metadata = {
-                    description: "AI-generated stories from The Storyforge",
-                    media: { duration: 0, fileSize: 0 }
-                };
-            }
-            
-            console.log('Playlist structure verified:', {
-                hasContent: !!playlist.content,
-                hasChapters: !!playlist.content.chapters,
-                chaptersLength: playlist.content.chapters.length,
-                hasMetadata: !!playlist.metadata
-            });
-            
-            // Step 3: Upload cover image if provided
+            // Step 1: Upload cover image if provided
             let coverImageUrl = null;
             if (storyData.heroImage) {
                 console.log("Uploading cover image...");
-                const mimeType = storyData.heroImage.substring(storyData.heroImage.indexOf(":") + 1, storyData.heroImage.indexOf(";"));
-                const imageFile = new Blob([new Uint8Array(atob(storyData.heroImage.split(',')[1]).split('').map(char => char.charCodeAt(0)))], { type: mimeType });
-                
-                const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
-                uploadUrl.searchParams.set("autoconvert", "true");
-                
-                const uploadResponse = await fetch(uploadUrl, {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        "Content-Type": mimeType,
-                    },
-                    body: imageFile,
-                });
-                
-                if (!uploadResponse.ok) {
-                    console.warn("Failed to upload cover image, continuing without it");
-                } else {
-                    const uploadResult = await uploadResponse.json();
-                    coverImageUrl = uploadResult.coverImage.mediaUrl;
+                try {
+                    const mimeType = storyData.heroImage.substring(storyData.heroImage.indexOf(":") + 1, storyData.heroImage.indexOf(";"));
+                    const imageFile = new Blob([new Uint8Array(atob(storyData.heroImage.split(',')[1]).split('').map(char => char.charCodeAt(0)))], { type: mimeType });
+                    
+                    const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
+                    uploadUrl.searchParams.set("autoconvert", "true");
+                    
+                    const uploadResponse = await fetch(uploadUrl, {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            "Content-Type": mimeType,
+                        },
+                        body: imageFile,
+                    });
+                    
+                    if (uploadResponse.ok) {
+                        const uploadResult = await uploadResponse.json();
+                        coverImageUrl = uploadResult.coverImage.mediaUrl;
+                        console.log("Cover image uploaded successfully:", coverImageUrl);
+                    } else {
+                        console.warn("Failed to upload cover image, continuing without it");
+                    }
+                } catch (imageError) {
+                    console.warn("Error uploading cover image:", imageError);
                 }
             }
             
-            // Step 4: Create new chapter with STREAMING trackUrl (CRITICAL)
-            const newChapterKey = String(playlist.content.chapters.length + 1).padStart(2, '0');
-            
-            // ✅ CRITICAL: Create streaming URL with story parameters
+            // Step 2: Create streaming URL for dynamic audio generation
             const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
-            streamingUrl.searchParams.set('heroName', storyData.heroName);
+            streamingUrl.searchParams.set('heroName', storyData.heroName || 'Hero');
             streamingUrl.searchParams.set('promptSetup', storyData.promptSetup || '');
             streamingUrl.searchParams.set('promptRising', storyData.promptRising || '');
             streamingUrl.searchParams.set('promptClimax', storyData.promptClimax || '');
@@ -427,115 +333,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 streamingUrl.searchParams.set('heroImage', storyData.heroImage);
             }
             
-            const newChapter = {
-                key: newChapterKey,
-                title: storyData.heroName || `Story ${newChapterKey}`,
-                tracks: [{
-                    key: "01",
-                    title: "Chapter One",
-                    trackUrl: streamingUrl.toString(),
-                    type: "stream",  // ❗ CRITICAL: Must be "stream" for dynamic content
-                    format: "mp3",
-                    duration: storyData.duration || 180,
-                    fileSize: storyData.fileSize || 1000000
-                }],
-                display: {
-                    icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8"
+            // Step 3: Create simple content structure
+            const storyTitle = storyData.heroName ? `${storyData.heroName}'s Adventure` : 'Storyforge Tale';
+            const contentBody = {
+                title: storyTitle,
+                content: {
+                    chapters: [{
+                        key: "01",
+                        title: "Your Epic Tale",
+                        tracks: [{
+                            key: "01",
+                            title: "Chapter One",
+                            trackUrl: streamingUrl.toString(),
+                            type: "stream",
+                            format: "mp3",
+                            duration: storyData.duration || 180,
+                            fileSize: storyData.fileSize || 1000000
+                        }],
+                        display: {
+                            icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8"
+                        }
+                    }]
+                },
+                metadata: {
+                    description: (storyData.storyText || 'AI-generated story').substring(0, 100) + '...',
+                    media: {
+                        duration: storyData.duration || 180,
+                        fileSize: storyData.fileSize || 1000000
+                    }
                 }
-            };
-            
-            // Step 5: Add chapter and recalculate metadata (COMPLETE REPLACEMENT)
-            playlist.content.chapters.push(newChapter);
-            
-            // ✅ SAFE: Calculate totals with proper null checks
-            const totalDuration = playlist.content.chapters.reduce((sum, ch) => {
-                if (ch && ch.tracks && Array.isArray(ch.tracks)) {
-                    return sum + ch.tracks.reduce((trackSum, track) => trackSum + (track?.duration || 0), 0);
-                }
-                return sum;
-            }, 0);
-            
-            const totalFileSize = playlist.content.chapters.reduce((sum, ch) => {
-                if (ch && ch.tracks && Array.isArray(ch.tracks)) {
-                    return sum + ch.tracks.reduce((trackSum, track) => trackSum + (track?.fileSize || 0), 0);
-                }
-                return sum;
-            }, 0);
-            
-            playlist.metadata.media = {
-                duration: totalDuration,
-                fileSize: totalFileSize
             };
             
             // Add cover image if we have one
             if (coverImageUrl) {
-                playlist.metadata.cover = { imageL: coverImageUrl };
+                contentBody.metadata.cover = { imageL: coverImageUrl };
             }
             
-            // Step 6: Create clean payload without cardId and send to appropriate endpoint
-            const cleanPlaylist = {
-                title: playlist.title,
-                content: playlist.content,
-                metadata: playlist.metadata
-            };
+            console.log('Creating Yoto content with payload:', JSON.stringify(contentBody, null, 2));
             
-            console.log(cardId ? "Updating existing playlist..." : "Creating new playlist...");
-            console.log('Clean playlist payload:', JSON.stringify(cleanPlaylist, null, 2));
-            
-            // Use different endpoints for create vs update
-            let response;
-            if (cardId) {
-                // Update existing playlist using PUT with cardId in URL
-                response = await fetch(`https://api.yotoplay.com/content/${cardId}`, {
-                    method: "PUT",
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(cleanPlaylist)
-                });
-            } else {
-                // Create new playlist using POST
-                response = await fetch("https://api.yotoplay.com/content", {
-                    method: "POST",
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(cleanPlaylist)
-                });
-            }
+            // Step 4: Create the content
+            const response = await fetch("https://api.yotoplay.com/content", {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(contentBody)
+            });
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Yoto API Error Details:", {
+                console.error("Yoto API Error:", {
                     status: response.status,
                     statusText: response.statusText,
-                    operation: cardId ? 'UPDATE' : 'CREATE',
-                    endpoint: cardId ? `/content/${cardId}` : '/content',
-                    method: cardId ? 'PUT' : 'POST',
                     errorBody: errorText
                 });
-                
-                // Try to parse error as JSON for better debugging
-                let parsedError;
-                try {
-                    parsedError = JSON.parse(errorText);
-                    console.error("Parsed error:", parsedError);
-                } catch (e) {
-                    console.error("Could not parse error as JSON:", errorText);
-                }
-                
-                throw new Error(`Failed to ${cardId ? 'update' : 'create'} playlist: ${errorText}`);
+                throw new Error(`Failed to create Yoto content: ${errorText}`);
             }
             
-            console.log(`Playlist successfully ${cardId ? 'updated' : 'created'}!`);
             const result = await response.json();
-            console.log('API Response:', result);
+            console.log("Yoto content created successfully:", result);
             return result;
             
         } catch (error) {
-            console.error("Error in createOrUpdateStoryForgePlaylist:", error);
+            console.error("Error in createSimpleYotoStory:", error);
             throw error;
         }
     }
