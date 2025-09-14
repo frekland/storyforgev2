@@ -346,6 +346,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
             
+            // ✅ CRITICAL FIX: Ensure playlist has proper structure
+            if (!playlist) {
+                throw new Error("Failed to load or create playlist structure");
+            }
+            if (!playlist.content) {
+                playlist.content = {};
+            }
+            if (!playlist.content.chapters) {
+                playlist.content.chapters = [];
+            }
+            if (!playlist.metadata) {
+                playlist.metadata = {
+                    description: "AI-generated stories from The Storyforge",
+                    media: { duration: 0, fileSize: 0 }
+                };
+            }
+            
+            console.log('Playlist structure verified:', {
+                hasContent: !!playlist.content,
+                hasChapters: !!playlist.content.chapters,
+                chaptersLength: playlist.content.chapters.length,
+                hasMetadata: !!playlist.metadata
+            });
+            
             // Step 3: Upload cover image if provided
             let coverImageUrl = null;
             if (storyData.heroImage) {
@@ -408,10 +432,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Step 5: Add chapter and recalculate metadata (COMPLETE REPLACEMENT)
             playlist.content.chapters.push(newChapter);
             
-            const totalDuration = playlist.content.chapters.reduce((sum, ch) => 
-                sum + ch.tracks.reduce((trackSum, track) => trackSum + (track.duration || 0), 0), 0);
-            const totalFileSize = playlist.content.chapters.reduce((sum, ch) => 
-                sum + ch.tracks.reduce((trackSum, track) => trackSum + (track.fileSize || 0), 0), 0);
+            // ✅ SAFE: Calculate totals with proper null checks
+            const totalDuration = playlist.content.chapters.reduce((sum, ch) => {
+                if (ch && ch.tracks && Array.isArray(ch.tracks)) {
+                    return sum + ch.tracks.reduce((trackSum, track) => trackSum + (track?.duration || 0), 0);
+                }
+                return sum;
+            }, 0);
+            
+            const totalFileSize = playlist.content.chapters.reduce((sum, ch) => {
+                if (ch && ch.tracks && Array.isArray(ch.tracks)) {
+                    return sum + ch.tracks.reduce((trackSum, track) => trackSum + (track?.fileSize || 0), 0);
+                }
+                return sum;
+            }, 0);
             
             playlist.metadata.media = {
                 duration: totalDuration,

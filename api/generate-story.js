@@ -19,37 +19,37 @@ function fileToGenerativePart(base64Data, mimeType) {
   return { inlineData: { data: base64Data.split(',')[1], mimeType } };
 }
 
-// Helper function to get age-appropriate voice settings
+// Helper function to get age-appropriate voice settings (British English only)
 function getVoiceSettings(age) {
   switch (age) {
     case '3':
       return {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-F', // Warm, friendly female voice
+        languageCode: 'en-GB',
+        name: 'en-GB-Wavenet-A', // Warm, friendly British female voice
         ssmlGender: 'FEMALE'
       };
     case '6':
       return {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-H', // Clear, engaging female voice
+        languageCode: 'en-GB',
+        name: 'en-GB-Wavenet-C', // Clear, engaging British female voice
         ssmlGender: 'FEMALE'
       };
     case '9':
       return {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-D', // Professional, engaging male voice
+        languageCode: 'en-GB',
+        name: 'en-GB-Wavenet-B', // Professional, engaging British male voice
         ssmlGender: 'MALE'
       };
     case '12':
       return {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-G', // Mature, sophisticated female voice
-        ssmlGender: 'FEMALE'
+        languageCode: 'en-GB',
+        name: 'en-GB-Wavenet-D', // Mature, sophisticated British male voice
+        ssmlGender: 'MALE'
       };
     default:
       return {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-H',
+        languageCode: 'en-GB',
+        name: 'en-GB-Wavenet-C',
         ssmlGender: 'FEMALE'
       };
   }
