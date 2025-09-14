@@ -25,31 +25,31 @@ function getVoiceSettings(age) {
     case '3':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Casual-K', // Warm, friendly female voice
+        name: 'en-US-Wavenet-F', // Warm, friendly female voice
         ssmlGender: 'FEMALE'
       };
     case '6':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Journey-F', // Clear, engaging female voice
+        name: 'en-US-Wavenet-H', // Clear, engaging female voice
         ssmlGender: 'FEMALE'
       };
     case '9':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Journey-D', // Professional, engaging voice
+        name: 'en-US-Wavenet-D', // Professional, engaging male voice
         ssmlGender: 'MALE'
       };
     case '12':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Studio-O', // Mature, sophisticated voice
+        name: 'en-US-Wavenet-G', // Mature, sophisticated female voice
         ssmlGender: 'FEMALE'
       };
     default:
       return {
         languageCode: 'en-US',
-        name: 'en-US-Journey-F',
+        name: 'en-US-Wavenet-H',
         ssmlGender: 'FEMALE'
       };
   }
@@ -67,60 +67,69 @@ function processStoryForTTS(storyText, age) {
     .replace(/([.!?])([A-Z])/g, '$1 $2')
     .trim();
 
-  // Age-appropriate SSML processing
+  // Check if text is too long for SSML (conservative 4000 byte limit to account for SSML markup)
+  const textByteLength = Buffer.byteLength(cleanText, 'utf8');
+  const useSimpleSSML = textByteLength > 3000; // Conservative limit
+  
+  if (useSimpleSSML) {
+    // For longer text, use minimal SSML to avoid 5000 byte limit
+    // Age-specific speaking rate only
+    let baseRate;
+    switch (age) {
+      case '3': baseRate = '0.8'; break;
+      case '6': baseRate = '0.9'; break;
+      case '9': baseRate = '0.95'; break;
+      case '12': baseRate = '1.0'; break;
+      default: baseRate = '0.9';
+    }
+    
+    const simpleSSML = `<speak><prosody rate="${baseRate}">${cleanText}</prosody></speak>`;
+    
+    return {
+      displayText: cleanText,
+      ttsText: simpleSSML
+    };
+  }
+
+  // For shorter text, use enhanced SSML with dramatic effects
   let processedText = cleanText;
   
-  // Add dramatic emphasis for exciting parts
+  // Add selective dramatic emphasis (only key words to keep SSML compact)
   processedText = processedText
-    .replace(/(!)/g, '<emphasis level="strong">$1</emphasis><break time="0.3s"/>')
-    .replace(/(\?)/g, '<emphasis level="moderate">$1</emphasis><break time="0.2s"/>')
-    .replace(/("[^"]*")/g, '<prosody pitch="+1st" rate="0.95">$1</prosody>') // Dialogue with slight pitch change
     .replace(/(suddenly|amazing|wonderful|magical|incredible)/gi, '<emphasis level="strong">$1</emphasis>')
-    .replace(/(whispered|quietly)/gi, '<prosody volume="-3dB">$1</prosody>')
-    .replace(/(shouted|yelled|roared)/gi, '<prosody volume="+3dB" pitch="+2st">$1</prosody>');
+    .replace(/(whispered|quietly)/gi, '<prosody volume="-2dB">$1</prosody>')
+    .replace(/(shouted|yelled)/gi, '<prosody volume="+2dB">$1</prosody>');
 
-  // Age-specific SSML enhancements
-  let baseRate, basePitch, pauseTime;
-  
+  // Age-specific minimal SSML
+  let baseRate, basePitch;
   switch (age) {
     case '3':
       baseRate = '0.8';
-      basePitch = '+3st';
-      pauseTime = '0.8s';
+      basePitch = '+2st';
       break;
     case '6':
       baseRate = '0.9';
       basePitch = '+1st';
-      pauseTime = '0.6s';
       break;
     case '9':
       baseRate = '0.95';
       basePitch = '+0.5st';
-      pauseTime = '0.4s';
       break;
     case '12':
       baseRate = '1.0';
       basePitch = '0st';
-      pauseTime = '0.3s';
       break;
     default:
       baseRate = '0.9';
       basePitch = '+1st';
-      pauseTime = '0.5s';
   }
 
-  // Create SSML with age-appropriate settings
-  const ssmlText = `<speak>
-    <prosody rate="${baseRate}" pitch="${basePitch}" volume="+2dB">
-      <break time="${pauseTime}"/>
-      ${processedText}
-      <break time="1s"/>
-    </prosody>
-  </speak>`;
+  // Create compact SSML
+  const ssmlText = `<speak><prosody rate="${baseRate}" pitch="${basePitch}">${processedText}</prosody></speak>`;
 
   return {
-    displayText: cleanText, // Clean text for UI display
-    ttsText: ssmlText      // SSML-enhanced text for TTS
+    displayText: cleanText,
+    ttsText: ssmlText
   };
 }
 
@@ -188,22 +197,48 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   const voiceSettings = getVoiceSettings(age);
   
   // Convert Story Text to Speech with SSML and improved voice settings
-  const ttsRequest = {
-    input: { ssml: processedStory.ttsText },
-    voice: {
-      languageCode: voiceSettings.languageCode,
-      name: voiceSettings.name,
-      ssmlGender: voiceSettings.ssmlGender,
-    },
-    audioConfig: {
-      audioEncoding: 'MP3',
-      speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95, // Slower for younger children
-      pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0, // Higher pitch for younger children
-      volumeGainDb: 2.0, // Slightly louder for clarity
-    },
-  };
-  const [ttsResponse] = await ttsClient.synthesizeSpeech(ttsRequest);
-  const audioContent = ttsResponse.audioContent;
+  let audioContent;
+  
+  try {
+    // Try SSML first
+    const ssmlRequest = {
+      input: { ssml: processedStory.ttsText },
+      voice: {
+        languageCode: voiceSettings.languageCode,
+        name: voiceSettings.name,
+        ssmlGender: voiceSettings.ssmlGender,
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95, // Slower for younger children
+        pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0, // Higher pitch for younger children
+        volumeGainDb: 2.0, // Slightly louder for clarity
+      },
+    };
+    const [ssmlResponse] = await ttsClient.synthesizeSpeech(ssmlRequest);
+    audioContent = ssmlResponse.audioContent;
+    
+  } catch (error) {
+    console.warn('SSML TTS failed, falling back to plain text:', error.message);
+    
+    // Fallback to plain text TTS
+    const textRequest = {
+      input: { text: processedStory.displayText },
+      voice: {
+        languageCode: voiceSettings.languageCode,
+        name: voiceSettings.name,
+        ssmlGender: voiceSettings.ssmlGender,
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
+        pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0,
+        volumeGainDb: 2.0,
+      },
+    };
+    const [textResponse] = await ttsClient.synthesizeSpeech(textRequest);
+    audioContent = textResponse.audioContent;
+  }
   
   return { 
     storyText: processedStory.displayText, // Return clean text for UI
