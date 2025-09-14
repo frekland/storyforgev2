@@ -273,11 +273,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (!myoResponse.ok) {
-                throw new Error("Failed to fetch user's MYO cards.");
+                const errorText = await myoResponse.text();
+                console.error('Failed to fetch MYO cards:', myoResponse.status, errorText);
+                throw new Error(`Failed to fetch user's MYO cards. Status: ${myoResponse.status}`);
             }
             
             const myoCards = await myoResponse.json();
-            const existing = myoCards.find(card => card.title === PLAYLIST_TITLE);
+            console.log('MYO Cards response:', myoCards);
+            
+            // Handle different response formats from Yoto API
+            let cardsArray = myoCards;
+            if (myoCards && myoCards.cards && Array.isArray(myoCards.cards)) {
+                cardsArray = myoCards.cards;
+            } else if (myoCards && myoCards.content && Array.isArray(myoCards.content)) {
+                cardsArray = myoCards.content;
+            } else if (!Array.isArray(myoCards)) {
+                console.warn('Unexpected response format from /content/mine:', myoCards);
+                cardsArray = [];
+            }
+            
+            const existing = cardsArray.length > 0 ? cardsArray.find(card => card && card.title === PLAYLIST_TITLE) : null;
             
             let playlist = null;
             let cardId = null;
@@ -392,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Step 6: POST complete playlist (Get-Modify-Post pattern)
             console.log(cardId ? "Updating existing playlist..." : "Creating new playlist...");
+            console.log('Playlist payload:', JSON.stringify(playlist, null, 2));
             
             const response = await fetch("https://api.yotoplay.com/content", {
                 method: "POST",
