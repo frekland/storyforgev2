@@ -3,70 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Storyforge</title>
+    <title>The Storyforge ✨ - Create Magical Audio Stories</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/x-icon" href="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Kalam:wght@300;400;700&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
 </head>
 <body>
-    <header>
-        <img src="https://d138g594z3544y.cloudfront.net/images/yoto-logo.png" alt="Yoto Logo" class="logo">
-        <h1>The Storyforge</h1>
+    <div class="theme-toggle">
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+            <span class="sun-icon">☀️</span>
+            <span class="moon-icon">🌙</span>
+        </button>
+    </div>
+    
+    <header class="main-header">
+        <div class="logo-container">
+            <div class="yoto-logo">
+                <span class="yoto-text">YOTO</span>
+                <div class="logo-doodles">
+                    <span class="doodle-star">★</span>
+                    <span class="doodle-heart">♡</span>
+                </div>
+            </div>
+        </div>
+        <h1 class="main-title">
+            <span class="title-word">The</span>
+            <span class="title-word highlight">Storyforge</span>
+            <div class="title-doodle">✨</div>
+        </h1>
+        <p class="subtitle">Where imagination becomes audio magic!</p>
     </header>
 
-    <main>
-        <button id="login-button" class="login-btn">Authorise Yoto Account</button>
-        <button id="logout-button" class="logout-btn hidden">Logout</button>
+    <main class="main-content">
+        <div class="auth-section paper-scrap">
+            <button id="login-button" class="login-btn paper-btn">
+                <span class="btn-text">Connect to Yoto</span>
+                <div class="btn-doodle">🔗</div>
+            </button>
+            <button id="logout-button" class="logout-btn paper-btn hidden">
+                <span class="btn-text">Disconnect</span>
+                <div class="btn-doodle">👋</div>
+            </button>
+        </div>
 
-        <div id="app-content" class="hidden">
-            <form id="quest-form">
-                <label for="heroName">Hero's Name</label>
-                <input type="text" id="heroName" placeholder="e.g., Captain Comet">
-
-                <label for="promptSetup">The Beginning</label>
-                <input type="text" id="promptSetup" placeholder="e.g., a magical forest made of ice cream">
-                
-                <label for="promptRising">The Challenge</label>
-                <input type="text" id="promptRising" placeholder="e.g., a grumpy dragon stole the sprinkles">
-
-                <label for="promptClimax">The Climax</label>
-                <input type="text" id="promptClimax" placeholder="e.g., the dragon was tickled until it laughed">
-                
-                <label for="heroImage">Upload an Image of a Hero or Monster</label>
-                <div id="image-upload-area">
-                    <input type="file" id="heroImage" accept="image/*" class="hidden-input">
-                    <button type="button" onclick="document.getElementById('heroImage').click()">Select a File</button>
-                    <p>or drag and drop here</p>
-                    <div id="image-preview" class="hidden"></div>
+        <div id="app-content" class="app-container hidden">
+            <div class="story-form-container">
+                <div class="form-header paper-scrap">
+                    <h2 class="form-title">Story Ingredients 🌲</h2>
+                    <div class="form-doodles">
+                        <span class="doodle">★</span>
+                        <span class="doodle">♡</span>
+                        <span class="doodle">✨</span>
+                    </div>
                 </div>
-
-                <label for="story-age">Story Length (by age)</label>
-                <select id="story-age" required>
-                    <option value="3">3-6 Years Old (approx. 150 words)</option>
-                    <option value="6" selected>6-8 Years Old (approx. 500 words)</option>
-                    <option value="9">8-12 Years Old (approx. 1000 words)</option>
-                    <option value="12">13+ Years Old (approx. 2000 words)</option>
-                </select>
-
-                <button type="submit">Forge Story!</button>
-            </form>
-        
-            <div id="story-output" class="hidden">
-                <h2>Your Epic Tale!</h2>
-                <div id="loading-spinner" class="spinner"></div>
-                <p id="story-text"></p>
                 
-                <audio id="story-audio-player" controls class="hidden"></audio>
-                <button id="upload-to-yoto-button" class="hidden">Add to StoryForge Playlist</button>
+                <form id="quest-form" class="story-form">
+                    <div class="input-group paper-scrap">
+                        <label for="heroName" class="playful-label">
+                            <span class="label-text">Hero's Name</span>
+                            <span class="label-doodle">🦸</span>
+                        </label>
+                        <input type="text" id="heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
+                    </div>
+
+                    <div class="input-group paper-scrap">
+                        <label for="promptSetup" class="playful-label">
+                            <span class="label-text">The Beginning</span>
+                            <span class="label-doodle">🌅</span>
+                        </label>
+                        <input type="text" id="promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                    </div>
+                    
+                    <div class="input-group paper-scrap">
+                        <label for="promptRising" class="playful-label">
+                            <span class="label-text">The Challenge</span>
+                            <span class="label-doodle">⚡</span>
+                        </label>
+                        <input type="text" id="promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
+                    </div>
+
+                    <div class="input-group paper-scrap">
+                        <label for="promptClimax" class="playful-label">
+                            <span class="label-text">The Climax</span>
+                            <span class="label-doodle">🎆</span>
+                        </label>
+                        <input type="text" id="promptClimax" class="paper-input" placeholder="e.g., the dragon was tickled until it laughed...">
+                    </div>
+                    
+                    <div class="input-group paper-scrap image-upload-section">
+                        <label for="heroImage" class="playful-label">
+                            <span class="label-text">Draw Your Character</span>
+                            <span class="label-doodle">🎨</span>
+                        </label>
+                        <div id="image-upload-area" class="paper-upload">
+                            <input type="file" id="heroImage" accept="image/*" class="hidden-input">
+                            <div class="upload-content">
+                                <button type="button" class="upload-btn" onclick="document.getElementById('heroImage').click()">
+                                    <span>📎 Upload Drawing</span>
+                                </button>
+                                <p class="upload-hint">or drag and drop your masterpiece here!</p>
+                                <div id="image-preview" class="preview-container hidden"></div>
+                            </div>
+                            <div class="upload-doodles">
+                                <span class="doodle-arrow">→</span>
+                                <span class="doodle-star">★</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group paper-scrap">
+                        <label for="story-age" class="playful-label">
+                            <span class="label-text">Story Length</span>
+                            <span class="label-doodle">📆</span>
+                        </label>
+                        <select id="story-age" class="paper-select" required>
+                            <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
+                            <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
+                            <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
+                            <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
+                        </select>
+                    </div>
+
+                    <div class="submit-section paper-scrap">
+                        <button type="submit" class="forge-btn">
+                            <span class="btn-text">✨ Forge My Story! ✨</span>
+                            <div class="btn-sparkles">
+                                <span>✨</span>
+                                <span>★</span>
+                                <span>✨</span>
+                            </div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        
+            <div id="story-output" class="story-output-container hidden">
+                <div class="story-header paper-scrap">
+                    <h2 class="story-title">
+                        <span>📚 Your Epic Tale! 📚</span>
+                        <div class="title-underline"></div>
+                    </h2>
+                    <div class="story-doodles">
+                        <span class="doodle">✨</span>
+                        <span class="doodle">🌟</span>
+                        <span class="doodle">✨</span>
+                    </div>
+                </div>
+                
+                <div class="loading-section paper-scrap" id="loading-section">
+                    <div id="loading-spinner" class="magical-spinner"></div>
+                    <p class="loading-text">
+                        <span class="loading-emoji">✨</span>
+                        <span>Brewing your magical story...</span>
+                        <span class="loading-emoji">✨</span>
+                    </p>
+                </div>
+                
+                <div class="story-content paper-scrap" id="story-content">
+                    <div class="story-text-container">
+                        <div class="story-decoration-top">
+                            <span>🌟</span>
+                            <span>✨</span>
+                            <span>🌟</span>
+                        </div>
+                        <p id="story-text" class="story-text"></p>
+                        <div class="story-decoration-bottom">
+                            <span>✨</span>
+                            <span>🌟</span>
+                            <span>✨</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="audio-section paper-scrap" id="audio-section">
+                    <div class="audio-header">
+                        <span class="audio-icon">🎧</span>
+                        <span class="audio-text">Listen to Your Story</span>
+                        <span class="audio-icon">🎵</span>
+                    </div>
+                    <audio id="story-audio-player" controls class="story-audio hidden"></audio>
+                </div>
+                
+                <div class="yoto-section paper-scrap" id="yoto-section">
+                    <button id="upload-to-yoto-button" class="yoto-btn hidden">
+                        <span class="btn-icon">🎧</span>
+                        <span class="btn-text">Add to StoryForge Playlist</span>
+                        <span class="btn-magic">✨</span>
+                    </button>
+                </div>
             </div>
         </div>
     </main>
     
     <div id="alert-modal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content paper-scrap">
             <span class="close-button">&times;</span>
-            <p id="alert-message"></p>
+            <div class="modal-header">
+                <span class="modal-icon">🚨</span>
+                <div class="modal-doodles">
+                    <span>★</span>
+                    <span>♡</span>
+                </div>
+            </div>
+            <p id="alert-message" class="alert-text"></p>
         </div>
+    </div>
+    
+    <!-- Background Doodles -->
+    <div class="background-doodles">
+        <div class="doodle-element doodle-star" style="top: 10%; left: 5%;">★</div>
+        <div class="doodle-element doodle-heart" style="top: 15%; right: 8%;">♡</div>
+        <div class="doodle-element doodle-arrow" style="top: 30%; left: 3%;">↗</div>
+        <div class="doodle-element doodle-swirl" style="top: 45%; right: 5%;">∿</div>
+        <div class="doodle-element doodle-star" style="bottom: 20%; left: 7%;">✦</div>
+        <div class="doodle-element doodle-circle" style="bottom: 15%; right: 10%;">○</div>
+        <div class="doodle-element doodle-zigzag" style="bottom: 40%; left: 2%;">〰</div>
+        <div class="doodle-element doodle-triangle" style="top: 60%; right: 3%;">△</div>
     </div>
     
     <script type="module" src="script.js"></script>

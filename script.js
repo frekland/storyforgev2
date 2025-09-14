@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertModal = document.getElementById('alert-modal');
     const alertMessage = document.getElementById('alert-message');
     const closeButton = document.querySelector('.close-button');
+    const themeToggle = document.getElementById('theme-toggle');
     
     let heroImageBase64 = null;
     let accessToken = null;
@@ -37,6 +38,28 @@ document.addEventListener('DOMContentLoaded', () => {
             alertModal.classList.add('hidden');
         }
     };
+    
+    // --- Theme Toggle Functionality ---
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('storyforge-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    };
+    
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('storyforge-theme', newTheme);
+        
+        // Add a little celebration animation
+        themeToggle.style.transform = 'scale(1.2) rotate(360deg)';
+        setTimeout(() => {
+            themeToggle.style.transform = '';
+        }, 300);
+    };
+    
+    themeToggle.addEventListener('click', toggleTheme);
+    initTheme();
 
     // --- Part 1: Authentication Logic ---
     const handleLogin = async () => {
