@@ -953,6 +953,81 @@ button[type="submit"]:hover {
   animation-delay: 0.6s;
 }
 
+/* 🎲 SURPRISE BUTTON */
+.button-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.divider-text {
+  background: var(--paper-bg);
+  padding: 0 15px;
+  font-family: var(--font-title);
+  color: var(--text-secondary);
+  font-size: 1em;
+  z-index: 2;
+  position: relative;
+}
+
+.divider-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border-color);
+  opacity: 0.5;
+}
+
+.surprise-btn {
+  font-family: var(--font-title);
+  font-size: 1.3em;
+  padding: 18px 35px;
+  border: none;
+  border-radius: 25px;
+  background: linear-gradient(45deg, #ff6b9d, #c44569);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 5px 18px rgba(255, 107, 157, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: rotate(0.5deg);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.surprise-btn:hover {
+  transform: rotate(-0.5deg) scale(1.05);
+  background: linear-gradient(45deg, #c44569, #ff6b9d);
+  box-shadow: 
+    0 7px 22px rgba(255, 107, 157, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.surprise-btn:active {
+  transform: rotate(0.2deg) scale(0.98);
+}
+
+[data-theme="dark"] .surprise-btn {
+  background: linear-gradient(45deg, #e056fd, #8b5cf6);
+  box-shadow: 
+    0 5px 18px rgba(224, 86, 253, 0.4),
+    0 0 25px rgba(224, 86, 253, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .surprise-btn:hover {
+  background: linear-gradient(45deg, #8b5cf6, #e056fd);
+  box-shadow: 
+    0 7px 22px rgba(224, 86, 253, 0.5),
+    0 0 35px rgba(224, 86, 253, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 /* 📦 MODAL STYLING */
 .modal {
   position: fixed;

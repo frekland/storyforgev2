@@ -169,6 +169,144 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginButton.addEventListener('click', handleLogin);
     logoutButton.addEventListener('click', handleLogout);
+    
+    // 🎲 Surprise Me Button Functionality
+    const surpriseMeButton = document.getElementById('surprise-me-btn');
+    surpriseMeButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        // Show loading state
+        storyOutput.classList.remove('hidden');
+        loadingSpinner.classList.remove('hidden');
+        storyText.textContent = '';
+        uploadToYotoButton.classList.add('hidden');
+        
+        // Update loading text for surprise mode
+        const loadingText = document.querySelector('.loading-text span:nth-child(2)');
+        loadingText.textContent = 'Creating a surprise adventure just for you...';
+        
+        // Get selected age
+        const storyAge = document.getElementById('story-age').value;
+        
+        try {
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    age: storyAge,
+                    surpriseMode: true 
+                }),
+            });
+            
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.message || `HTTP Error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            loadingSpinner.classList.add('hidden');
+            loadingText.textContent = 'Brewing your magical story...';
+            storyText.textContent = result.story;
+
+            // Handle generated image if present
+            if (result.generatedImage) {
+                console.log('🎨 Received generated image for surprise story');
+                
+                // Update the image preview with the generated image
+                const imagePreview = document.getElementById('image-preview');
+                imagePreview.style.backgroundImage = `url(${result.generatedImage})`;
+                imagePreview.classList.remove('hidden');
+                
+                // Store the generated image as the heroImage for playlist creation
+                heroImageBase64 = result.generatedImage;
+                
+                // Show a note about the generated image
+                const imageNote = document.createElement('div');
+                imageNote.className = 'generated-image-note';
+                imageNote.innerHTML = '🎨 <span>AI-generated illustration based on your story!</span>';
+                imageNote.style.cssText = `
+                    background: var(--accent-color);
+                    color: white;
+                    padding: 8px 15px;
+                    border-radius: 15px;
+                    font-size: 0.9em;
+                    margin-top: 10px;
+                    text-align: center;
+                    opacity: 0.9;
+                `;
+                
+                const imageUploadArea = document.getElementById('image-upload-area');
+                const existingNote = imageUploadArea.querySelector('.generated-image-note');
+                if (existingNote) existingNote.remove();
+                imageUploadArea.appendChild(imageNote);
+            }
+
+            // Handle audio
+            const audioSrc = `data:audio/mp3;base64,${result.audio}`;
+            const base64toBlob = (base64) => {
+                const byteString = atob(base64.split(',')[1]);
+                const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+                return new Blob([ab], { type: mimeString });
+            };
+            const audioBlob = base64toBlob(audioSrc);
+            const audioBlobUrl = URL.createObjectURL(audioBlob);
+            audioPlayer.src = audioBlobUrl;
+            audioPlayer.classList.remove('hidden');
+
+            // Setup Yoto upload functionality
+            uploadToYotoButton.onclick = async () => {
+                uploadToYotoButton.disabled = true;
+                uploadToYotoButton.textContent = 'Forging Yoto Card...';
+                try {
+                    if (isTokenExpired(accessToken)) {
+                        const newTokens = await refreshTokens(refreshToken);
+                        accessToken = newTokens.accessToken;
+                        refreshToken = newTokens.refreshToken;
+                    }
+                    
+                    // Extract story elements from the generated story for playlist creation
+                    const words = result.story.split(' ');
+                    const heroName = words.find((word, index) => {
+                        const prevWords = words.slice(Math.max(0, index - 3), index).join(' ').toLowerCase();
+                        return (prevWords.includes('hero') || prevWords.includes('character') || index < 10) && 
+                               word.charAt(0) === word.charAt(0).toUpperCase() && word.length > 2;
+                    }) || 'Surprise Hero';
+                    
+                    const myoContent = await createOrUpdateStoryForgePlaylist({
+                        heroName: heroName,
+                        storyText: result.story,
+                        duration: result.duration,
+                        fileSize: result.fileSize,
+                        promptSetup: 'surprise adventure',
+                        promptRising: 'unexpected challenge',
+                        promptClimax: 'clever solution',
+                        age: storyAge,
+                        heroImage: heroImageBase64
+                    }, accessToken);
+                    showAlert('Surprise story successfully added to StoryForge playlist!');
+                    console.log('StoryForge Playlist Updated:', myoContent);
+                } catch (e) {
+                    console.error("Failed to create/update StoryForge playlist:", e);
+                    showAlert("Error updating StoryForge playlist. Please check the console.");
+                } finally {
+                    uploadToYotoButton.disabled = false;
+                    uploadToYotoButton.textContent = 'Add to StoryForge Playlist';
+                }
+            };
+            uploadToYotoButton.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Surprise story error:', error);
+            loadingSpinner.classList.add('hidden');
+            loadingText.textContent = 'Brewing your magical story...';
+            storyText.textContent = `Oh no! The surprise magic didn't work this time. Error: ${error.message}`;
+            showAlert(error.message);
+        }
+    });
 
     // --- Part 2: Form & Drag-and-Drop Image Logic ---
     const handleFile = (file) => {

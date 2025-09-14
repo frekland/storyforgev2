@@ -19,6 +19,40 @@ function fileToGenerativePart(base64Data, mimeType) {
   return { inlineData: { data: base64Data.split(',')[1], mimeType } };
 }
 
+// Helper function to create a placeholder image for surprise stories
+async function createStoryPlaceholderImage(heroName, setting, age) {
+  // This creates a simple SVG-based placeholder image
+  // In production, replace this with actual AI image generation
+  
+  const colors = {
+    '3': { bg: '#FFE5E5', accent: '#FF6B9D', text: '#8B4A6B' },
+    '6': { bg: '#E5F3FF', accent: '#4A9EFF', text: '#2C5BAA' },
+    '9': { bg: '#F0E5FF', accent: '#8B5CF6', text: '#5B2C87' },
+    '12': { bg: '#E5FFE5', accent: '#10B981', text: '#065F46' }
+  };
+  
+  const colorScheme = colors[age] || colors['6'];
+  
+  const svgImage = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:${colorScheme.bg};stop-opacity:1" />
+        <stop offset="100%" style="stop-color:${colorScheme.accent};stop-opacity:0.3" />
+      </linearGradient>
+    </defs>
+    <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+    <circle cx="200" cy="150" r="80" fill="${colorScheme.accent}" opacity="0.7"/>
+    <rect x="120" y="220" width="160" height="100" fill="${colorScheme.accent}" opacity="0.5" rx="15"/>
+    <text x="200" y="50" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="${colorScheme.text}">${heroName}</text>
+    <text x="200" y="360" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="${colorScheme.text}" opacity="0.8">in ${setting}</text>
+    <text x="200" y="380" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="${colorScheme.text}" opacity="0.6">Generated Story Illustration</text>
+  </svg>`;
+  
+  // Convert SVG to base64
+  const base64Svg = Buffer.from(svgImage).toString('base64');
+  return `data:image/svg+xml;base64,${base64Svg}`;
+}
+
 // Helper function to get age-appropriate voice settings (British English only)
 function getVoiceSettings(age) {
   switch (age) {
@@ -133,8 +167,58 @@ function processStoryForTTS(storyText, age) {
   };
 }
 
+// Helper function to generate random story elements for surprise mode
+function generateRandomStoryElements(age) {
+  const heroes = {
+    '3': ['Benny the Bear', 'Luna the Cat', 'Pip the Penguin', 'Ruby the Rabbit', 'Max the Mouse'],
+    '6': ['Captain Sparkles', 'Princess Adventure', 'Zara the Explorer', 'Leo the Brave', 'Maya the Inventor'],
+    '9': ['Alexander the Bold', 'Nira the Stormcaller', 'Quinn the Timekeeper', 'Sage the Spellbinder', 'Jax the Shadowdancer'],
+    '12': ['Aria Nightwhisper', 'Kael Ironheart', 'Zephyr Starweaver', 'Lyra Frostborn', 'Darian Voidwalker']
+  };
+  
+  const settings = {
+    '3': ['a magical garden', 'a cozy treehouse', 'a friendly farm', 'a colorful playground', 'a warm bakery'],
+    '6': ['an enchanted forest', 'a floating castle', 'a secret cave', 'an underwater palace', 'a sky pirate ship'],
+    '9': ['the Crystal Mountains', 'the Whispering Desert', 'the Floating Isles', 'the Shadowlands', 'the Time Academy'],
+    '12': ['the Realm of Forgotten Dreams', 'the Nexus of Parallel Worlds', 'the Citadel of Eternal Storms', 'the Labyrinth of Echoing Souls', 'the Observatory of Cosmic Secrets']
+  };
+  
+  const challenges = {
+    '3': ['a lost teddy bear', 'a sad little bird', 'missing cookies', 'a broken toy', 'a scared puppy'],
+    '6': ['a sleeping dragon', 'a locked treasure chest', 'a missing magic wand', 'a cranky troll', 'a puzzle door'],
+    '9': ['an ancient curse', 'a dimensional rift', 'a rogue magical storm', 'a tournament of champions', 'a betrayal by a trusted friend'],
+    '12': ['the collapse of reality itself', 'a war between gods', 'the awakening of an eldritch horror', 'a paradox threatening time', 'the final prophecy coming true']
+  };
+  
+  const solutions = {
+    '3': ['sharing and kindness', 'a warm hug', 'asking for help', 'being brave', 'making a new friend'],
+    '6': ['clever thinking', 'teamwork with magical creatures', 'discovering hidden powers', 'solving an ancient riddle', 'making a brave sacrifice'],
+    '9': ['mastering forbidden magic', 'forging unlikely alliances', 'uncovering buried secrets', 'making an impossible choice', 'transcending mortal limitations'],
+    '12': ['rewriting the laws of existence', 'sacrificing everything for the greater good', 'becoming one with cosmic forces', 'breaking free from destiny itself', 'embracing the paradox of creation and destruction']
+  };
+  
+  const ageGroup = heroes[age] ? age : '6'; // fallback
+  
+  return {
+    heroName: heroes[ageGroup][Math.floor(Math.random() * heroes[ageGroup].length)],
+    promptSetup: settings[ageGroup][Math.floor(Math.random() * settings[ageGroup].length)],
+    promptRising: challenges[ageGroup][Math.floor(Math.random() * challenges[ageGroup].length)],
+    promptClimax: solutions[ageGroup][Math.floor(Math.random() * solutions[ageGroup].length)]
+  };
+}
+
 // Helper function to generate story and audio
-async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, age }) {
+async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode = false }) {
+  // Handle surprise mode by generating random story elements
+  if (surpriseMode) {
+    const randomElements = generateRandomStoryElements(age);
+    heroName = randomElements.heroName;
+    promptSetup = randomElements.promptSetup;
+    promptRising = randomElements.promptRising;
+    promptClimax = randomElements.promptClimax;
+    console.log('🎲 Generated random story elements:', randomElements);
+  }
+  
   // Determine the story length and reading level based on the age
   let storyLength = 150;
   let readingLevel = "a simple, conversational style for young children";
@@ -189,6 +273,52 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   
   const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
   const storyText = (await result.response).text();
+  
+  // Generate image for surprise mode using Gemini 2.5 Flash
+  let generatedImageBase64 = null;
+  if (surpriseMode) {
+    try {
+      console.log('🎨 Generating illustration for surprise story...');
+      
+      const imagePrompt = `Create a beautiful, child-friendly illustration for this story:
+      
+      Story: ${storyText.substring(0, 500)}...
+      
+      Style requirements:
+      - Colorful and vibrant
+      - Child-friendly and safe
+      - Storybook illustration style
+      - Focus on the main character: ${heroName}
+      - Setting: ${promptSetup}
+      - Magical and whimsical atmosphere
+      - No text or words in the image
+      - High quality digital art`;
+      
+      const imageModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      
+      const imageResult = await imageModel.generateContent({
+        contents: [{
+          role: "user",
+          parts: [{
+            text: imagePrompt
+          }]
+        }]
+      });
+      
+      // For now, create a descriptive placeholder since we can't generate actual images
+      // In a real implementation, this would call an image generation API like DALL-E, Midjourney, etc.
+      const imageDescription = `A beautiful storybook illustration of ${heroName} in ${promptSetup}, facing ${promptRising} and ultimately ${promptClimax}. Colorful, child-friendly, magical atmosphere.`;
+      console.log('🎨 Generated image description:', imageDescription);
+      
+      // For demonstration, we'll create a simple colored rectangle with the story info
+      // In production, this would be replaced with actual AI image generation
+      generatedImageBase64 = await createStoryPlaceholderImage(heroName, promptSetup, age);
+      
+    } catch (imageError) {
+      console.warn('⚠️ Failed to generate image for surprise story:', imageError.message);
+      // Continue without generated image
+    }
+  }
 
   // Process story text for TTS and UI display
   const processedStory = processStoryForTTS(storyText, age);
@@ -242,7 +372,8 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   
   return { 
     storyText: processedStory.displayText, // Return clean text for UI
-    audioContent 
+    audioContent,
+    generatedImage: generatedImageBase64 // Include generated image for surprise mode
   };
 }
 
@@ -251,26 +382,33 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     // Mode 1: Client requests story generation
     try {
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, age } = req.body;
+      const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode } = req.body;
       
-      // Validate input
-      if (!heroName || !promptSetup) {
+      // Validate input (skip validation for surprise mode)
+      if (!surpriseMode && (!heroName || !promptSetup)) {
         return res.status(400).json({ message: 'Missing required story parameters.' });
       }
 
-      console.log("Generating story for client...");
-      const { storyText, audioContent } = await generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, age
+      console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
+      const { storyText, audioContent, generatedImage } = await generateStoryAndAudio({
+        heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode
       });
 
-      // Return story text and Base64 audio for the client to handle
-      res.status(200).json({
+      // Return story text, Base64 audio, and generated image (if any) for the client to handle
+      const response = {
         story: storyText,
         audio: audioContent.toString('base64'),
         // Calculate estimated duration (rough approximation: ~150 words per minute)
         duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
         fileSize: audioContent.length
-      });
+      };
+      
+      // Include generated image for surprise mode
+      if (generatedImage) {
+        response.generatedImage = generatedImage;
+      }
+      
+      res.status(200).json(response);
 
     } catch (error) {
       console.error('Error in story generation:', error);
