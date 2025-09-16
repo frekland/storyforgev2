@@ -368,9 +368,9 @@ async function generateOpenAITTS(cleanStoryText, voiceSettings) {
   }
 }
 
-// Google TTS Fallback Function
+// Google TTS Fallback Function - Updated to match Yoto's official example
 async function generateGoogleTTS(cleanStoryText, age) {
-  console.log('🎵 Generating audio with Google TTS fallback');
+  console.log('🎵 Generating audio with Google TTS fallback (MP3 format for Yoto compatibility)');
   
   const voiceSettings = {
     languageCode: 'en-GB',
@@ -382,8 +382,8 @@ async function generateGoogleTTS(cleanStoryText, age) {
     input: { text: cleanStoryText },
     voice: voiceSettings,
     audioConfig: {
-      audioEncoding: 'LINEAR16',  // WAV format (uncompressed PCM)
-      sampleRateHertz: 22050,     // Same as our working test audio
+      audioEncoding: 'MP3',           // Changed to MP3 to match Yoto's example
+      sampleRateHertz: 22050,         // Same as Yoto's example (22kHz)
       speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
       volumeGainDb: 2.0
     }
@@ -391,18 +391,17 @@ async function generateGoogleTTS(cleanStoryText, age) {
   
   const [response] = await ttsClient.synthesizeSpeech(request);
   
-  // Convert LINEAR16 PCM to WAV format with proper headers
-  const pcmData = response.audioContent;
-  const wavData = addWAVHeader(pcmData, 22050);
+  // Return MP3 data directly (no WAV header needed)
+  const mp3Data = response.audioContent;
   
   console.log('✅ Google TTS generation successful:', {
-    pcmSize: pcmData.length,
-    wavSize: wavData.length,
-    format: 'wav',
-    sampleRate: '22050Hz'
+    audioSize: mp3Data.length,
+    format: 'mp3',
+    sampleRate: '22050Hz',
+    encoding: 'MP3'
   });
   
-  return wavData;
+  return mp3Data;
 }
 
 // ✅ DUAL-MODE SERVERLESS FUNCTION - CRITICAL FOR STREAMING WORKFLOW
@@ -541,8 +540,8 @@ module.exports = async function handler(req, res) {
         isForYoto: isYotoRequest
       });
 
-      // ❗ CRITICAL: Set the correct headers for audio streaming (NOW WAV FORMAT!)
-      res.setHeader('Content-Type', 'audio/wav');
+      // ❗ CRITICAL: Set the correct headers for audio streaming (MP3 FORMAT like Yoto's example!)
+      res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', audioContent.length);
       res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests for streaming
       res.setHeader('Content-Disposition', 'inline'); // Ensure inline playback
@@ -577,22 +576,46 @@ module.exports = async function handler(req, res) {
       if (req.method === 'HEAD') {
         // For HEAD requests, just return headers without body
         console.log('🔍 HEAD request - returning headers only');
-        res.status(200).end();
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': audioContent.length.toString(),
+            'Accept-Ranges': 'bytes',
+            'Content-Disposition': 'inline',
+            'Cache-Control': 'public, max-age=300',
+            'Access-Control-Allow-Origin': '*'
+          }
+        };
       } else {
-        // Send the audio buffer as the response
-        console.log('✅ *** SUCCESSFULLY STREAMING AUDIO ***');
+        // Send the audio buffer as the response (Yoto's official format)
+        console.log('✅ *** SUCCESSFULLY STREAMING AUDIO (YOTO FORMAT) ***');
         console.log('📤 Audio details:', {
           contentLength: audioContent.length,
-          contentType: 'audio/wav',
+          contentType: 'audio/mpeg',
           isYotoRequest: isYotoRequest,
-          userAgent: userAgent.substring(0, 100) // First 100 chars
+          userAgent: userAgent.substring(0, 100), // First 100 chars
+          responseFormat: 'base64-encoded MP3'
         });
         
         if (isYotoRequest) {
           console.log('🎉 *** YOTO SUCCESSFULLY RECEIVED AUDIO ***');
         }
         
-        res.status(200).send(audioContent);
+        // Return in Yoto's expected format (matching their official example)
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': audioContent.length.toString(),
+            'Accept-Ranges': 'bytes',
+            'Content-Disposition': 'inline',
+            'Cache-Control': 'public, max-age=300',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: audioContent.toString('base64'),
+          isBase64Encoded: true
+        };
       }
 
     } catch (error) {
@@ -617,38 +640,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-// Helper function to add WAV header to PCM data (LINEAR16)
-function addWAVHeader(pcmData, sampleRate) {
-  console.log(`🎵 Adding WAV header to PCM data: ${pcmData.length} bytes, ${sampleRate}Hz`);
-  
-  const dataSize = pcmData.length;
-  const fileSize = 44 + dataSize;
-  
-  const wavBuffer = Buffer.alloc(44 + dataSize);
-  
-  // RIFF header (12 bytes)
-  wavBuffer.write('RIFF', 0, 'ascii');                    // ChunkID
-  wavBuffer.writeUInt32LE(fileSize - 8, 4);               // ChunkSize
-  wavBuffer.write('WAVE', 8, 'ascii');                    // Format
-  
-  // fmt chunk (24 bytes)
-  wavBuffer.write('fmt ', 12, 'ascii');                   // Subchunk1ID
-  wavBuffer.writeUInt32LE(16, 16);                        // Subchunk1Size (16 for PCM)
-  wavBuffer.writeUInt16LE(1, 20);                         // AudioFormat (1 = PCM)
-  wavBuffer.writeUInt16LE(1, 22);                         // NumChannels (1 = mono)
-  wavBuffer.writeUInt32LE(sampleRate, 24);                // SampleRate
-  wavBuffer.writeUInt32LE(sampleRate * 2, 28);            // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
-  wavBuffer.writeUInt16LE(2, 32);                         // BlockAlign (NumChannels * BitsPerSample/8)
-  wavBuffer.writeUInt16LE(16, 34);                        // BitsPerSample
-  
-  // data chunk (8 bytes + PCM data)
-  wavBuffer.write('data', 36, 'ascii');                   // Subchunk2ID
-  wavBuffer.writeUInt32LE(dataSize, 40);                  // Subchunk2Size
-  
-  // Copy PCM data
-  pcmData.copy(wavBuffer, 44);
-  
-  console.log(`✅ WAV file created: ${wavBuffer.length} bytes total (${dataSize} audio + 44 header)`);
-  
-  return wavBuffer;
-}
+// WAV header function removed - now using MP3 format to match Yoto's official example

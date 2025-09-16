@@ -348,8 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: audioData.duration || 0
                 });
                 
-                // Convert base64 to blob for upload (now WAV format)
-                const audioBlob = b64toBlob(audioData.audio, 'audio/wav');
+                // Convert base64 to blob for upload (MP3 format to match Yoto's example)
+                const audioBlob = b64toBlob(audioData.audio, 'audio/mpeg');
                 console.log('🔄 Converted to blob:', audioBlob.size, 'bytes');
                 
                 // Upload to Yoto's media API
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'audio/wav'
+                        'Content-Type': 'audio/mpeg'
                     },
                     body: audioBlob
                 });
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     title: "Chapter One",
                     trackUrl: trackUrl,
                     type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                    format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
+                        format: "mp3", // Always MP3 now, matching Yoto's official example
                     duration: storyData.duration || 180,
                     fileSize: storyData.fileSize || 1000000
                 };
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     title: "Chapter One",
                     trackUrl: trackUrl,
                     type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                    format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
+                    format: "mp3", // Always MP3 now, matching Yoto's official example
                     duration: storyData.duration || 180,
                     fileSize: storyData.fileSize || 1000000
                 };
