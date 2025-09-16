@@ -1380,6 +1380,70 @@ document.addEventListener('DOMContentLoaded', () => {
         simpleLog('Comparison complete!', 'success');
     };
     
+    window.testDummyAudio = async () => {
+        simpleLog('Testing dummy audio endpoint...');
+        
+        try {
+            const startTime = Date.now();
+            const response = await fetch('/api/test-audio');
+            const duration = Date.now() - startTime;
+            
+            simpleLog(`Dummy GET ${response.status} ${response.statusText} (${duration}ms)`);
+            simpleLog(`Content-Type: ${response.headers.get('content-type')}`);
+            simpleLog(`Content-Length: ${response.headers.get('content-length')}`);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                simpleLog(`Dummy success: ${blob.size} bytes audio`, 'success');
+                
+                // Add audio player
+                const playersDiv = document.getElementById('debug-players');
+                if (playersDiv) {
+                    const audioEl = document.createElement('audio');
+                    audioEl.controls = true;
+                    audioEl.src = URL.createObjectURL(blob);
+                    
+                    const label = document.createElement('div');
+                    label.textContent = `Dummy Audio (${blob.size} bytes) - 5sec 440Hz tone`;
+                    label.style.marginBottom = '5px';
+                    label.style.fontWeight = 'bold';
+                    
+                    playersDiv.appendChild(label);
+                    playersDiv.appendChild(audioEl);
+                }
+            } else {
+                const errorText = await response.text();
+                simpleLog(`Dummy failed: ${errorText}`, 'error');
+            }
+        } catch (error) {
+            simpleLog(`Dummy error: ${error.message}`, 'error');
+        }
+    };
+    
+    window.testYotoDummy = async () => {
+        if (!accessToken) {
+            simpleLog('Please log in to Yoto first!', 'error');
+            return;
+        }
+        
+        simpleLog('Creating Yoto playlist with dummy audio...');
+        
+        const dummyStoryData = {
+            heroName: 'Test Tone',
+            text: 'This is a test story with a 5-second 440Hz audio tone.',
+            audioStreamUrl: `${window.location.origin}/api/test-audio`,
+            surpriseMode: false
+        };
+        
+        try {
+            const result = await createOrUpdateStoryForgePlaylist(dummyStoryData, accessToken);
+            simpleLog(`Yoto dummy test success!`, 'success');
+            simpleLog(`Card ID: ${result.card?.cardId || 'unknown'}`);
+        } catch (error) {
+            simpleLog(`Yoto dummy error: ${error.message}`, 'error');
+        }
+    };
+    
     window.clearDebugLogs = () => {
         const logsDiv = document.getElementById('debug-logs-simple');
         const playersDiv = document.getElementById('debug-players');
