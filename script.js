@@ -1673,4 +1673,182 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initial check on page load
     checkAuthentication();
+    
+    // Add debug functionality directly in main script
+    setupDebugSystem();
 });
+
+// Debug system setup
+function setupDebugSystem() {
+    console.log('🔧 Setting up debug system...');
+    
+    // Test Yoto upload workflow
+    window.testYotoUploadWorkflow = async function() {
+        try {
+            console.log('🧪 Testing Yoto upload workflow manually...');
+            
+            const accessToken = localStorage.getItem('yoto_access_token');
+            if (!accessToken) {
+                console.error('❌ No access token found - please log in first');
+                return null;
+            }
+            
+            // Test upload URL endpoint
+            console.log('🔗 Testing upload URL endpoint...');
+            const uploadUrlResponse = await fetch('https://api.yotoplay.com/media/transcode/audio/uploadUrl', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log('🔍 Upload URL Response:', {
+                status: uploadUrlResponse.status,
+                statusText: uploadUrlResponse.statusText,
+                headers: Object.fromEntries(uploadUrlResponse.headers.entries())
+            });
+            
+            if (uploadUrlResponse.ok) {
+                const uploadUrlData = await uploadUrlResponse.json();
+                console.log('📊 Upload URL Data:', uploadUrlData);
+                return uploadUrlData;
+            } else {
+                const errorText = await uploadUrlResponse.text();
+                console.error('❌ Upload URL failed:', errorText);
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ Test failed:', error);
+            return null;
+        }
+    };
+    
+    // Check authentication status
+    window.checkYotoAuth = function() {
+        const token = localStorage.getItem('yoto_access_token');
+        console.log('🔐 Yoto authentication status:', {
+            hasToken: !!token,
+            tokenLength: token ? token.length : 0
+        });
+        return !!token;
+    };
+    
+    // Create visual debug panel
+    window.showDebugPanel = function() {
+        // Remove existing panel
+        const existing = document.getElementById('debug-panel');
+        if (existing) existing.remove();
+        
+        console.log('🔧 Creating debug panel...');
+        
+        const debugPanel = document.createElement('div');
+        debugPanel.id = 'debug-panel';
+        debugPanel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 10000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        
+        debugPanel.innerHTML = `
+            <div style="margin-bottom: 10px; font-weight: bold; color: #4CAF50;">🔧 Yoto API Debug Panel</div>
+            <div id="debug-results">Ready to run diagnostics...</div>
+            <button onclick="runDiagnostics()" style="margin-top: 10px; padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Tests</button>
+            <button onclick="document.getElementById('debug-panel').remove()" style="margin: 10px 0 0 5px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+        `;
+        
+        document.body.appendChild(debugPanel);
+        console.log('✅ Debug panel created successfully');
+    };
+    
+    // Run diagnostics function
+    window.runDiagnostics = async function() {
+        const resultsDiv = document.getElementById('debug-results');
+        if (!resultsDiv) {
+            console.error('❌ Debug results div not found');
+            return;
+        }
+        
+        resultsDiv.innerHTML = 'Running diagnostics...';
+        
+        try {
+            let results = [];
+            
+            // Test 1: Authentication
+            const authStatus = window.checkYotoAuth();
+            results.push(`✅ Auth Status: ${authStatus ? 'Authenticated' : 'Not logged in'}`);
+            
+            if (!authStatus) {
+                results.push(`❌ Please log in to Yoto to run API tests`);
+                resultsDiv.innerHTML = results.join('<br>');
+                return;
+            }
+            
+            // Test 2: Upload URL endpoint
+            results.push(`🔄 Testing upload URL endpoint...`);
+            resultsDiv.innerHTML = results.join('<br>');
+            
+            const uploadTest = await window.testYotoUploadWorkflow();
+            
+            if (uploadTest) {
+                results[results.length - 1] = `✅ Upload URL: SUCCESS`;
+                results.push(`📄 Upload ID: ${uploadTest.upload?.uploadId || 'N/A'}`);
+                results.push(`🔗 Upload URL: ${uploadTest.upload?.uploadUrl ? 'Provided' : 'Missing'}`);
+            } else {
+                results[results.length - 1] = `❌ Upload URL: FAILED`;
+            }
+            
+            // Test 3: Content API
+            results.push(`🔄 Testing content API...`);
+            resultsDiv.innerHTML = results.join('<br>');
+            
+            try {
+                const accessToken = localStorage.getItem('yoto_access_token');
+                const contentResponse = await fetch('https://api.yotoplay.com/content/mine', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                
+                if (contentResponse.ok) {
+                    const contentData = await contentResponse.json();
+                    results[results.length - 1] = `✅ Content API: SUCCESS`;
+                    results.push(`📊 Total items: ${(contentData.cards || contentData || []).length}`);
+                } else {
+                    results[results.length - 1] = `❌ Content API: FAILED (${contentResponse.status})`;
+                }
+            } catch (e) {
+                results[results.length - 1] = `❌ Content API: ERROR`;
+            }
+            
+            resultsDiv.innerHTML = results.join('<br>');
+            
+        } catch (error) {
+            resultsDiv.innerHTML = `❌ Diagnostics failed: ${error.message}`;
+        }
+    };
+    
+    // Auto-show debug panel if user is authenticated
+    setTimeout(() => {
+        if (window.checkYotoAuth()) {
+            window.showDebugPanel();
+            // Auto-run diagnostics
+            setTimeout(() => {
+                if (typeof window.runDiagnostics === 'function') {
+                    window.runDiagnostics();
+                }
+            }, 500);
+        } else {
+            console.log('🔧 Debug system ready - call window.showDebugPanel() to show');
+        }
+    }, 2000);
+    
+    console.log('✅ Debug system setup complete');
+}
