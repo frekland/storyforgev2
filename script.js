@@ -755,6 +755,167 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Mode Switching Logic ---
+    let currentMode = null;
+    
+    // Mode switching functionality
+    const initializeModeSelection = () => {
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const modeContentContainer = document.getElementById('mode-content');
+        const modeSelectionGrid = document.querySelector('.mode-selection-grid');
+        const welcomeSection = document.querySelector('.welcome-section');
+        
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedMode = button.dataset.mode;
+                showMode(selectedMode);
+            });
+        });
+    };
+    
+    const showMode = (mode) => {
+        currentMode = mode;
+        console.log(`Switching to ${mode} mode`);
+        
+        const modeContentContainer = document.getElementById('mode-content');
+        const modeSelectionGrid = document.querySelector('.mode-selection-grid');
+        const welcomeSection = document.querySelector('.welcome-section');
+        
+        // Hide welcome section and mode grid
+        if (welcomeSection) welcomeSection.classList.add('hidden');
+        if (modeSelectionGrid) modeSelectionGrid.classList.add('hidden');
+        
+        // Show mode content container
+        if (modeContentContainer) {
+            modeContentContainer.classList.remove('hidden');
+            modeContentContainer.innerHTML = getModeContent(mode);
+            
+            // Set up mode-specific event listeners
+            setupModeEventListeners(mode);
+        }
+    };
+    
+    const backToModeSelection = () => {
+        console.log('Returning to mode selection');
+        
+        const modeContentContainer = document.getElementById('mode-content');
+        const modeSelectionGrid = document.querySelector('.mode-selection-grid');
+        const welcomeSection = document.querySelector('.welcome-section');
+        
+        // Hide mode content
+        if (modeContentContainer) {
+            modeContentContainer.classList.add('hidden');
+            modeContentContainer.innerHTML = '';
+        }
+        
+        // Show welcome section and mode grid
+        if (welcomeSection) welcomeSection.classList.remove('hidden');
+        if (modeSelectionGrid) modeSelectionGrid.classList.remove('hidden');
+        
+        currentMode = null;
+    };
+    
+    const getModeContent = (mode) => {
+        switch (mode) {
+            case 'help':
+                return `
+                    <div class="mode-header paper-scrap">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <h2 class="mode-title-header">
+                            <span class="mode-icon">💡</span>
+                            <span>Help & Templates</span>
+                        </h2>
+                    </div>
+                    
+                    <div class="help-content paper-scrap">
+                        <div class="help-section">
+                            <h3>📚 How to Use StoryForge</h3>
+                            <ol>
+                                <li><strong>Choose Your Mode:</strong> Select from Classic stories, Wild West adventures, educational tales, bedtime stories, or monster adventures</li>
+                                <li><strong>Fill in Details:</strong> Each mode has different inputs to customize your story</li>
+                                <li><strong>Generate:</strong> Click the generate button to create your personalized story</li>
+                                <li><strong>Listen & Share:</strong> Enjoy the audio narration and share with friends</li>
+                                <li><strong>Upload to Yoto:</strong> Connect your Yoto account to add stories to your player</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h3>🎭 Story Modes Guide</h3>
+                            <div class="mode-guide-grid">
+                                <div class="mode-guide">
+                                    <h4>📚 Classic Story</h4>
+                                    <p>Traditional storytelling with heroes, challenges, and magical endings. Perfect for timeless adventures.</p>
+                                </div>
+                                <div class="mode-guide">
+                                    <h4>🤠 Wanted Poster</h4>
+                                    <p>Wild West tales with outlaws, sheriffs, and frontier justice. Great for action-packed adventures.</p>
+                                </div>
+                                <div class="mode-guide">
+                                    <h4>📝 Homework Forge</h4>
+                                    <p>Educational stories that make learning fun. Turn any subject into an engaging adventure.</p>
+                                </div>
+                                <div class="mode-guide">
+                                    <h4>🌙 Sleep Forge</h4>
+                                    <p>Gentle bedtime stories with calming narration. Perfect for winding down at night.</p>
+                                </div>
+                                <div class="mode-guide">
+                                    <h4>👹 Monster Maker</h4>
+                                    <p>Design custom creatures and hear their adventures. Great for creative storytelling.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="help-section">
+                            <h3>💡 Tips for Better Stories</h3>
+                            <ul>
+                                <li>Be specific with your descriptions - details make stories come alive</li>
+                                <li>Think about your audience age when setting story complexity</li>
+                                <li>Upload character drawings to personalize your tales</li>
+                                <li>Try the Surprise Me feature for unexpected adventures</li>
+                                <li>Use Sleep Forge for gentle bedtime stories</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            
+            default:
+                return `
+                    <div class="mode-header paper-scrap">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <h2 class="mode-title-header">
+                            <span class="mode-icon">🚧</span>
+                            <span>${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode</span>
+                        </h2>
+                    </div>
+                    
+                    <div class="coming-soon paper-scrap">
+                        <h3>Coming Soon!</h3>
+                        <p>This story mode is currently under development. Please check back soon for exciting new features!</p>
+                        <div class="coming-soon-doodles">
+                            <span>🚀</span>
+                            <span>⚡</span>
+                            <span>✨</span>
+                        </div>
+                    </div>
+                `;
+        }
+    };
+    
+    const setupModeEventListeners = (mode) => {
+        // Mode-specific event listener setup
+        console.log(`Setting up event listeners for ${mode} mode`);
+        
+        // Make backToModeSelection globally available
+        window.backToModeSelection = backToModeSelection;
+    };
+    
+    // Initialize mode selection after DOM is loaded
+    initializeModeSelection();
+
     // Initial check on page load
     checkAuthentication();
 });
