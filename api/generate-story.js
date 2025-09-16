@@ -417,6 +417,15 @@ module.exports = async function handler(req, res) {
         response.generatedImage = generatedImage;
       }
       
+      console.log('🎵 POST response summary:', {
+        storyLength: storyText.length,
+        audioBase64Length: response.audio.length,
+        audioBytesLength: audioContent.length,
+        duration: response.duration,
+        fileSize: response.fileSize,
+        hasGeneratedImage: !!generatedImage
+      });
+      
       res.status(200).json(response);
 
     } catch (error) {
@@ -427,14 +436,25 @@ module.exports = async function handler(req, res) {
   } else if (req.method === 'GET' || req.method === 'HEAD') {
     // Mode 2: Yoto servers request audio stream
     try {
-      console.log('🎵 GET request received for audio streaming');
+      const timestamp = new Date().toISOString();
+      console.log(`🎵 [${timestamp}] GET request received for audio streaming`);
       console.log('📋 Query parameters:', req.query);
-      console.log('🌐 Request headers:', {
+      console.log('🌐 Request headers (full):', req.headers);
+      console.log('🔍 Key headers analysis:', {
         'user-agent': req.headers['user-agent'],
         'accept': req.headers['accept'],
         'origin': req.headers['origin'],
-        'referer': req.headers['referer']
+        'referer': req.headers['referer'],
+        'range': req.headers['range'], // Important for streaming
+        'connection': req.headers['connection'],
+        'accept-encoding': req.headers['accept-encoding']
       });
+      
+      // Set CORS headers immediately
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Accept, User-Agent');
+      res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type, Accept-Ranges');
       
       const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, audioOnly } = req.query;
 
@@ -470,8 +490,19 @@ module.exports = async function handler(req, res) {
       // ❗ CRITICAL: Set the correct headers for audio streaming
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', audioContent.length);
+      res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests for streaming
+      res.setHeader('Content-Disposition', 'inline'); // Ensure inline playback
       // Cache the response to reduce load and improve performance
       res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+      
+      console.log('📤 Response headers set:', {
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': audioContent.length,
+        'Accept-Ranges': 'bytes',
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'public, max-age=86400',
+        'Access-Control-Allow-Origin': '*'
+      });
 
       if (req.method === 'HEAD') {
         // For HEAD requests, just return headers without body
@@ -494,8 +525,16 @@ module.exports = async function handler(req, res) {
       });
       res.status(500).json({ message: 'Failed to stream audio.', error: error.message });
     }
+  } else if (req.method === 'OPTIONS') {
+    // Handle CORS preflight requests
+    console.log('🔍 OPTIONS request received - CORS preflight');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Accept, User-Agent, Authorization');
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 1 day
+    res.status(200).end();
   } else {
-    res.setHeader('Allow', ['GET', 'POST', 'HEAD']);
+    res.setHeader('Allow', ['GET', 'POST', 'HEAD', 'OPTIONS']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 };

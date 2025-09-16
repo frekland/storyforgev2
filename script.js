@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let heroImageBase64 = null;
     let accessToken = null;
     let refreshToken = null;
+    
+    // Audio player state management to prevent infinite loops
+    let audioPlayerInitialized = false;
 
     const clientId = import.meta.env.VITE_CLIENT_ID;
 
@@ -1039,43 +1042,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('🎮 Audio player visibility set:', !audioPlayer.classList.contains('hidden'));
                     console.log('🎮 Audio player display style:', audioPlayer.style.display);
                     
-                    // Add comprehensive event listeners for debugging
-                    audioPlayer.addEventListener('loadstart', () => {
-                        console.log('🔄 Audio loading started');
-                    });
+                    // NO EVENT LISTENERS TO PREVENT INFINITE LOOPS
+                    // Just set up the audio source and let the user interact with it
                     
-                    audioPlayer.addEventListener('loadeddata', () => {
-                        console.log('📊 Audio data loaded');
-                    });
-                    
-                    audioPlayer.addEventListener('loadedmetadata', () => {
-                        console.log('✅ Audio metadata loaded - Duration:', audioPlayer.duration, 'seconds');
-                    });
-                    
-                    audioPlayer.addEventListener('canplay', () => {
-                        console.log('▶️ Audio can start playing');
-                        
-                        // Try to test playback capability (will fail if no user gesture, but that's expected)
-                        audioPlayer.play().then(() => {
-                            console.log('✅ Audio autoplay successful');
-                            // Pause immediately since user didn't click play
-                            audioPlayer.pause();
-                            audioPlayer.currentTime = 0;
-                        }).catch(e => {
-                            console.log('⚠️ Audio autoplay blocked (this is normal):', e.message);
-                        });
-                    });
-                    
-                    audioPlayer.addEventListener('error', (e) => {
-                        console.error('❌ Audio player error:', e);
-                        console.error('Error code:', audioPlayer.error?.code);
-                        console.error('Error message:', audioPlayer.error?.message);
-                    });
-                    
-                    // Force load the audio
-                    audioPlayer.load();
-                    
-                    console.log('🎵 Audio player setup complete');
+                    console.log('🎵 Audio player setup complete - ready for user interaction');
                 } catch (audioError) {
                     console.error('❌ Error setting up audio player:', audioError);
                 }

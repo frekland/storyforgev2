@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Audio Test - StoryForge Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        button:disabled { 
+            background: #6c757d; 
+            cursor: not-allowed; 
+        }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .status.success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb;
+        }
+        .status.error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border: 1px solid #ffeaa7;
+        }
+        .status.info { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border: 1px solid #bee5eb;
+        }
+        .logs {
+            background: #212529;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            margin: 15px 0;
+        }
+        .url-display {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        audio {
+            width: 100%;
+            margin: 15px 0;
+        }
+        .test-params {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .test-params label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .test-params input {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 StoryForge Streaming Audio Debug Tool</h1>
+        <p><strong>Purpose:</strong> Test if our streaming endpoint works correctly before sending to Yoto</p>
+        
+        <!-- Test Parameters -->
+        <div class="test-section">
+            <h3>📝 Test Parameters</h3>
+            <div class="test-params">
+                <label>Hero Name:</label>
+                <input type="text" id="heroName" value="Test Hero" />
+                
+                <label>Setup:</label>
+                <input type="text" id="promptSetup" value="a magical forest" />
+                
+                <label>Rising Action:</label>
+                <input type="text" id="promptRising" value="a lost treasure" />
+                
+                <label>Climax:</label>
+                <input type="text" id="promptClimax" value="friendship saves the day" />
+                
+                <label>Age:</label>
+                <input type="text" id="age" value="6" />
+            </div>
+        </div>
+        
+        <!-- Streaming URL Test -->
+        <div class="test-section">
+            <h3>🌐 Streaming URL Tests</h3>
+            <button onclick="testStreamingEndpoint()">🧪 Test GET Request</button>
+            <button onclick="testStreamingHeaders()">🔍 Test HEAD Request</button>
+            <button onclick="testCORSPreflight()">✈️ Test CORS Preflight</button>
+            <button onclick="clearLogs()">🧹 Clear Logs</button>
+            
+            <div id="current-url" class="url-display">No URL generated yet</div>
+            <div id="status" class="status info">Ready to test streaming endpoint</div>
+            
+            <!-- Audio players for testing -->
+            <div style="margin-top: 20px;">
+                <h4>🎧 Audio Test Players:</h4>
+                <div id="audio-container">
+                    <!-- Audio elements will be created here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison Test -->
+        <div class="test-section">
+            <h3>🔄 POST vs GET Comparison</h3>
+            <button onclick="compareEndpoints()">⚖️ Compare POST vs GET</button>
+            <div id="comparison-results"></div>
+        </div>
+        
+        <!-- Debug Logs -->
+        <div class="test-section">
+            <h3>📋 Debug Logs</h3>
+            <div class="logs" id="logs">🚀 Streaming test tool initialized\n</div>
+        </div>
+    </div>
+
+    <script>
+        let logCount = 0;
+        let currentStreamingUrl = null;
+        
+        function log(message, type = 'info') {
+            logCount++;
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            const prefix = {
+                'error': '❌',
+                'success': '✅', 
+                'warning': '⚠️',
+                'info': 'ℹ️',
+                'debug': '🔧'
+            }[type] || 'ℹ️';
+            
+            logsDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            if (logCount > 200) {
+                logsDiv.textContent = logsDiv.textContent.split('\n').slice(-100).join('\n');
+                logCount = 100;
+            }
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').textContent = '🧹 Logs cleared\n';
+            logCount = 0;
+        }
+        
+        function getTestParams() {
+            return {
+                heroName: document.getElementById('heroName').value.trim(),
+                promptSetup: document.getElementById('promptSetup').value.trim(),
+                promptRising: document.getElementById('promptRising').value.trim(),
+                promptClimax: document.getElementById('promptClimax').value.trim(),
+                age: document.getElementById('age').value.trim() || '6',
+                audioOnly: 'true'
+            };
+        }
+        
+        function buildStreamingUrl() {
+            const params = getTestParams();
+            const url = new URL(`${window.location.origin}/api/generate-story`);
+            
+            Object.entries(params).forEach(([key, value]) => {
+                if (value) url.searchParams.set(key, value);
+            });
+            
+            currentStreamingUrl = url.toString();
+            document.getElementById('current-url').textContent = currentStreamingUrl;
+            log(`Generated streaming URL: ${currentStreamingUrl}`, 'debug');
+            
+            return currentStreamingUrl;
+        }
+        
+        async function testStreamingEndpoint() {
+            log('=== TESTING GET REQUEST ===');
+            updateStatus('Testing GET request...', 'info');
+            
+            const url = buildStreamingUrl();
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                const endTime = Date.now();
+                
+                log(`GET Response: ${response.status} ${response.statusText} (${endTime - startTime}ms)`);
+                log(`Content-Type: ${response.headers.get('content-type')}`);
+                log(`Content-Length: ${response.headers.get('content-length')}`);
+                log(`Accept-Ranges: ${response.headers.get('accept-ranges')}`);
+                log(`Cache-Control: ${response.headers.get('cache-control')}`);
+                log(`CORS Headers: ${response.headers.get('access-control-allow-origin')}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    log(`Received blob: ${blob.size} bytes, type: ${blob.type}`, 'success');
+                    
+                    // Create audio player for testing
+                    const audioId = `audio-${Date.now()}`;
+                    const audioContainer = document.getElementById('audio-container');
+                    
+                    const audioWrapper = document.createElement('div');
+                    audioWrapper.innerHTML = `
+                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <strong>GET Request Audio (${blob.size} bytes)</strong>
+                            <audio id="${audioId}" controls style="width: 100%; margin-top: 8px;">
+                                Your browser does not support audio playback.
+                            </audio>
+                        </div>
+                    `;
+                    audioContainer.appendChild(audioWrapper);
+                    
+                    const audioElement = document.getElementById(audioId);
+                    audioElement.src = URL.createObjectURL(blob);
+                    
+                    log('Audio player created - try playing it!', 'success');
+                    updateStatus('GET request successful - audio ready for testing', 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`GET request failed: ${errorText}`, 'error');
+                    updateStatus(`GET request failed: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`GET request error: ${error.message}`, 'error');
+                updateStatus(`GET request error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testStreamingHeaders() {
+            log('=== TESTING HEAD REQUEST ===');
+            updateStatus('Testing HEAD request...', 'info');
+            
+            const url = buildStreamingUrl();
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                });
+                
+                log(`HEAD Response: ${response.status} ${response.statusText}`);
+                
+                // Log all headers
+                for (const [key, value] of response.headers.entries()) {
+                    log(`Header: ${key}: ${value}`, 'debug');
+                }
+                
+                if (response.ok) {
+                    log('HEAD request successful - headers look good', 'success');
+                    updateStatus('HEAD request successful', 'success');
+                } else {
+                    log(`HEAD request failed: ${response.status}`, 'error');
+                    updateStatus(`HEAD request failed: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`HEAD request error: ${error.message}`, 'error');
+                updateStatus(`HEAD request error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCORSPreflight() {
+            log('=== TESTING CORS PREFLIGHT ===');
+            updateStatus('Testing CORS preflight...', 'info');
+            
+            const url = buildStreamingUrl();
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type, Range'
+                    }
+                });
+                
+                log(`OPTIONS Response: ${response.status} ${response.statusText}`);
+                log(`CORS Allow-Origin: ${response.headers.get('access-control-allow-origin')}`);
+                log(`CORS Allow-Methods: ${response.headers.get('access-control-allow-methods')}`);
+                log(`CORS Allow-Headers: ${response.headers.get('access-control-allow-headers')}`);
+                log(`CORS Max-Age: ${response.headers.get('access-control-max-age')}`);
+                
+                if (response.ok) {
+                    log('CORS preflight successful', 'success');
+                    updateStatus('CORS preflight successful', 'success');
+                } else {
+                    log(`CORS preflight failed: ${response.status}`, 'error');
+                    updateStatus(`CORS preflight failed: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`CORS preflight error: ${error.message}`, 'error');
+                updateStatus(`CORS preflight error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function compareEndpoints() {
+            log('=== COMPARING POST vs GET ===');
+            updateStatus('Comparing endpoints...', 'info');
+            
+            const params = getTestParams();
+            const streamUrl = buildStreamingUrl();
+            
+            try {
+                // Test POST endpoint
+                log('Testing POST endpoint...');
+                const postResponse = await fetch('/api/generate-story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        heroName: params.heroName,
+                        promptSetup: params.promptSetup,
+                        promptRising: params.promptRising,
+                        promptClimax: params.promptClimax,
+                        age: params.age
+                    })
+                });
+                
+                if (!postResponse.ok) throw new Error(`POST failed: ${postResponse.status}`);
+                
+                const postData = await postResponse.json();
+                log(`POST result: ${postData.story?.length || 0} chars, ${postData.fileSize || 0} bytes audio`);
+                
+                // Test GET endpoint
+                log('Testing GET endpoint...');
+                const getResponse = await fetch(streamUrl);
+                
+                if (!getResponse.ok) throw new Error(`GET failed: ${getResponse.status}`);
+                
+                const getBlob = await getResponse.blob();
+                log(`GET result: ${getBlob.size} bytes audio`);
+                
+                // Compare
+                const postAudioBytes = postData.fileSize || 0;
+                const getAudioBytes = getBlob.size;
+                const sizeDiff = Math.abs(postAudioBytes - getAudioBytes);
+                const sizeMatch = sizeDiff < 1000; // Allow small differences
+                
+                log(`Comparison: POST=${postAudioBytes} bytes, GET=${getAudioBytes} bytes, diff=${sizeDiff}`, 
+                    sizeMatch ? 'success' : 'warning');
+                
+                const resultsDiv = document.getElementById('comparison-results');
+                resultsDiv.innerHTML = `
+                    <div class="status ${sizeMatch ? 'success' : 'warning'}">
+                        <strong>Comparison Results:</strong><br>
+                        POST endpoint: ${postAudioBytes} bytes<br>
+                        GET endpoint: ${getAudioBytes} bytes<br>
+                        Difference: ${sizeDiff} bytes<br>
+                        Match: ${sizeMatch ? 'YES ✅' : 'NO ⚠️'}
+                    </div>
+                `;
+                
+                updateStatus(sizeMatch ? 'Endpoints match!' : 'Size difference detected', 
+                           sizeMatch ? 'success' : 'warning');
+                
+            } catch (error) {
+                log(`Comparison error: ${error.message}`, 'error');
+                updateStatus(`Comparison error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        log('Streaming test tool ready');
+        log('Enter test parameters above and click "Test GET Request" to start');
+    </script>
+</body>
+</html>

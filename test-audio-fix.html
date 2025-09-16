@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        audio {
+            width: 100%;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #console-log {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Audio Player Fix Test</h1>
+        
+        <div class="status info">
+            <strong>Testing:</strong> Audio player without infinite event loops
+        </div>
+        
+        <button onclick="testAudioSetup()">🎵 Test Audio Setup (Safe)</button>
+        <button onclick="clearConsoleLog()">🧹 Clear Console</button>
+        
+        <audio id="test-audio" controls style="display: none;">
+            <!-- Audio source will be set by JavaScript -->
+        </audio>
+        
+        <div class="status success">
+            <strong>Expected Result:</strong> Clean console output, no infinite loops
+        </div>
+        
+        <h3>Console Output:</h3>
+        <div id="console-log">Ready to test...\n</div>
+    </div>
+
+    <script>
+        // Capture console.log for display
+        const originalConsoleLog = console.log;
+        const consoleLogElement = document.getElementById('console-log');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            consoleLogElement.textContent += args.join(' ') + '\n';
+            consoleLogElement.scrollTop = consoleLogElement.scrollHeight;
+        };
+        
+        let audioSetupCount = 0;
+        
+        function testAudioSetup() {
+            audioSetupCount++;
+            console.log(`\n=== Test #${audioSetupCount} - Audio Setup ===`);
+            
+            const audioPlayer = document.getElementById('test-audio');
+            
+            // Create a simple test audio blob (silence)
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const buffer = audioContext.createBuffer(1, 44100, 44100);
+            
+            // Convert to blob
+            const audioData = buffer.getChannelData(0);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            console.log('🎵 Created test audio blob');
+            console.log('📏 Blob size:', blob.size, 'bytes');
+            
+            // Set up audio player with NO EVENT LISTENERS (the fix)
+            audioPlayer.src = blobUrl;
+            audioPlayer.style.display = 'block';
+            
+            console.log('✅ Audio player setup complete - NO EVENT LISTENERS');
+            console.log('🎮 Audio ready for manual user interaction');
+            console.log('==========================================\n');
+            
+            // This should NOT trigger any loops
+            audioPlayer.load();
+        }
+        
+        function clearConsoleLog() {
+            consoleLogElement.textContent = 'Console cleared...\n';
+        }
+        
+        console.log('🚀 Audio Fix Test Page Loaded');
+        console.log('Click "Test Audio Setup" to verify the fix');
+    </script>
+</body>
+</html>
