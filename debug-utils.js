@@ -57,33 +57,77 @@ window.checkYotoAuth = function() {
 
 console.log('✅ Debug functions loaded: testYotoUploadWorkflow(), checkYotoAuth()');
 
+// Add a simple indicator that this script loaded
+window.debugUtilsLoaded = true;
+console.log('📝 DEBUG SCRIPT LOADED SUCCESSFULLY - Version 1.1');
+
+// Add a simple visual test
+if (typeof document !== 'undefined') {
+    console.log('🔍 Document available, DOM ready state:', document.readyState);
+}
+
 // Auto-run diagnostics when page loads
-window.addEventListener('load', async function() {
-    // Wait a bit for everything to initialize
-    setTimeout(async () => {
-        console.log('🔄 Auto-running Yoto API diagnostics...');
-        
-        // Check if we're logged in
-        const authStatus = window.checkYotoAuth();
-        
-        if (authStatus) {
-            console.log('✅ User is authenticated, testing upload workflow...');
-            await window.testYotoUploadWorkflow();
-        } else {
-            console.log('❌ User not authenticated - skipping API tests');
-        }
-        
-        // Create a visual debug panel
-        createDebugPanel();
-    }, 2000);
+function initializeDebugSystem() {
+    console.log('🔄 Auto-running Yoto API diagnostics...');
+    
+    // Always create the debug panel, regardless of auth status
+    createDebugPanel();
+    
+    // Check if we're logged in
+    const authStatus = window.checkYotoAuth();
+    
+    if (authStatus) {
+        console.log('✅ User is authenticated, will test upload workflow...');
+    } else {
+        console.log('❌ User not authenticated - panel will show login prompt');
+    }
+}
+
+// Add temporary alert to verify script is running
+setTimeout(function() {
+    if (typeof alert !== 'undefined') {
+        alert('Debug script loaded! Check console for details.');
+    }
+    console.log('✅ Debug script executed after timeout');
+}, 1000);
+
+// Try multiple ways to ensure the debug system loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDebugSystem);
+} else {
+    initializeDebugSystem();
+}
+
+// Also try when window loads
+window.addEventListener('load', function() {
+    // If panel doesn't exist yet, create it
+    if (!document.getElementById('debug-panel')) {
+        console.log('🔄 Debug panel missing, creating now...');
+        initializeDebugSystem();
+    }
 });
+
+// Add a manual trigger for debugging
+window.showDebugPanel = function() {
+    // Remove existing panel if any
+    const existing = document.getElementById('debug-panel');
+    if (existing) existing.remove();
+    
+    // Create new panel
+    createDebugPanel();
+};
 
 // Create visual debug panel in the UI
 function createDebugPanel() {
-    // Only create if user is logged in and panel doesn't exist
-    if (!window.checkYotoAuth() || document.getElementById('debug-panel')) {
+    // Don't create if panel already exists
+    if (document.getElementById('debug-panel')) {
+        console.log('🔧 Debug panel already exists');
         return;
     }
+    
+    console.log('🔧 Creating debug panel...');
+    
+    // Show panel regardless of auth status - it will handle auth internally
     
     const debugPanel = document.createElement('div');
     debugPanel.id = 'debug-panel';
