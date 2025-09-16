@@ -936,9 +936,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Handle audio if available
             const audioPlayer = document.getElementById('story-audio-player');
-            if (data.audioUrl && audioPlayer) {
-                audioPlayer.src = data.audioUrl;
+            if (data.audio && audioPlayer) {
+                // Convert Base64 audio to blob URL for playback
+                const audioSrc = `data:audio/mp3;base64,${data.audio}`;
+                const base64toBlob = (base64) => {
+                    const byteString = atob(base64.split(',')[1]);
+                    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) { 
+                        ia[i] = byteString.charCodeAt(i); 
+                    }
+                    return new Blob([ab], { type: mimeString });
+                };
+                const audioBlob = base64toBlob(audioSrc);
+                const audioBlobUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioBlobUrl;
                 audioPlayer.classList.remove('hidden');
+                console.log('Audio player loaded with generated story audio');
             }
             
             // Show Yoto upload button if user is authenticated
