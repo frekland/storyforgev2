@@ -529,8 +529,16 @@ module.exports = async function handler(req, res) {
         age: age || '6'
       });
       // Re-generate the audio on-demand using the same parameters
-      const { audioContent } = await generateStoryAndAudio({
+      const { storyText, audioContent } = await generateStoryAndAudio({
         heroName, promptSetup, promptRising, promptClimax, heroImage, age
+      });
+      
+      console.log('✅ Audio generation complete for streaming:', {
+        storyLength: storyText.length,
+        audioSize: audioContent.length,
+        format: 'wav',
+        sampleRate: '22050Hz',
+        isForYoto: isYotoRequest
       });
 
       // ❗ CRITICAL: Set the correct headers for audio streaming (NOW WAV FORMAT!)
@@ -538,16 +546,23 @@ module.exports = async function handler(req, res) {
       res.setHeader('Content-Length', audioContent.length);
       res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests for streaming
       res.setHeader('Content-Disposition', 'inline'); // Ensure inline playback
-      // Cache the response to reduce load and improve performance
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+      // Reduce caching for debugging Yoto streaming issues
+      res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes only
       
       // Additional headers for better compatibility
       if (isYotoRequest) {
         console.log('🎵 Adding Yoto-specific headers for better compatibility');
-        res.setHeader('X-Content-Duration', Math.ceil((storyText || '').split(' ').length / 2.5)); // Estimated duration
+        const estimatedDuration = Math.ceil(storyText.split(' ').length / 2.5);
+        res.setHeader('X-Content-Duration', estimatedDuration); // Estimated duration
         res.setHeader('icy-name', 'StoryForge Audio Story');
         res.setHeader('icy-genre', 'Children Story');
         res.setHeader('icy-description', 'AI-generated story for children');
+        
+        console.log('🎵 Yoto-specific headers added:', {
+          'X-Content-Duration': estimatedDuration,
+          'icy-name': 'StoryForge Audio Story',
+          'icy-genre': 'Children Story'
+        });
       }
       
       console.log('📤 Response headers set:', {

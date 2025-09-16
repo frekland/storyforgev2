@@ -439,6 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
+                // Add timestamp to ensure unique URLs and avoid caching issues
+                streamingUrl.searchParams.set('t', Date.now().toString());
+                
+                trackUrl = streamingUrl.toString();
+                
                 trackUrl = streamingUrl.toString();
                 console.log('🔄 Using streaming URL due to upload error:', trackUrl);
             }
