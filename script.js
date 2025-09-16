@@ -1435,19 +1435,88 @@ document.addEventListener('DOMContentLoaded', () => {
             `${window.location.origin}/api/test-audio?format=${format}` :
             `${window.location.origin}/api/test-audio`;
         
-        const dummyStoryData = {
-            heroName: `Test ${formatName.toUpperCase()}`,
-            text: `This is a test story with a 5-second 440Hz audio tone in ${formatName} format.`,
-            audioStreamUrl: audioUrl,
-            surpriseMode: false
-        };
-        
         try {
-            const result = await createOrUpdateStoryForgePlaylist(dummyStoryData, accessToken);
+            const result = await createStreamingOnlyPlaylist({
+                heroName: `Test ${formatName.toUpperCase()}`,
+                audioStreamUrl: audioUrl
+            }, accessToken);
             simpleLog(`Yoto ${formatName} test success!`, 'success');
             simpleLog(`Card ID: ${result.card?.cardId || 'unknown'}`);
         } catch (error) {
             simpleLog(`Yoto ${formatName} error: ${error.message}`, 'error');
+        }
+    };
+    
+    // Streaming-only playlist creation for testing (skips direct upload attempt)
+    async function createStreamingOnlyPlaylist(testData, accessToken) {
+        const PLAYLIST_TITLE = "StoryForge";
+        
+        try {
+            console.log("🔍 Creating streaming-only test playlist...");
+            
+            // Step 1: Find existing StoryForge playlist
+            const myoResponse = await fetch("https://api.yotoplay.com/content/mine", {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            
+            if (!myoResponse.ok) {
+                throw new Error(`Failed to fetch user content: ${myoResponse.status}`);
+            }
+            
+            const myoData = await myoResponse.json();
+            let contentArray = [];
+            if (Array.isArray(myoData)) {
+                contentArray = myoData;
+            } else if (myoData.cards && Array.isArray(myoData.cards)) {
+                contentArray = myoData.cards;
+            } else if (myoData.content && Array.isArray(myoData.content)) {
+                contentArray = myoData.content;
+            }
+            
+            const existingStoryForge = contentArray.find(item => 
+                item && item.title === PLAYLIST_TITLE
+            );
+            
+            // Step 2: Create playlist using streaming URL (skip upload attempt)
+            console.log('🔄 Using streaming URL (test mode):', testData.audioStreamUrl);
+            
+            const playlistPayload = {
+                title: `${PLAYLIST_TITLE} - ${testData.heroName}`,
+                content: {
+                    chapters: [{
+                        title: testData.heroName,
+                        audio: testData.audioStreamUrl,
+                        duration: 5 // 5 second test tone
+                    }]
+                }
+            };
+            
+            console.log('📝 Creating test playlist...');
+            const createResponse = await fetch('https://api.yotoplay.com/content/makeYourOwn', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(playlistPayload)
+            });
+            
+            if (!createResponse.ok) {
+                const errorText = await createResponse.text();
+                throw new Error(`Playlist creation failed: ${createResponse.status} ${errorText}`);
+            }
+            
+            const createResult = await createResponse.json();
+            console.log('✅ Test playlist created:', {
+                operation: 'CREATED',
+                cardId: createResult.card?.cardId || 'unknown'
+            });
+            
+            return { card: createResult.card };
+            
+        } catch (error) {
+            console.error('❌ Streaming test error:', error);
+            throw error;
         }
     };
     
