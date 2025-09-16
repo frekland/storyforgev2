@@ -1687,9 +1687,16 @@ function setupDebugSystem() {
         try {
             console.log('🧪 Testing Yoto upload workflow manually...');
             
+            // First run checkYotoAuth to discover and normalize the token
+            const isAuthenticated = window.checkYotoAuth();
+            if (!isAuthenticated) {
+                console.error('❌ No access token found - please log in first');
+                return null;
+            }
+            
             const accessToken = localStorage.getItem('yoto_access_token');
             if (!accessToken) {
-                console.error('❌ No access token found - please log in first');
+                console.error('❌ Token normalization failed');
                 return null;
             }
             
@@ -1726,12 +1733,65 @@ function setupDebugSystem() {
     
     // Check authentication status
     window.checkYotoAuth = function() {
-        const token = localStorage.getItem('yoto_access_token');
-        console.log('🔐 Yoto authentication status:', {
-            hasToken: !!token,
-            tokenLength: token ? token.length : 0
+        // Check multiple possible token storage locations
+        const possibleKeys = [
+            'yoto_access_token',
+            'access_token', 
+            'accessToken',
+            'yoto_token',
+            'auth_token'
+        ];
+        
+        console.log('🔐 Checking localStorage for Yoto tokens...');
+        
+        // Log all localStorage keys for debugging
+        const allKeys = Object.keys(localStorage);
+        console.log('🗝 All localStorage keys:', allKeys);
+        
+        let foundToken = null;
+        let foundKey = null;
+        
+        // Try each possible key
+        for (const key of possibleKeys) {
+            const token = localStorage.getItem(key);
+            if (token) {
+                foundToken = token;
+                foundKey = key;
+                console.log(`✅ Found token at key: ${key}`);
+                break;
+            }
+        }
+        
+        // Also check if there are any keys containing 'token' or 'yoto'
+        const relevantKeys = allKeys.filter(key => 
+            key.toLowerCase().includes('token') || 
+            key.toLowerCase().includes('yoto') ||
+            key.toLowerCase().includes('auth')
+        );
+        
+        if (relevantKeys.length > 0) {
+            console.log('🔍 Keys containing token/yoto/auth:', relevantKeys);
+            relevantKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                console.log(`  ${key}: ${value ? value.substring(0, 20) + '...' : 'null'}`);
+            });
+        }
+        
+        if (foundToken) {
+            // Store the found token in the expected location for other functions
+            if (foundKey !== 'yoto_access_token') {
+                localStorage.setItem('yoto_access_token', foundToken);
+                console.log('🔄 Copied token to yoto_access_token for compatibility');
+            }
+        }
+        
+        console.log('🔐 Final authentication status:', {
+            hasToken: !!foundToken,
+            tokenLength: foundToken ? foundToken.length : 0,
+            foundAt: foundKey || 'none'
         });
-        return !!token;
+        
+        return !!foundToken;
     };
     
     // Create visual debug panel
