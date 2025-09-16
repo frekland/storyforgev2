@@ -889,9 +889,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            // Get form data
+            // Get form data in the format expected by the API
             const formData = {
-                mode: 'classic',
                 heroName: document.getElementById('classic-heroName')?.value || '',
                 promptSetup: document.getElementById('classic-promptSetup')?.value || '',
                 promptRising: document.getElementById('classic-promptRising')?.value || '',
