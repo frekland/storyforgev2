@@ -1762,6 +1762,27 @@ function setupDebugSystem() {
             }
         }
         
+        // Also check for JSON-stored tokens like YOTO_STORYFORGE_TOKENS
+        if (!foundToken) {
+            const yotoTokensKey = 'YOTO_STORYFORGE_TOKENS';
+            const yotoTokensStr = localStorage.getItem(yotoTokensKey);
+            
+            if (yotoTokensStr) {
+                try {
+                    const yotoTokens = JSON.parse(yotoTokensStr);
+                    console.log('🔍 Parsed YOTO_STORYFORGE_TOKENS:', yotoTokens);
+                    
+                    if (yotoTokens.accessToken) {
+                        foundToken = yotoTokens.accessToken;
+                        foundKey = `${yotoTokensKey}.accessToken`;
+                        console.log(`✅ Found token in JSON at: ${foundKey}`);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Failed to parse YOTO_STORYFORGE_TOKENS:', e);
+                }
+            }
+        }
+        
         // Also check if there are any keys containing 'token' or 'yoto'
         const relevantKeys = allKeys.filter(key => 
             key.toLowerCase().includes('token') || 
