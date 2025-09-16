@@ -443,8 +443,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('🔄 Using streaming URL due to upload error:', trackUrl);
             }
             
-            // Store URL globally for debugging
-            window.lastTrackUrl = trackUrl;
+    // Store URL globally for debugging
+    window.lastTrackUrl = trackUrl;
+    
+    // Debug function to examine working Yoto content
+    window.debugYotoContent = async function(cardId) {
+        try {
+            const accessToken = await getAccessToken();
+            const response = await fetch(`https://api.yotoplay.com/content/${cardId}`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            
+            if (!response.ok) {
+                console.error('Failed to fetch content:', response.status);
+                return;
+            }
+            
+            const content = await response.json();
+            console.log('🔍 Working Yoto content structure:', content);
+            
+            content.content?.chapters?.forEach((chapter, chapterIndex) => {
+                console.log(`📚 Chapter ${chapterIndex + 1}:`, {
+                    key: chapter.key,
+                    title: chapter.title,
+                    trackCount: chapter.tracks?.length || 0
+                });
+                
+                chapter.tracks?.forEach((track, trackIndex) => {
+                    console.log(`  🎵 Track ${trackIndex + 1}:`, {
+                        key: track.key,
+                        title: track.title,
+                        trackUrl: track.trackUrl,
+                        type: track.type,
+                        format: track.format,
+                        duration: track.duration,
+                        fileSize: track.fileSize,
+                        hasTrackUrl: !!track.trackUrl,
+                        urlType: track.trackUrl ? (track.trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'external-stream') : 'none'
+                    });
+                });
+            });
+            
+            return content;
+        } catch (error) {
+            console.error('Error examining Yoto content:', error);
+        }
+    };
             
             // Step 4: Build playlist structure
             let finalPlaylist;
@@ -467,18 +511,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nextChapterNumber = playlistData.content.chapters.length + 1;
                 const newChapterKey = String(nextChapterNumber).padStart(2, '0');
                 
+                const trackData = {
+                    key: "01",
+                    title: "Chapter One",
+                    trackUrl: trackUrl,
+                    type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
+                    format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
+                    duration: storyData.duration || 180,
+                    fileSize: storyData.fileSize || 1000000
+                };
+                
+                console.log('🎵 Track data being added to existing playlist:', {
+                    trackUrl: trackData.trackUrl,
+                    type: trackData.type,
+                    format: trackData.format,
+                    duration: trackData.duration,
+                    fileSize: trackData.fileSize,
+                    isStreamingUrl: !trackUrl.startsWith('https://api.yotoplay.com'),
+                    urlLength: trackUrl.length
+                });
+                
                 const newChapter = {
                     key: newChapterKey,
                     title: storyData.heroName || `Story ${nextChapterNumber}`,
-                    tracks: [{
-                        key: "01",
-                        title: "Chapter One",
-                        trackUrl: trackUrl,
-                        type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                        format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
-                        duration: storyData.duration || 180,
-                        fileSize: storyData.fileSize || 1000000
-                    }],
+                    tracks: [trackData],
                     display: {
                         icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8"
                     }
@@ -524,18 +580,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create new playlist
                 console.log("🆕 Creating new playlist...");
                 
+                const trackData = {
+                    key: "01",
+                    title: "Chapter One",
+                    trackUrl: trackUrl,
+                    type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
+                    format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
+                    duration: storyData.duration || 180,
+                    fileSize: storyData.fileSize || 1000000
+                };
+                
+                console.log('🎵 Track data being added to new playlist:', {
+                    trackUrl: trackData.trackUrl,
+                    type: trackData.type,
+                    format: trackData.format,
+                    duration: trackData.duration,
+                    fileSize: trackData.fileSize,
+                    isStreamingUrl: !trackUrl.startsWith('https://api.yotoplay.com'),
+                    urlLength: trackUrl.length
+                });
+                
                 const newChapter = {
                     key: "01",
                     title: storyData.heroName || "Story 1",
-                    tracks: [{
-                        key: "01",
-                        title: "Chapter One",
-                        trackUrl: trackUrl,
-                        type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                        format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
-                        duration: storyData.duration || 180,
-                        fileSize: storyData.fileSize || 1000000
-                    }],
+                    tracks: [trackData],
                     display: {
                         icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8"
                     }
@@ -565,6 +633,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 chaptersCount: finalPlaylist.content.chapters.length,
                 hasCover: !!(finalPlaylist.metadata.cover),
                 totalDuration: finalPlaylist.metadata.media.duration
+            });
+            
+            // Log the complete track details that will be sent to Yoto
+            finalPlaylist.content.chapters.forEach((chapter, chapterIndex) => {
+                console.log(`🎵 Chapter ${chapterIndex + 1} tracks:`);
+                chapter.tracks?.forEach((track, trackIndex) => {
+                    console.log(`  📀 Track ${trackIndex + 1}:`, {
+                        title: track.title,
+                        trackUrl: track.trackUrl?.substring(0, 80) + '...',
+                        fullTrackUrl: track.trackUrl,
+                        type: track.type,
+                        format: track.format,
+                        duration: track.duration,
+                        fileSize: track.fileSize
+                    });
+                });
             });
             
             // Step 5: Submit to Yoto API
