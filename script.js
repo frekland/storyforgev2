@@ -1534,9 +1534,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Format-specific test functions
+    window.testMinimal = () => testDummyAudio('minimal');
     window.testSimple = () => testDummyAudio('simple');
     window.testWAV22 = () => testDummyAudio('wav22');
     window.testWAV44 = () => testDummyAudio('wav44');
+    window.testYotoMinimal = () => testYotoDummy('minimal');
     window.testYotoWAV22 = () => testYotoDummy('wav22');
     window.testYotoWAV44 = () => testYotoDummy('wav44');
     window.testYotoSimple = () => testYotoDummy('simple');
