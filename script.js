@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('⚙️ Step 3: Waiting for transcoding...');
                 let transcodedAudio = null;
                 let attempts = 0;
-                const maxAttempts = 30; // 15 seconds timeout
+                const maxAttempts = 60; // 30 seconds timeout
                 
                 while (attempts < maxAttempts) {
                     const transcodeResponse = await fetch(
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (!transcodedAudio) {
-                    throw new Error('Transcoding timed out after 15 seconds');
+                    throw new Error('Transcoding timed out after 30 seconds');
                 }
                 
                 // STEP 4: Create permanent trackUrl with yoto:#hash
@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         hasTrackUrl: !!track.trackUrl,
                         urlType: track.trackUrl ? 
                             (track.trackUrl.startsWith('yoto:#') ? 'permanent-hash' : 
-                             (track.trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'external-stream')) : 'none'
+                             (track.trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-audio' : 'external-stream')) : 'none'
                     });
                 });
             });
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     key: "01",
                     title: "Chapter One",
                     trackUrl: trackUrl,
-                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "file" : "stream",
+                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "audio" : "stream",
                     format: "mp3", // Always MP3 now, matching Yoto's official example
                     duration: storyData.duration || (mediaInfo?.duration) || 180,
                     fileSize: storyData.fileSize || (mediaInfo?.fileSize) || 1000000
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: trackData.duration,
                     fileSize: trackData.fileSize,
                     isPermanentUrl: trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com'),
-                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'stream'),
+                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-audio' : 'stream'),
                     urlLength: trackUrl.length
                 });
                 
@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     key: "01",
                     title: "Chapter One",
                     trackUrl: trackUrl,
-                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "file" : "stream",
+                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "audio" : "stream",
                     format: "mp3", // Always MP3 now, matching Yoto's official example
                     duration: storyData.duration || (mediaInfo?.duration) || 180,
                     fileSize: storyData.fileSize || (mediaInfo?.fileSize) || 1000000
@@ -654,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: trackData.duration,
                     fileSize: trackData.fileSize,
                     isPermanentUrl: trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com'),
-                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'stream'),
+                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-audio' : 'stream'),
                     urlLength: trackUrl.length
                 });
                 
