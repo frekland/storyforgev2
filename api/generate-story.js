@@ -437,18 +437,34 @@ module.exports = async function handler(req, res) {
     // Mode 2: Yoto servers request audio stream
     try {
       const timestamp = new Date().toISOString();
-      console.log(`🎵 [${timestamp}] GET request received for audio streaming`);
+      console.log(`🎵 [${timestamp}] *** STREAMING REQUEST RECEIVED ***`);
       console.log('📋 Query parameters:', req.query);
       console.log('🌐 Request headers (full):', req.headers);
-      console.log('🔍 Key headers analysis:', {
-        'user-agent': req.headers['user-agent'],
+      
+      // Special detection for Yoto requests
+      const userAgent = req.headers['user-agent'] || '';
+      const isYotoRequest = userAgent.toLowerCase().includes('yoto') || 
+                           req.headers['origin'] === 'https://yotoplay.com' ||
+                           req.headers['referer']?.includes('yoto');
+      
+      console.log('🔍 Request analysis:', {
+        'user-agent': userAgent,
+        'is-yoto-request': isYotoRequest,
         'accept': req.headers['accept'],
         'origin': req.headers['origin'],
         'referer': req.headers['referer'],
-        'range': req.headers['range'], // Important for streaming
+        'range': req.headers['range'],
         'connection': req.headers['connection'],
-        'accept-encoding': req.headers['accept-encoding']
+        'accept-encoding': req.headers['accept-encoding'],
+        'x-forwarded-for': req.headers['x-forwarded-for'],
+        'cf-connecting-ip': req.headers['cf-connecting-ip']
       });
+      
+      if (isYotoRequest) {
+        console.log('🎉 *** CONFIRMED YOTO REQUEST DETECTED ***');
+      } else {
+        console.log('🤔 Non-Yoto request (browser/debug tool)');
+      }
       
       // Set CORS headers immediately
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -510,10 +526,18 @@ module.exports = async function handler(req, res) {
         res.status(200).end();
       } else {
         // Send the audio buffer as the response
-        console.log('✅ Successfully streaming audio:', {
+        console.log('✅ *** SUCCESSFULLY STREAMING AUDIO ***');
+        console.log('📤 Audio details:', {
           contentLength: audioContent.length,
-          contentType: 'audio/mpeg'
+          contentType: 'audio/mpeg',
+          isYotoRequest: isYotoRequest,
+          userAgent: userAgent.substring(0, 100) // First 100 chars
         });
+        
+        if (isYotoRequest) {
+          console.log('🎉 *** YOTO SUCCESSFULLY RECEIVED AUDIO ***');
+        }
+        
         res.status(200).send(audioContent);
       }
 
