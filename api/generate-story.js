@@ -1,14 +1,24 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const textToSpeech = require('@google-cloud/text-to-speech');
 require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+// --- Google Cloud TTS Client (Fallback) ---
+const ttsClient = new textToSpeech.TextToSpeechClient({
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+});
+
 // --- OpenAI TTS Configuration ---
 // Using ttsopenai.com API for better audio compatibility with Yoto
 const OPENAI_TTS_API_URL = 'https://ttsopenai.com/api/tts';
 const OPENAI_API_KEY = 'tts-c12443d1d4e2e42d385fe3d040ce401e';
+const USE_OPENAI_TTS = true; // Set to false to use Google TTS fallback
 
 // Helper function for Gemini image processing
 function fileToGenerativePart(base64Data, mimeType) {
@@ -260,9 +270,25 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     textLength: cleanStoryText.length
   });
   
-  // Convert Story Text to Speech using OpenAI TTS
+  // Convert Story Text to Speech using OpenAI TTS (with Google TTS fallback)
   let audioContent;
   
+  if (USE_OPENAI_TTS) {
+    try {
+      console.log('🎵 Attempting OpenAI TTS...');
+      audioContent = await generateOpenAITTS(cleanStoryText, voiceSettings);
+    } catch (openaiError) {
+      console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS:', openaiError.message);
+      audioContent = await generateGoogleTTS(cleanStoryText, age);
+    }
+  } else {
+    console.log('🎵 Using Google TTS (OpenAI disabled)');
+    audioContent = await generateGoogleTTS(cleanStoryText, age);
+  }
+}
+
+// OpenAI TTS Generation Function
+async function generateOpenAITTS(cleanStoryText, voiceSettings) {
   try {
     const requestBody = {
       model: 'tts-1',
@@ -325,6 +351,35 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     // Fallback error message
     throw new Error(`Audio generation failed: ${error.message}. Please try again.`);
   }
+}
+
+// Google TTS Fallback Function
+async function generateGoogleTTS(cleanStoryText, age) {
+  console.log('🎵 Generating audio with Google TTS fallback');
+  
+  const voiceSettings = {
+    languageCode: 'en-GB',
+    name: age === '3' ? 'en-GB-Wavenet-A' : age === '6' ? 'en-GB-Wavenet-C' : 'en-GB-Wavenet-B',
+    ssmlGender: age === '9' || age === '12' ? 'MALE' : 'FEMALE'
+  };
+  
+  const request = {
+    input: { text: cleanStoryText },
+    voice: voiceSettings,
+    audioConfig: {
+      audioEncoding: 'MP3',
+      speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
+      volumeGainDb: 2.0
+    }
+  };
+  
+  const [response] = await ttsClient.synthesizeSpeech(request);
+  console.log('✅ Google TTS generation successful:', {
+    audioSize: response.audioContent.length,
+    format: 'mp3'
+  });
+  
+  return response.audioContent;
   
   return { 
     storyText: cleanStoryText, // Return clean text for UI
