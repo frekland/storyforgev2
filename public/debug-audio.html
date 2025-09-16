@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Debug - Minimal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        audio {
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        
+        .logs {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Minimal Audio Debug Test</h1>
+        
+        <div class="status">
+            <strong>Purpose:</strong> Test audio creation and playback without any complex event listeners
+        </div>
+        
+        <div class="controls">
+            <button onclick="generateTestStory()">📝 Generate Test Story</button>
+            <button onclick="testStreamingUrl()" disabled id="streamBtn">🌐 Test Streaming URL</button>
+            <button onclick="clearLogs()">🧹 Clear Logs</button>
+        </div>
+        
+        <audio id="testAudio" controls>
+            Your browser does not support the audio element.
+        </audio>
+        
+        <div class="status" id="status">Ready to test...</div>
+        
+        <h3>Debug Logs:</h3>
+        <div class="logs" id="logs">Starting debug session...\n</div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentStreamingUrl = null;
+        let logCount = 0;
+        
+        // Simple logging function
+        function debugLog(message, type = 'info') {
+            logCount++;
+            const timestamp = new Date().toLocaleTimeString();
+            const logsDiv = document.getElementById('logs');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            logsDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            // Prevent infinite logging
+            if (logCount > 100) {
+                logsDiv.textContent += `[${timestamp}] ⚠️ Log limit reached - stopping to prevent infinite loops\n`;
+                return;
+            }
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').textContent = 'Logs cleared...\n';
+            logCount = 0;
+        }
+        
+        // Utility function to convert base64 to blob
+        function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+            debugLog('Converting base64 to blob...');
+            try {
+                const byteCharacters = atob(b64Data);
+                const byteArrays = [];
+
+                for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                    const slice = byteCharacters.slice(offset, offset + sliceSize);
+                    const byteNumbers = new Array(slice.length);
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
+                }
+
+                const blob = new Blob(byteArrays, { type: contentType });
+                debugLog(`Blob created successfully: ${blob.size} bytes`, 'success');
+                return blob;
+            } catch (error) {
+                debugLog(`Blob conversion failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Generate a test story
+        async function generateTestStory() {
+            debugLog('=== STARTING TEST STORY GENERATION ===');
+            updateStatus('Generating test story...', 'info');
+            
+            try {
+                const response = await fetch('/api/generate-story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        heroName: 'Test Hero',
+                        promptSetup: 'a simple test story',
+                        promptRising: 'everything works perfectly',
+                        promptClimax: 'the audio plays without issues',
+                        age: '6',
+                        surpriseMode: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                debugLog('Story generation successful', 'success');
+                debugLog(`Story length: ${data.story?.length || 0} characters`);
+                debugLog(`Audio data length: ${data.audio?.length || 0} characters`);
+                debugLog(`File size: ${data.fileSize || 0} bytes`);
+                
+                if (data.audio) {
+                    setupAudioPlayer(data.audio);
+                    setupStreamingUrl(data);
+                } else {
+                    debugLog('No audio data received', 'error');
+                    updateStatus('No audio data received', 'error');
+                }
+                
+            } catch (error) {
+                debugLog(`Story generation failed: ${error.message}`, 'error');
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Setup audio player with ZERO event listeners to prevent loops
+        function setupAudioPlayer(base64Audio) {
+            debugLog('=== SETTING UP AUDIO PLAYER ===');
+            
+            try {
+                const audioPlayer = document.getElementById('testAudio');
+                
+                // Clear any existing source
+                audioPlayer.removeAttribute('src');
+                audioPlayer.load();
+                
+                // Convert base64 to blob
+                const audioBlob = b64toBlob(base64Audio, 'audio/mpeg');
+                const audioBlobUrl = URL.createObjectURL(audioBlob);
+                
+                debugLog(`Created blob URL: ${audioBlobUrl}`);
+                
+                // Set source - NO EVENT LISTENERS AT ALL
+                audioPlayer.src = audioBlobUrl;
+                audioPlayer.style.display = 'block';
+                
+                debugLog('Audio player setup complete - NO EVENT LISTENERS ADDED', 'success');
+                updateStatus('Audio ready - click play button to test', 'success');
+                
+            } catch (error) {
+                debugLog(`Audio setup failed: ${error.message}`, 'error');
+                updateStatus(`Audio setup failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Setup streaming URL for testing
+        function setupStreamingUrl(storyData) {
+            const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
+            streamingUrl.searchParams.set('heroName', 'Test Hero');
+            streamingUrl.searchParams.set('promptSetup', 'a simple test story');
+            streamingUrl.searchParams.set('promptRising', 'everything works perfectly');
+            streamingUrl.searchParams.set('promptClimax', 'the audio plays without issues');
+            streamingUrl.searchParams.set('age', '6');
+            streamingUrl.searchParams.set('audioOnly', 'true');
+            
+            currentStreamingUrl = streamingUrl.toString();
+            document.getElementById('streamBtn').disabled = false;
+            
+            debugLog(`Streaming URL ready: ${currentStreamingUrl}`);
+        }
+        
+        // Test streaming URL
+        async function testStreamingUrl() {
+            if (!currentStreamingUrl) {
+                debugLog('No streaming URL available', 'error');
+                return;
+            }
+            
+            debugLog('=== TESTING STREAMING URL ===');
+            updateStatus('Testing streaming URL...', 'info');
+            
+            try {
+                const response = await fetch(currentStreamingUrl);
+                debugLog(`Streaming response: ${response.status} ${response.statusText}`);
+                debugLog(`Content-Type: ${response.headers.get('content-type')}`);
+                debugLog(`Content-Length: ${response.headers.get('content-length')}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    debugLog(`Streaming blob size: ${blob.size} bytes`);
+                    
+                    // Create a second audio player for streaming test
+                    const streamingAudio = document.createElement('audio');
+                    streamingAudio.controls = true;
+                    streamingAudio.style.width = '100%';
+                    streamingAudio.style.marginTop = '10px';
+                    streamingAudio.src = URL.createObjectURL(blob);
+                    
+                    // Add it after the first audio player
+                    const firstAudio = document.getElementById('testAudio');
+                    firstAudio.parentNode.insertBefore(streamingAudio, firstAudio.nextSibling);
+                    
+                    debugLog('Streaming URL test successful', 'success');
+                    updateStatus('Streaming URL works! Second audio player added.', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                debugLog(`Streaming URL test failed: ${error.message}`, 'error');
+                updateStatus(`Streaming URL failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        debugLog('Debug page loaded - ready for testing');
+        updateStatus('Click "Generate Test Story" to begin', 'info');
+    </script>
+</body>
+</html>
