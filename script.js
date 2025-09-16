@@ -348,8 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: audioData.duration || 0
                 });
                 
-                // Convert base64 to blob for upload
-                const audioBlob = b64toBlob(audioData.audio, 'audio/mpeg');
+                // Convert base64 to blob for upload (now WAV format)
+                const audioBlob = b64toBlob(audioData.audio, 'audio/wav');
                 console.log('🔄 Converted to blob:', audioBlob.size, 'bytes');
                 
                 // Upload to Yoto's media API
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'audio/mpeg'
+                        'Content-Type': 'audio/wav'
                     },
                     body: audioBlob
                 });
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: "Chapter One",
                         trackUrl: trackUrl,
                         type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                        format: "mp3",
+                        format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
                         duration: storyData.duration || 180,
                         fileSize: storyData.fileSize || 1000000
                     }],
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: "Chapter One",
                         trackUrl: trackUrl,
                         type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                        format: "mp3",
+                        format: trackUrl.startsWith('https://api.yotoplay.com') ? "mp3" : "wav",
                         duration: storyData.duration || 180,
                         fileSize: storyData.fileSize || 1000000
                     }],
