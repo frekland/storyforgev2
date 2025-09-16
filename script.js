@@ -318,16 +318,23 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Generate the audio first
                 console.log('🎼 Generating audio for Yoto upload...');
+                
+                // Prepare the request body - exactly matching what was sent to the main story generation
+                const audioRequestBody = {
+                    heroName: storyData.heroName || 'Hero',
+                    promptSetup: storyData.promptSetup || '',
+                    promptRising: storyData.promptRising || '',
+                    promptClimax: storyData.promptClimax || '',
+                    age: storyData.age || '6',
+                    surpriseMode: storyData.surpriseMode || false
+                };
+                
+                console.log('📝 Audio generation request body:', audioRequestBody);
+                
                 const audioResponse = await fetch('/api/generate-story', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        heroName: storyData.heroName || 'Hero',
-                        promptSetup: storyData.promptSetup || '',
-                        promptRising: storyData.promptRising || '',
-                        promptClimax: storyData.promptClimax || '',
-                        age: storyData.age || '6'
-                    })
+                    body: JSON.stringify(audioRequestBody)
                 });
                 
                 if (!audioResponse.ok) {
@@ -376,17 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         promptRising: (storyData.promptRising || '').trim(),
                         promptClimax: (storyData.promptClimax || '').trim(),
                         age: (storyData.age || '6').trim(),
+                        surpriseMode: storyData.surpriseMode ? 'true' : 'false',
                         audioOnly: 'true'
                     };
                     
-                    // Log parameters being used
-                    console.log('📝 Story parameters for streaming:', {
-                        heroName: params.heroName,
-                        promptSetup: params.promptSetup || '[MISSING]',
-                        promptRising: params.promptRising || '[MISSING]',
-                        promptClimax: params.promptClimax || '[MISSING]',
-                        age: params.age
-                    });
+                // Log parameters being used
+                console.log('📝 Story parameters for streaming:', {
+                    heroName: params.heroName,
+                    promptSetup: params.promptSetup || '[MISSING]',
+                    promptRising: params.promptRising || '[MISSING]',
+                    promptClimax: params.promptClimax || '[MISSING]',
+                    age: params.age,
+                    surpriseMode: params.surpriseMode
+                });
                     
                     Object.entries(params).forEach(([key, value]) => {
                         if (value && value.trim()) { // Only add non-empty values
@@ -410,6 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     promptRising: (storyData.promptRising || '').trim(),
                     promptClimax: (storyData.promptClimax || '').trim(),
                     age: (storyData.age || '6').trim(),
+                    surpriseMode: storyData.surpriseMode ? 'true' : 'false',
                     audioOnly: 'true'
                 };
                 
@@ -419,7 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     promptSetup: params.promptSetup || '[MISSING]',
                     promptRising: params.promptRising || '[MISSING]',
                     promptClimax: params.promptClimax || '[MISSING]',
-                    age: params.age
+                    age: params.age,
+                    surpriseMode: params.surpriseMode
                 });
                 
                 Object.entries(params).forEach(([key, value]) => {
@@ -1166,7 +1177,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         promptRising: storyData.promptRising,
                         promptClimax: storyData.promptClimax,
                         age: storyData.age,
-                        heroImage: storyData.heroImage
+                        heroImage: storyData.heroImage,
+                        surpriseMode: storyData.surpriseMode
                     }, accessToken);
                     showAlert('Story successfully uploaded as individual Yoto card!');
                     console.log('StoryForge Playlist Updated:', myoContent);
