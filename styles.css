@@ -1906,3 +1906,15 @@ button[type="submit"]:hover {
     gap: 10px;
   }
 }
+
+/* Required field indicator */
+.required {
+  color: var(--accent-color);
+  font-weight: bold;
+  margin-left: 2px;
+}
+
+[data-theme="dark"] .required {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px var(--accent-color);
+}

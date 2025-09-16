@@ -589,18 +589,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         <form id="classic-story-form" class="story-form">
                             <div class="input-group paper-scrap">
                                 <label for="classic-heroName" class="playful-label">
-                                    <span class="label-text">Hero's Name</span>
+                                    <span class="label-text">Hero's Name <span class="required">*</span></span>
                                     <span class="label-doodle">🦸</span>
                                 </label>
-                                <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
+                                <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna..." required>
                             </div>
 
                             <div class="input-group paper-scrap">
                                 <label for="classic-promptSetup" class="playful-label">
-                                    <span class="label-text">The Beginning</span>
+                                    <span class="label-text">The Beginning <span class="required">*</span></span>
                                     <span class="label-doodle">🌅</span>
                                 </label>
-                                <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                                <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream..." required>
                             </div>
                             
                             <div class="input-group paper-scrap">
@@ -891,14 +891,26 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Get form data in the format expected by the API
             const formData = {
-                heroName: document.getElementById('classic-heroName')?.value || '',
-                promptSetup: document.getElementById('classic-promptSetup')?.value || '',
-                promptRising: document.getElementById('classic-promptRising')?.value || '',
-                promptClimax: document.getElementById('classic-promptClimax')?.value || '',
+                heroName: document.getElementById('classic-heroName')?.value.trim() || '',
+                promptSetup: document.getElementById('classic-promptSetup')?.value.trim() || '',
+                promptRising: document.getElementById('classic-promptRising')?.value.trim() || '',
+                promptClimax: document.getElementById('classic-promptClimax')?.value.trim() || '',
                 age: document.getElementById('classic-story-age')?.value || '6',
                 heroImage: heroImageBase64,
                 surpriseMode: isSurpriseMode
             };
+            
+            // Validate required fields for non-surprise mode
+            if (!isSurpriseMode) {
+                if (!formData.heroName) {
+                    showAlert('Please enter a hero name for your story!');
+                    return;
+                }
+                if (!formData.promptSetup) {
+                    showAlert('Please describe the beginning of your story!');
+                    return;
+                }
+            }
             
             console.log('Sending story generation request:', formData);
             
