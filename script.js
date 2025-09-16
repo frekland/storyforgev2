@@ -170,9 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loginButton.addEventListener('click', handleLogin);
     logoutButton.addEventListener('click', handleLogout);
-    
-    // Initialize mode selection after DOM elements are ready
-    initializeModeSelection();
     // 🎯 PROPER: Create or update StoryForge playlist with new stories as chapters
     async function createOrUpdateStoryForgePlaylist(storyData, accessToken) {
         const PLAYLIST_TITLE = "StoryForge";
@@ -983,6 +980,9 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     };
+    
+    // Initialize mode selection after all functions are defined
+    initializeModeSelection();
     
     // Initial check on page load
     checkAuthentication();
