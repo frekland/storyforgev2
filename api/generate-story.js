@@ -343,6 +343,9 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
         speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95, // Slower for younger children
         pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0, // Higher pitch for younger children
         volumeGainDb: 2.0, // Slightly louder for clarity
+        // Yoto-optimized settings for better compatibility
+        sampleRateHertz: 22050, // Standard rate compatible with most players
+        effectsProfileId: ['telephony-class-application'] // Optimize for device playback
       },
     };
     const [ssmlResponse] = await ttsClient.synthesizeSpeech(ssmlRequest);
@@ -364,6 +367,9 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
         speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
         pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0,
         volumeGainDb: 2.0,
+        // Yoto-optimized settings for better compatibility
+        sampleRateHertz: 22050, // Standard rate compatible with most players
+        effectsProfileId: ['telephony-class-application'] // Optimize for device playback
       },
     };
     const [textResponse] = await ttsClient.synthesizeSpeech(textRequest);
@@ -443,9 +449,11 @@ module.exports = async function handler(req, res) {
       
       // Special detection for Yoto requests
       const userAgent = req.headers['user-agent'] || '';
+      // Yoto uses Android Dalvik user-agent based on the logs
       const isYotoRequest = userAgent.toLowerCase().includes('yoto') || 
                            req.headers['origin'] === 'https://yotoplay.com' ||
-                           req.headers['referer']?.includes('yoto');
+                           req.headers['referer']?.includes('yoto') ||
+                           (userAgent.includes('Dalvik') && req.headers['icy-metadata']); // Android with streaming metadata
       
       console.log('🔍 Request analysis:', {
         'user-agent': userAgent,
@@ -510,6 +518,15 @@ module.exports = async function handler(req, res) {
       res.setHeader('Content-Disposition', 'inline'); // Ensure inline playback
       // Cache the response to reduce load and improve performance
       res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+      
+      // Additional headers for better compatibility
+      if (isYotoRequest) {
+        console.log('🎵 Adding Yoto-specific headers for better compatibility');
+        res.setHeader('X-Content-Duration', Math.ceil((storyText || '').split(' ').length / 2.5)); // Estimated duration
+        res.setHeader('icy-name', 'StoryForge Audio Story');
+        res.setHeader('icy-genre', 'Children Story');
+        res.setHeader('icy-description', 'AI-generated story for children');
+      }
       
       console.log('📤 Response headers set:', {
         'Content-Type': 'audio/mpeg',
