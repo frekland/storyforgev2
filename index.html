@@ -49,108 +49,107 @@
         </div>
 
         <div id="app-content" class="app-container hidden">
-            <div class="story-form-container">
-                <div class="form-header paper-scrap">
-                    <h2 class="form-title">Story Ingredients 🌲</h2>
-                    <div class="form-doodles">
-                        <span class="doodle">★</span>
-                        <span class="doodle">♡</span>
-                        <span class="doodle">✨</span>
-                    </div>
+            <!-- Welcome Section -->
+            <div class="welcome-section paper-scrap">
+                <div class="welcome-content">
+                    <h2 class="welcome-title">
+                        <span>Choose Your Story Adventure!</span>
+                        <div class="title-doodles">
+                            <span class="doodle">✨</span>
+                            <span class="doodle">🎭</span>
+                            <span class="doodle">✨</span>
+                        </div>
+                    </h2>
+                    <p class="welcome-description">
+                        Pick a storytelling mode below to start creating your magical adventure!
+                    </p>
                 </div>
-                
-                <form id="quest-form" class="story-form">
-                    <div class="input-group paper-scrap">
-                        <label for="heroName" class="playful-label">
-                            <span class="label-text">Hero's Name</span>
-                            <span class="label-doodle">🦸</span>
-                        </label>
-                        <input type="text" id="heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
-                    </div>
+            </div>
 
-                    <div class="input-group paper-scrap">
-                        <label for="promptSetup" class="playful-label">
-                            <span class="label-text">The Beginning</span>
-                            <span class="label-doodle">🌅</span>
-                        </label>
-                        <input type="text" id="promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
-                    </div>
-                    
-                    <div class="input-group paper-scrap">
-                        <label for="promptRising" class="playful-label">
-                            <span class="label-text">The Challenge</span>
-                            <span class="label-doodle">⚡</span>
-                        </label>
-                        <input type="text" id="promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
-                    </div>
-
-                    <div class="input-group paper-scrap">
-                        <label for="promptClimax" class="playful-label">
-                            <span class="label-text">The Climax</span>
-                            <span class="label-doodle">🎆</span>
-                        </label>
-                        <input type="text" id="promptClimax" class="paper-input" placeholder="e.g., the dragon was tickled until it laughed...">
-                    </div>
-                    
-                    <div class="input-group paper-scrap image-upload-section">
-                        <label for="heroImage" class="playful-label">
-                            <span class="label-text">Draw Your Character</span>
-                            <span class="label-doodle">🎨</span>
-                        </label>
-                        <div id="image-upload-area" class="paper-upload">
-                            <input type="file" id="heroImage" accept="image/*" class="hidden-input">
-                            <div class="upload-content">
-                                <button type="button" class="upload-btn" onclick="document.getElementById('heroImage').click()">
-                                    <span>📎 Upload Drawing</span>
-                                </button>
-                                <p class="upload-hint">or drag and drop your masterpiece here!</p>
-                                <div id="image-preview" class="preview-container hidden"></div>
-                            </div>
-                            <div class="upload-doodles">
-                                <span class="doodle-arrow">→</span>
-                                <span class="doodle-star">★</span>
-                            </div>
+            <!-- Mode Selection Grid -->
+            <div class="mode-selection-grid">
+                <button class="mode-btn paper-scrap" data-mode="classic">
+                    <div class="mode-icon">📚</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Classic Story</h3>
+                        <p class="mode-description">Create traditional tales with heroes, adventures, and magical endings</p>
+                        <div class="mode-doodles">
+                            <span>⚔️</span>
+                            <span>🏰</span>
+                            <span>✨</span>
                         </div>
                     </div>
+                </button>
 
-                    <div class="input-group paper-scrap">
-                        <label for="story-age" class="playful-label">
-                            <span class="label-text">Story Length</span>
-                            <span class="label-doodle">📆</span>
-                        </label>
-                        <select id="story-age" class="paper-select" required>
-                            <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
-                            <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
-                            <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
-                            <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
-                        </select>
-                    </div>
-
-                    <div class="submit-section paper-scrap">
-                        <button type="submit" class="forge-btn">
-                            <span class="btn-text">✨ Forge My Story! ✨</span>
-                            <div class="btn-sparkles">
-                                <span>✨</span>
-                                <span>★</span>
-                                <span>✨</span>
-                            </div>
-                        </button>
-                        
-                        <div class="button-divider">
-                            <span class="divider-text">or</span>
-                            <div class="divider-line"></div>
+                <button class="mode-btn paper-scrap" data-mode="wanted-poster">
+                    <div class="mode-icon">🤠</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Wanted Poster</h3>
+                        <p class="mode-description">Create Wild West adventures with outlaws, sheriffs, and frontier justice</p>
+                        <div class="mode-doodles">
+                            <span>🌵</span>
+                            <span>⭐</span>
+                            <span>🐎</span>
                         </div>
-                        
-                        <button type="button" id="surprise-me-btn" class="surprise-btn">
-                            <span class="btn-text">🎲 Surprise Me! 🎲</span>
-                            <div class="btn-sparkles">
-                                <span>🎊</span>
-                                <span>🎉</span>
-                                <span>🎊</span>
-                            </div>
-                        </button>
                     </div>
-                </form>
+                </button>
+
+                <button class="mode-btn paper-scrap" data-mode="homework-forge">
+                    <div class="mode-icon">📝</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Homework Forge</h3>
+                        <p class="mode-description">Turn learning into adventure! Educational stories that make subjects exciting</p>
+                        <div class="mode-doodles">
+                            <span>🧮</span>
+                            <span>🔬</span>
+                            <span>📖</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn paper-scrap" data-mode="sleep-forge">
+                    <div class="mode-icon">🌙</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Sleep Forge</h3>
+                        <p class="mode-description">Gentle, calming bedtime stories with soothing narration</p>
+                        <div class="mode-doodles">
+                            <span>⭐</span>
+                            <span>🛏️</span>
+                            <span>💤</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn paper-scrap" data-mode="monster-maker">
+                    <div class="mode-icon">👹</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Monster Maker</h3>
+                        <p class="mode-description">Design custom creatures and hear their wild adventures come to life</p>
+                        <div class="mode-doodles">
+                            <span>🎨</span>
+                            <span>🦄</span>
+                            <span>🐉</span>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn paper-scrap" data-mode="help">
+                    <div class="mode-icon">💡</div>
+                    <div class="mode-content">
+                        <h3 class="mode-title">Help & Templates</h3>
+                        <p class="mode-description">Get tips, guides, and downloadable templates for better storytelling</p>
+                        <div class="mode-doodles">
+                            <span>📋</span>
+                            <span>⭐</span>
+                            <span>🎯</span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Dynamic Mode Content Area -->
+            <div id="mode-content" class="mode-content-container hidden">
+                <!-- Mode-specific content will be dynamically loaded here -->
             </div>
         
             <div id="story-output" class="story-output-container hidden">
