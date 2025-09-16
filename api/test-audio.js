@@ -22,7 +22,12 @@ export default async function handler(req, res) {
     // Format-specific audio generation
     let audioBuffer, contentType;
     
-    if (format === 'wav44') {
+    if (format === 'simple') {
+      // Ultra simple WAV for testing
+      audioBuffer = createSimpleWAV();
+      contentType = 'audio/wav';
+      console.log(`🎵 Generated simple WAV: ${audioBuffer.length} bytes`);
+    } else if (format === 'wav44') {
       // WAV at 44.1kHz (CD quality)
       const result = generateWAV(44100, 5);
       audioBuffer = result.buffer;
@@ -85,6 +90,58 @@ function generateWAV(sampleRate, duration) {
   buffer.set(pcmBytes, wavHeader.length);
   
   return { buffer, samples, sampleRate, duration };
+}
+
+// Create a minimal WAV file for testing
+function createSimpleWAV() {
+  const sampleRate = 8000; // Very low sample rate for simplicity
+  const duration = 1; // 1 second
+  const samples = sampleRate * duration;
+  const frequency = 440;
+  
+  // Generate simple sine wave
+  const pcmData = new Int16Array(samples);
+  for (let i = 0; i < samples; i++) {
+    const sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 16384; // 50% volume
+    pcmData[i] = Math.max(-32768, Math.min(32767, sample));
+  }
+  
+  // Create WAV header for 8kHz 16-bit mono
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  
+  const byteRate = sampleRate * 2;
+  const dataSize = samples * 2;
+  const fileSize = 36 + dataSize;
+  
+  // RIFF header
+  view.setUint32(0, 0x46464952, false); // "RIFF"
+  view.setUint32(4, fileSize, true);
+  view.setUint32(8, 0x45564157, false); // "WAVE"
+  
+  // fmt chunk
+  view.setUint32(12, 0x20746d66, false); // "fmt "
+  view.setUint32(16, 16, true); // chunk size
+  view.setUint16(20, 1, true); // PCM format
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, 2, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
+  
+  // data chunk
+  view.setUint32(36, 0x61746164, false); // "data"
+  view.setUint32(40, dataSize, true);
+  
+  const headerBytes = new Uint8Array(header);
+  const pcmBytes = new Uint8Array(pcmData.buffer);
+  
+  // Combine header and data
+  const buffer = new Uint8Array(headerBytes.length + pcmBytes.length);
+  buffer.set(headerBytes, 0);
+  buffer.set(pcmBytes, headerBytes.length);
+  
+  return buffer;
 }
 
 function createWAVHeader(samples, sampleRate) {

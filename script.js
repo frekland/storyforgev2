@@ -1398,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const blob = await response.blob();
                 simpleLog(`${formatName} success: ${blob.size} bytes audio`, 'success');
                 
-                // Add audio player
+                // Add audio player and direct link
                 const playersDiv = document.getElementById('debug-players');
                 if (playersDiv) {
                     const audioEl = document.createElement('audio');
@@ -1410,7 +1410,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     label.style.marginBottom = '5px';
                     label.style.fontWeight = 'bold';
                     
-                    playersDiv.appendChild(label);
+                    // Add direct URL link for testing
+                    const directUrl = format ? `/api/test-audio?format=${format}` : '/api/test-audio';
+                    const linkEl = document.createElement('a');
+                    linkEl.href = directUrl;
+                    linkEl.textContent = 'Direct Link';
+                    linkEl.target = '_blank';
+                    linkEl.style.marginLeft = '10px';
+                    linkEl.style.color = '#0066cc';
+                    
+                    const containerDiv = document.createElement('div');
+                    containerDiv.appendChild(label);
+                    label.appendChild(linkEl);
+                    
+                    playersDiv.appendChild(containerDiv);
                     playersDiv.appendChild(audioEl);
                 }
             } else {
@@ -1521,10 +1534,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Format-specific test functions
+    window.testSimple = () => testDummyAudio('simple');
     window.testWAV22 = () => testDummyAudio('wav22');
     window.testWAV44 = () => testDummyAudio('wav44');
     window.testYotoWAV22 = () => testYotoDummy('wav22');
     window.testYotoWAV44 = () => testYotoDummy('wav44');
+    window.testYotoSimple = () => testYotoDummy('simple');
     
     window.clearDebugLogs = () => {
         const logsDiv = document.getElementById('debug-logs-simple');
