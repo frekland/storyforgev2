@@ -216,6 +216,48 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Hidden Debug Panel - Access with ?debug=true or Ctrl+Shift+D -->
+        <div id="debug-panel" class="debug-panel hidden">
+            <div class="debug-header">
+                <h2>🔧 StoryForge Debug Panel</h2>
+                <button onclick="toggleDebugPanel()" class="debug-close">❌</button>
+            </div>
+            
+            <div class="debug-section">
+                <h3>📝 Test Parameters</h3>
+                <div class="debug-params">
+                    <input type="text" id="debug-heroName" placeholder="Hero Name" value="Test Hero" />
+                    <input type="text" id="debug-promptSetup" placeholder="Setup" value="a magical forest" />
+                    <input type="text" id="debug-promptRising" placeholder="Rising Action" value="a lost treasure" />
+                    <input type="text" id="debug-promptClimax" placeholder="Climax" value="friendship saves the day" />
+                    <input type="text" id="debug-age" placeholder="Age" value="6" />
+                </div>
+            </div>
+            
+            <div class="debug-section">
+                <h3>🧪 Streaming Tests</h3>
+                <div class="debug-buttons">
+                    <button onclick="debugTestGET()">Test GET Request</button>
+                    <button onclick="debugTestHEAD()">Test HEAD Request</button>
+                    <button onclick="debugTestPOST()">Test POST Request</button>
+                    <button onclick="debugCompareEndpoints()">Compare Endpoints</button>
+                    <button onclick="debugClearLogs()">Clear Logs</button>
+                </div>
+                
+                <div id="debug-url" class="debug-url">No URL generated</div>
+                <div id="debug-status" class="debug-status">Ready to debug</div>
+                
+                <div id="debug-audio-container" class="debug-audio-container">
+                    <!-- Debug audio players will appear here -->
+                </div>
+            </div>
+            
+            <div class="debug-section">
+                <h3>📋 Debug Logs</h3>
+                <div id="debug-logs" class="debug-logs">🚀 Debug panel initialized</div>
+            </div>
+        </div>
     </main>
     
     <div id="alert-modal" class="modal hidden">

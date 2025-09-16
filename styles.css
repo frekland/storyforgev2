@@ -1312,6 +1312,168 @@ button[type="submit"]:hover {
   transform: scale(1.1);
 }
 
+/* 🔧 DEBUG PANEL */
+.debug-panel {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 400px;
+  max-height: 80vh;
+  background: var(--bg-paper);
+  border: 3px solid var(--accent-color);
+  border-radius: 15px;
+  box-shadow: 0 8px 20px var(--shadow-dark);
+  z-index: 9999;
+  overflow-y: auto;
+  transform: translateX(420px);
+  transition: transform 0.3s ease;
+  font-size: 0.9em;
+}
+
+.debug-panel.show {
+  transform: translateX(0);
+}
+
+.debug-header {
+  background: var(--accent-color);
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px 12px 0 0;
+}
+
+.debug-header h2 {
+  margin: 0;
+  font-size: 1.2em;
+  font-family: var(--font-title);
+}
+
+.debug-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.debug-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.debug-section {
+  padding: 15px;
+  border-bottom: 1px solid var(--shadow-light);
+}
+
+.debug-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 1em;
+  color: var(--text-primary);
+}
+
+.debug-params {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.debug-params input {
+  padding: 8px;
+  border: 2px solid var(--shadow-light);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.debug-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.debug-buttons button {
+  background: var(--accent-secondary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-family: var(--font-body);
+}
+
+.debug-buttons button:hover {
+  background: var(--accent-color);
+}
+
+.debug-url, .debug-status {
+  background: var(--bg-secondary);
+  padding: 8px;
+  border-radius: 4px;
+  margin: 5px 0;
+  font-size: 0.8em;
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.debug-status.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.debug-status.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.debug-status.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.debug-logs {
+  background: #1a1a1a;
+  color: #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  height: 200px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75em;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.debug-audio-container {
+  margin: 10px 0;
+}
+
+.debug-audio-container audio {
+  width: 100%;
+  margin: 5px 0;
+}
+
+@media (max-width: 768px) {
+  .debug-panel {
+    width: 90vw;
+    right: 5vw;
+    transform: translateX(calc(90vw + 20px));
+  }
+  
+  .debug-panel.show {
+    transform: translateX(0);
+  }
+}
+
 /* 📱 RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .main-content {
