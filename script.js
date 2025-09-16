@@ -988,29 +988,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const audioPlayer = document.getElementById('story-audio-player');
             if (data.audio && audioPlayer) {
                 try {
-                    // Convert Base64 audio to blob URL for playback
-                    // The API returns raw base64, not data URL format
-                    const byteString = atob(data.audio);
-                    const ab = new ArrayBuffer(byteString.length);
-                    const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) { 
-                        ia[i] = byteString.charCodeAt(i); 
-                    }
-                    const audioBlob = new Blob([ab], { type: 'audio/mpeg' });
+                    console.log('🎵 Processing audio data...');
+                    console.log('Audio data length:', data.audio.length);
+                    console.log('File size from API:', data.fileSize);
+                    
+                    // Use improved base64 to blob conversion (from experimental code)
+                    const audioBlob = b64toBlob(data.audio, 'audio/mpeg');
                     const audioBlobUrl = URL.createObjectURL(audioBlob);
+                    
+                    console.log('Created audio blob:', audioBlob.size, 'bytes');
+                    console.log('Created blob URL:', audioBlobUrl);
                     
                     audioPlayer.src = audioBlobUrl;
                     audioPlayer.classList.remove('hidden');
                     
-                    // Add event listeners for debugging
-                    audioPlayer.addEventListener('loadedmetadata', () => {
-                        console.log('✅ Audio loaded successfully, duration:', audioPlayer.duration);
-                    });
-                    audioPlayer.addEventListener('error', (e) => {
-                        console.error('❌ Audio player error:', e);
+                    // Add comprehensive event listeners for debugging
+                    audioPlayer.addEventListener('loadstart', () => {
+                        console.log('🔄 Audio loading started');
                     });
                     
-                    console.log('🎵 Audio player setup complete with blob URL');
+                    audioPlayer.addEventListener('loadeddata', () => {
+                        console.log('📊 Audio data loaded');
+                    });
+                    
+                    audioPlayer.addEventListener('loadedmetadata', () => {
+                        console.log('✅ Audio metadata loaded - Duration:', audioPlayer.duration, 'seconds');
+                    });
+                    
+                    audioPlayer.addEventListener('canplay', () => {
+                        console.log('▶️ Audio can start playing');
+                    });
+                    
+                    audioPlayer.addEventListener('error', (e) => {
+                        console.error('❌ Audio player error:', e);
+                        console.error('Error code:', audioPlayer.error?.code);
+                        console.error('Error message:', audioPlayer.error?.message);
+                    });
+                    
+                    // Force load the audio
+                    audioPlayer.load();
+                    
+                    console.log('🎵 Audio player setup complete');
                 } catch (audioError) {
                     console.error('❌ Error setting up audio player:', audioError);
                 }
@@ -1065,6 +1083,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
         }
+    };
+    
+    // Utility function to convert Base64 to Blob (improved version from experimental code)
+    const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+
+        const blob = new Blob(byteArrays, { type: contentType });
+        return blob;
     };
     
     // Initialize mode selection after all functions are defined

@@ -385,8 +385,17 @@ module.exports = async function handler(req, res) {
       const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode } = req.body;
       
       // Validate input (skip validation for surprise mode)
-      if (!surpriseMode && (!heroName || !promptSetup)) {
-        return res.status(400).json({ message: 'Missing required story parameters.' });
+      // For regular mode, require at least one story element
+      if (!surpriseMode) {
+        const hasAtLeastOneElement = 
+          (heroName && heroName.trim()) || 
+          (promptSetup && promptSetup.trim()) || 
+          (promptRising && promptRising.trim()) || 
+          (promptClimax && promptClimax.trim());
+        
+        if (!hasAtLeastOneElement) {
+          return res.status(400).json({ message: 'Please provide at least one story element (hero name, setup, rising action, or climax).' });
+        }
       }
 
       console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
