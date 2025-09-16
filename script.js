@@ -311,9 +311,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Step 3: Upload audio directly to Yoto's media API (alternative to streaming)
-            console.log('🎵 Uploading audio directly to Yoto media API...');
+            // Step 3: Upload audio using Yoto's 4-step permanent upload workflow
+            console.log('🎵 Starting Yoto permanent upload workflow...');
             let trackUrl = null;
+            let mediaInfo = null;
+            
+            // Show progress to user
+            const progressElement = document.querySelector('.upload-progress');
+            if (progressElement) {
+                progressElement.textContent = 'Generating audio... (0%)';
+            }
             
             try {
                 // Generate the audio first
@@ -348,70 +355,127 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: audioData.duration || 0
                 });
                 
-                // Convert base64 to blob for upload (MP3 format to match Yoto's example)
+                // Store story data for later use
+                storyData.story = audioData.story;
+                storyData.duration = audioData.duration;
+                storyData.fileSize = audioData.fileSize;
+                
+                // Convert base64 to blob for upload (MP3 format)
                 const audioBlob = b64toBlob(audioData.audio, 'audio/mpeg');
                 console.log('🔄 Converted to blob:', audioBlob.size, 'bytes');
                 
-                // Upload to Yoto's media API
-                console.log('⬆️ Uploading audio to Yoto media API...');
-                const uploadResponse = await fetch('https://api.yotoplay.com/media/audio/user/me/upload', {
-                    method: 'POST',
+                if (progressElement) {
+                    progressElement.textContent = 'Getting upload URL... (10%)';
+                }
+                
+                // STEP 1: Get upload URL from Yoto's transcoding service
+                console.log('🔗 Step 1: Getting upload URL...');
+                const uploadUrlResponse = await fetch('https://api.yotoplay.com/media/transcode/audio/uploadUrl', {
+                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'audio/mpeg'
-                    },
-                    body: audioBlob
+                        'Accept': 'application/json'
+                    }
                 });
                 
-                if (uploadResponse.ok) {
-                    const uploadResult = await uploadResponse.json();
-                    trackUrl = uploadResult.mediaUrl || uploadResult.url;
-                    console.log('✅ Audio uploaded to Yoto successfully:', trackUrl);
-                } else {
-                    const uploadError = await uploadResponse.text();
-                    console.warn('⚠️ Yoto audio upload failed, falling back to streaming:', {
-                        status: uploadResponse.status,
-                        error: uploadError
-                    });
-                    
-                    // Fallback to streaming URL with ALL story parameters
-                    console.log('🔄 Building streaming URL with full story parameters...');
-                    const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
-                    const params = {
-                        heroName: (storyData.heroName || 'Hero').trim(),
-                        promptSetup: (storyData.promptSetup || '').trim(),
-                        promptRising: (storyData.promptRising || '').trim(),
-                        promptClimax: (storyData.promptClimax || '').trim(),
-                        age: (storyData.age || '6').trim(),
-                        surpriseMode: storyData.surpriseMode ? 'true' : 'false',
-                        audioOnly: 'true'
-                    };
-                    
-                // Log parameters being used
-                console.log('📝 Story parameters for streaming:', {
-                    heroName: params.heroName,
-                    promptSetup: params.promptSetup || '[MISSING]',
-                    promptRising: params.promptRising || '[MISSING]',
-                    promptClimax: params.promptClimax || '[MISSING]',
-                    age: params.age,
-                    surpriseMode: params.surpriseMode
+                if (!uploadUrlResponse.ok) {
+                    const errorText = await uploadUrlResponse.text();
+                    throw new Error(`Failed to get upload URL: ${uploadUrlResponse.status} - ${errorText}`);
+                }
+                
+                const { upload: { uploadUrl: audioUploadUrl, uploadId } } = await uploadUrlResponse.json();
+                console.log('✅ Upload URL obtained:', { uploadId, hasUrl: !!audioUploadUrl });
+                
+                if (progressElement) {
+                    progressElement.textContent = 'Uploading audio... (25%)';
+                }
+                
+                // STEP 2: Upload the audio file to the secured URL
+                console.log('⬆️ Step 2: Uploading audio file...');
+                const uploadResponse = await fetch(audioUploadUrl, {
+                    method: 'PUT',
+                    body: new Blob([audioBlob], {
+                        type: 'audio/mpeg'
+                    }),
+                    headers: {
+                        'Content-Type': 'audio/mpeg'
+                    }
                 });
-                    
-                    Object.entries(params).forEach(([key, value]) => {
-                        if (value && value.trim()) { // Only add non-empty values
-                            streamingUrl.searchParams.set(key, value);
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Audio upload failed: ${uploadResponse.status}`);
+                }
+                
+                console.log('✅ Audio uploaded successfully, waiting for transcoding...');
+                
+                if (progressElement) {
+                    progressElement.textContent = 'Transcoding audio... (50%)';
+                }
+                
+                // STEP 3: Wait for transcoding to complete
+                console.log('⚙️ Step 3: Waiting for transcoding...');
+                let transcodedAudio = null;
+                let attempts = 0;
+                const maxAttempts = 30; // 15 seconds timeout
+                
+                while (attempts < maxAttempts) {
+                    const transcodeResponse = await fetch(
+                        `https://api.yotoplay.com/media/upload/${uploadId}/transcoded?loudnorm=false`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Accept': 'application/json'
+                            }
                         }
-                    });
+                    );
                     
-                    trackUrl = streamingUrl.toString();
-                    console.log('🔄 Using streaming URL as fallback:', trackUrl);
+                    if (transcodeResponse.ok) {
+                        const data = await transcodeResponse.json();
+                        
+                        if (data.transcode && data.transcode.transcodedSha256) {
+                            console.log('✅ Transcoding complete:', data.transcode);
+                            transcodedAudio = data.transcode;
+                            mediaInfo = transcodedAudio.transcodedInfo;
+                            break;
+                        }
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                    
+                    const progress = 50 + (attempts / maxAttempts) * 25;
+                    if (progressElement) {
+                        progressElement.textContent = `Transcoding audio... (${Math.round(progress)}%)`;
+                    }
+                    console.log(`⏳ Transcoding progress: ${Math.round(progress)}%`);
+                }
+                
+                if (!transcodedAudio) {
+                    throw new Error('Transcoding timed out after 15 seconds');
+                }
+                
+                // STEP 4: Create permanent trackUrl with yoto:#hash
+                trackUrl = `yoto:#${transcodedAudio.transcodedSha256}`;
+                console.log('✅ Permanent trackUrl created:', trackUrl);
+                console.log('📊 Media info:', mediaInfo);
+                
+                // Store media info for playlist creation
+                storyData.mediaInfo = mediaInfo;
+                
+                if (progressElement) {
+                    progressElement.textContent = 'Creating playlist... (85%)';
                 }
                 
             } catch (uploadError) {
-                console.error('❌ Error in audio upload process:', uploadError);
+                console.error('❌ Error in permanent upload workflow:', uploadError);
+                
+                // Show error to user
+                if (progressElement) {
+                    progressElement.textContent = 'Upload failed - using streaming fallback';
+                }
                 
                 // Fallback to streaming URL with ALL story parameters
-                console.log('🔄 Building streaming URL with full story parameters (upload error fallback)...');
+                console.log('🔄 Falling back to streaming URL...');
                 const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
                 const params = {
                     heroName: (storyData.heroName || 'Hero').trim(),
@@ -423,29 +487,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     audioOnly: 'true'
                 };
                 
-                // Log parameters being used
-                console.log('📝 Story parameters for streaming (error fallback):', {
-                    heroName: params.heroName,
-                    promptSetup: params.promptSetup || '[MISSING]',
-                    promptRising: params.promptRising || '[MISSING]',
-                    promptClimax: params.promptClimax || '[MISSING]',
-                    age: params.age,
-                    surpriseMode: params.surpriseMode
-                });
-                
                 Object.entries(params).forEach(([key, value]) => {
-                    if (value && value.trim()) { // Only add non-empty values
+                    if (value && value.trim()) {
                         streamingUrl.searchParams.set(key, value);
                     }
                 });
                 
-                // Add timestamp to ensure unique URLs and avoid caching issues
-                streamingUrl.searchParams.set('t', Date.now().toString());
-                
                 trackUrl = streamingUrl.toString();
-                
-                trackUrl = streamingUrl.toString();
-                console.log('🔄 Using streaming URL due to upload error:', trackUrl);
+                console.log('🔄 Using streaming URL as fallback:', trackUrl);
             }
             
     // Store URL globally for debugging
@@ -484,7 +533,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         duration: track.duration,
                         fileSize: track.fileSize,
                         hasTrackUrl: !!track.trackUrl,
-                        urlType: track.trackUrl ? (track.trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'external-stream') : 'none'
+                        urlType: track.trackUrl ? 
+                            (track.trackUrl.startsWith('yoto:#') ? 'permanent-hash' : 
+                             (track.trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'external-stream')) : 'none'
                     });
                 });
             });
@@ -520,10 +571,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     key: "01",
                     title: "Chapter One",
                     trackUrl: trackUrl,
-                    type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
-                        format: "mp3", // Always MP3 now, matching Yoto's official example
-                    duration: storyData.duration || 180,
-                    fileSize: storyData.fileSize || 1000000
+                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "file" : "stream",
+                    format: "mp3", // Always MP3 now, matching Yoto's official example
+                    duration: storyData.duration || (mediaInfo?.duration) || 180,
+                    fileSize: storyData.fileSize || (mediaInfo?.fileSize) || 1000000
                 };
                 
                 console.log('🎵 Track data being added to existing playlist:', {
@@ -532,7 +583,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     format: trackData.format,
                     duration: trackData.duration,
                     fileSize: trackData.fileSize,
-                    isStreamingUrl: !trackUrl.startsWith('https://api.yotoplay.com'),
+                    isPermanentUrl: trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com'),
+                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'stream'),
                     urlLength: trackUrl.length
                 });
                 
@@ -589,10 +641,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     key: "01",
                     title: "Chapter One",
                     trackUrl: trackUrl,
-                    type: trackUrl.startsWith('https://api.yotoplay.com') ? "file" : "stream",
+                    type: (trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com')) ? "file" : "stream",
                     format: "mp3", // Always MP3 now, matching Yoto's official example
-                    duration: storyData.duration || 180,
-                    fileSize: storyData.fileSize || 1000000
+                    duration: storyData.duration || (mediaInfo?.duration) || 180,
+                    fileSize: storyData.fileSize || (mediaInfo?.fileSize) || 1000000
                 };
                 
                 console.log('🎵 Track data being added to new playlist:', {
@@ -601,7 +653,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     format: trackData.format,
                     duration: trackData.duration,
                     fileSize: trackData.fileSize,
-                    isStreamingUrl: !trackUrl.startsWith('https://api.yotoplay.com'),
+                    isPermanentUrl: trackUrl.startsWith('yoto:#') || trackUrl.startsWith('https://api.yotoplay.com'),
+                    urlType: trackUrl.startsWith('yoto:#') ? 'permanent-hash' : (trackUrl.startsWith('https://api.yotoplay.com') ? 'yoto-file' : 'stream'),
                     urlLength: trackUrl.length
                 });
                 
@@ -706,6 +759,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 title: result.title,
                 chapters: result.content?.chapters?.length || 'unknown'
             });
+            
+            // Update progress to completion
+            if (progressElement) {
+                progressElement.textContent = '✅ Story created successfully! (100%)';
+            }
             
             return result;
             
