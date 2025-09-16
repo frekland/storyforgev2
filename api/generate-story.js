@@ -292,6 +292,12 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     console.log('🎵 Using Google TTS (OpenAI disabled)');
     audioContent = await generateGoogleTTS(cleanStoryText, age);
   }
+  
+  return { 
+    storyText: cleanStoryText, // Return clean text for UI
+    audioContent,
+    generatedImage: generatedImageBase64 // Include generated image for surprise mode
+  };
 }
 
 // OpenAI TTS Generation Function
@@ -349,6 +355,8 @@ async function generateOpenAITTS(cleanStoryText, voiceSettings) {
       throw new Error('Received empty audio buffer');
     }
     
+    return audioContent;
+    
   } catch (error) {
     console.error('❌ OpenAI TTS generation failed:', {
       message: error.message,
@@ -387,12 +395,6 @@ async function generateGoogleTTS(cleanStoryText, age) {
   });
   
   return response.audioContent;
-  
-  return { 
-    storyText: cleanStoryText, // Return clean text for UI
-    audioContent,
-    generatedImage: generatedImageBase64 // Include generated image for surprise mode
-  };
 }
 
 // ✅ DUAL-MODE SERVERLESS FUNCTION - CRITICAL FOR STREAMING WORKFLOW
