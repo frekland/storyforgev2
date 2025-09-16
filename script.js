@@ -817,6 +817,123 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const getModeContent = (mode) => {
         switch (mode) {
+            case 'classic':
+                return `
+                    <div class="mode-header paper-scrap">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <h2 class="mode-title-header">
+                            <span class="mode-icon">📚</span>
+                            <span>Classic Story</span>
+                        </h2>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <div class="form-header paper-scrap">
+                            <h2 class="form-title">Story Ingredients 🌲</h2>
+                            <div class="form-doodles">
+                                <span class="doodle">★</span>
+                                <span class="doodle">♡</span>
+                                <span class="doodle">✨</span>
+                            </div>
+                        </div>
+                        
+                        <form id="classic-story-form" class="story-form">
+                            <div class="input-group paper-scrap">
+                                <label for="classic-heroName" class="playful-label">
+                                    <span class="label-text">Hero's Name</span>
+                                    <span class="label-doodle">🦸</span>
+                                </label>
+                                <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
+                            </div>
+
+                            <div class="input-group paper-scrap">
+                                <label for="classic-promptSetup" class="playful-label">
+                                    <span class="label-text">The Beginning</span>
+                                    <span class="label-doodle">🌅</span>
+                                </label>
+                                <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                            </div>
+                            
+                            <div class="input-group paper-scrap">
+                                <label for="classic-promptRising" class="playful-label">
+                                    <span class="label-text">The Challenge</span>
+                                    <span class="label-doodle">⚡</span>
+                                </label>
+                                <input type="text" id="classic-promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
+                            </div>
+
+                            <div class="input-group paper-scrap">
+                                <label for="classic-promptClimax" class="playful-label">
+                                    <span class="label-text">The Climax</span>
+                                    <span class="label-doodle">🎆</span>
+                                </label>
+                                <input type="text" id="classic-promptClimax" class="paper-input" placeholder="e.g., the dragon was tickled until it laughed...">
+                            </div>
+                            
+                            <div class="input-group paper-scrap image-upload-section">
+                                <label for="classic-heroImage" class="playful-label">
+                                    <span class="label-text">Draw Your Character</span>
+                                    <span class="label-doodle">🎨</span>
+                                </label>
+                                <div id="classic-image-upload-area" class="paper-upload">
+                                    <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
+                                    <div class="upload-content">
+                                        <button type="button" class="upload-btn" onclick="document.getElementById('classic-heroImage').click()">
+                                            <span>📎 Upload Drawing</span>
+                                        </button>
+                                        <p class="upload-hint">or drag and drop your masterpiece here!</p>
+                                        <div id="classic-image-preview" class="preview-container hidden"></div>
+                                    </div>
+                                    <div class="upload-doodles">
+                                        <span class="doodle-arrow">→</span>
+                                        <span class="doodle-star">★</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group paper-scrap">
+                                <label for="classic-story-age" class="playful-label">
+                                    <span class="label-text">Story Length</span>
+                                    <span class="label-doodle">📆</span>
+                                </label>
+                                <select id="classic-story-age" class="paper-select" required>
+                                    <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
+                                    <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
+                                    <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
+                                    <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
+                                </select>
+                            </div>
+
+                            <div class="submit-section paper-scrap">
+                                <button type="submit" class="forge-btn">
+                                    <span class="btn-text">✨ Forge My Story! ✨</span>
+                                    <div class="btn-sparkles">
+                                        <span>✨</span>
+                                        <span>★</span>
+                                        <span>✨</span>
+                                    </div>
+                                </button>
+                                
+                                <div class="button-divider">
+                                    <span class="divider-text">or</span>
+                                    <div class="divider-line"></div>
+                                </div>
+                                
+                                <button type="button" id="classic-surprise-me-btn" class="surprise-btn">
+                                    <span class="btn-text">🎲 Surprise Me! 🎲</span>
+                                    <div class="btn-sparkles">
+                                        <span>🎊</span>
+                                        <span>🎉</span>
+                                        <span>🎊</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                
             case 'help':
                 return `
                     <div class="mode-header paper-scrap">
@@ -911,6 +1028,210 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Make backToModeSelection globally available
         window.backToModeSelection = backToModeSelection;
+        
+        switch (mode) {
+            case 'classic':
+                setupClassicModeListeners();
+                break;
+            // Additional modes will be added here
+        }
+    };
+    
+    const setupClassicModeListeners = () => {
+        const classicForm = document.getElementById('classic-story-form');
+        const classicSurpriseBtn = document.getElementById('classic-surprise-me-btn');
+        const classicImageInput = document.getElementById('classic-heroImage');
+        const classicImageUploadArea = document.getElementById('classic-image-upload-area');
+        const classicImagePreview = document.getElementById('classic-image-preview');
+        
+        // Form submission
+        if (classicForm) {
+            classicForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateClassicStory(false); // false = not surprise mode
+            });
+        }
+        
+        // Surprise Me button
+        if (classicSurpriseBtn) {
+            classicSurpriseBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await generateClassicStory(true); // true = surprise mode
+            });
+        }
+        
+        // Image upload handling
+        if (classicImageInput && classicImagePreview) {
+            classicImageInput.addEventListener('change', (e) => {
+                handleImageUpload(e, classicImagePreview);
+            });
+        }
+        
+        // Drag and drop for image upload
+        if (classicImageUploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                classicImageUploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                classicImageUploadArea.addEventListener(eventName, () => {
+                    classicImageUploadArea.classList.add('drag-over');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                classicImageUploadArea.addEventListener(eventName, () => {
+                    classicImageUploadArea.classList.remove('drag-over');
+                }, false);
+            });
+            
+            classicImageUploadArea.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    classicImageInput.files = files;
+                    handleImageUpload({ target: { files: files } }, classicImagePreview);
+                }
+            }, false);
+        }
+    };
+    
+    // Helper functions for image upload
+    const preventDefaults = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+    
+    const handleImageUpload = (e, previewElement) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewElement.style.backgroundImage = `url(${e.target.result})`;
+                previewElement.classList.remove('hidden');
+                // Store the base64 data for later use
+                heroImageBase64 = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    // Main story generation function for Classic mode
+    const generateClassicStory = async (isSurpriseMode) => {
+        console.log(`Generating classic story, surprise mode: ${isSurpriseMode}`);
+        
+        // Show story output section
+        const storyOutput = document.getElementById('story-output');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const storyText = document.getElementById('story-text');
+        const uploadToYotoButton = document.getElementById('upload-to-yoto-button');
+        
+        if (storyOutput) {
+            storyOutput.classList.remove('hidden');
+            storyOutput.scrollIntoView({ behavior: 'smooth' });
+        }
+        if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        if (storyText) storyText.textContent = '';
+        if (uploadToYotoButton) uploadToYotoButton.classList.add('hidden');
+        
+        // Update loading text
+        const loadingText = document.querySelector('.loading-text span:nth-child(2)');
+        if (loadingText) {
+            loadingText.textContent = isSurpriseMode ? 
+                'Creating a surprise adventure just for you...' : 
+                'Brewing your magical story...';
+        }
+        
+        try {
+            // Get form data
+            const formData = {
+                mode: 'classic',
+                heroName: document.getElementById('classic-heroName')?.value || '',
+                promptSetup: document.getElementById('classic-promptSetup')?.value || '',
+                promptRising: document.getElementById('classic-promptRising')?.value || '',
+                promptClimax: document.getElementById('classic-promptClimax')?.value || '',
+                age: document.getElementById('classic-story-age')?.value || '6',
+                heroImage: heroImageBase64,
+                surpriseMode: isSurpriseMode
+            };
+            
+            console.log('Sending story generation request:', formData);
+            
+            // Call the existing story generation API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle the response
+            if (loadingSpinner) loadingSpinner.classList.add('hidden');
+            
+            if (data.story && storyText) {
+                storyText.textContent = data.story;
+            }
+            
+            // Handle audio if available
+            const audioPlayer = document.getElementById('story-audio-player');
+            if (data.audioUrl && audioPlayer) {
+                audioPlayer.src = data.audioUrl;
+                audioPlayer.classList.remove('hidden');
+            }
+            
+            // Show Yoto upload button if user is authenticated
+            if (uploadToYotoButton && accessToken) {
+                uploadToYotoButton.classList.remove('hidden');
+                // Update the existing Yoto upload handler to work with new form data
+                setupYotoUploadHandler(formData);
+            }
+            
+        } catch (error) {
+            console.error('Error generating story:', error);
+            if (loadingSpinner) loadingSpinner.classList.add('hidden');
+            if (storyText) {
+                storyText.textContent = `Oh no! The storyforge has run out of magic. Error: ${error.message}`;
+            }
+            showAlert(error.message);
+        }
+    };
+    
+    // Helper function to set up Yoto upload handler
+    const setupYotoUploadHandler = (storyData) => {
+        const uploadButton = document.getElementById('upload-to-yoto-button');
+        if (uploadButton) {
+            // Remove existing listeners
+            uploadButton.replaceWith(uploadButton.cloneNode(true));
+            const newUploadButton = document.getElementById('upload-to-yoto-button');
+            
+            newUploadButton.onclick = async () => {
+                newUploadButton.disabled = true;
+                newUploadButton.textContent = 'Uploading...';
+                
+                try {
+                    const myoContent = await createOrUpdateStoryForgePlaylist({
+                        heroName: storyData.heroName,
+                        promptSetup: storyData.promptSetup,
+                        promptRising: storyData.promptRising,
+                        promptClimax: storyData.promptClimax,
+                        age: storyData.age,
+                        heroImage: storyData.heroImage
+                    }, accessToken);
+                    showAlert('Story successfully uploaded as individual Yoto card!');
+                    console.log('StoryForge Playlist Updated:', myoContent);
+                } catch (e) {
+                    console.error("Failed to create/update StoryForge playlist:", e);
+                    showAlert("Error updating StoryForge playlist. Please check the console.");
+                } finally {
+                    newUploadButton.disabled = false;
+                    newUploadButton.textContent = 'Upload to Yoto';
+                }
+            };
+        }
     };
     
     // Initialize mode selection after DOM is loaded
