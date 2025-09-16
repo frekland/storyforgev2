@@ -1154,161 +1154,92 @@ document.addEventListener('DOMContentLoaded', () => {
         return blob;
     };
     
-    // Debug Panel Functions (Global scope for inline onclick handlers)
-    window.toggleDebugPanel = () => {
-        const panel = document.getElementById('debug-panel');
-        panel.classList.toggle('show');
-    };
-    
-    let debugLogCount = 0;
-    const debugLog = (message, type = 'info') => {
-        debugLogCount++;
+    // Simple Debug Functions
+    let simpleLogCount = 0;
+    const simpleLog = (message, type = 'info') => {
+        simpleLogCount++;
         const timestamp = new Date().toLocaleTimeString();
-        const logsDiv = document.getElementById('debug-logs');
+        const logsDiv = document.getElementById('debug-logs-simple');
         const prefix = {
             'error': '❌',
             'success': '✅', 
             'warning': '⚠️',
-            'info': 'ℹ️',
-            'debug': '🔧'
+            'info': 'ℹ️'
         }[type] || 'ℹ️';
         
         if (logsDiv) {
             logsDiv.textContent += `[${timestamp}] ${prefix} ${message}\n`;
             logsDiv.scrollTop = logsDiv.scrollHeight;
             
-            if (debugLogCount > 100) {
+            if (simpleLogCount > 50) {
                 const lines = logsDiv.textContent.split('\n');
-                logsDiv.textContent = lines.slice(-50).join('\n');
-                debugLogCount = 50;
+                logsDiv.textContent = lines.slice(-25).join('\n');
+                simpleLogCount = 25;
             }
         }
     };
     
-    const debugUpdateStatus = (message, type = 'info') => {
-        const statusDiv = document.getElementById('debug-status');
-        if (statusDiv) {
-            statusDiv.textContent = message;
-            statusDiv.className = `debug-status ${type}`;
-        }
-    };
-    
-    const getDebugParams = () => {
+    const getSimpleParams = () => {
         return {
-            heroName: document.getElementById('debug-heroName')?.value?.trim() || 'Test Hero',
-            promptSetup: document.getElementById('debug-promptSetup')?.value?.trim() || 'a magical forest',
-            promptRising: document.getElementById('debug-promptRising')?.value?.trim() || 'a lost treasure',
-            promptClimax: document.getElementById('debug-promptClimax')?.value?.trim() || 'friendship saves the day',
-            age: document.getElementById('debug-age')?.value?.trim() || '6',
+            heroName: document.getElementById('debug-hero')?.value?.trim() || 'Test Hero',
+            promptSetup: document.getElementById('debug-setup')?.value?.trim() || 'magical forest',
+            promptRising: document.getElementById('debug-rising')?.value?.trim() || 'lost treasure',
+            promptClimax: document.getElementById('debug-climax')?.value?.trim() || 'friendship saves day',
+            age: '6',
             audioOnly: 'true'
         };
     };
     
-    const buildDebugStreamingUrl = () => {
-        const params = getDebugParams();
-        const url = new URL(`${window.location.origin}/api/generate-story`);
+    window.testStreamingGET = async () => {
+        simpleLog('Testing GET streaming endpoint...');
         
+        const params = getSimpleParams();
+        const url = new URL(`${window.location.origin}/api/generate-story`);
         Object.entries(params).forEach(([key, value]) => {
             if (value) url.searchParams.set(key, value);
         });
         
-        const urlString = url.toString();
-        const urlDiv = document.getElementById('debug-url');
-        if (urlDiv) urlDiv.textContent = urlString;
-        debugLog(`Generated URL: ${urlString}`, 'debug');
-        
-        return urlString;
-    };
-    
-    window.debugTestGET = async () => {
-        debugLog('=== TESTING GET REQUEST ===');
-        debugUpdateStatus('Testing GET request...', 'info');
-        
-        const url = buildDebugStreamingUrl();
-        
         try {
             const startTime = Date.now();
-            const response = await fetch(url, {
-                method: 'GET',
-                cache: 'no-cache'
-            });
-            const endTime = Date.now();
+            const response = await fetch(url.toString());
+            const duration = Date.now() - startTime;
             
-            debugLog(`Response: ${response.status} ${response.statusText} (${endTime - startTime}ms)`);
-            debugLog(`Content-Type: ${response.headers.get('content-type')}`);
-            debugLog(`Content-Length: ${response.headers.get('content-length')}`);
-            debugLog(`CORS: ${response.headers.get('access-control-allow-origin')}`);
+            simpleLog(`GET ${response.status} ${response.statusText} (${duration}ms)`);
+            simpleLog(`Content-Type: ${response.headers.get('content-type')}`);
+            simpleLog(`Content-Length: ${response.headers.get('content-length')}`);
             
             if (response.ok) {
                 const blob = await response.blob();
-                debugLog(`Success: ${blob.size} bytes, type: ${blob.type}`, 'success');
+                simpleLog(`Success: ${blob.size} bytes audio`, 'success');
                 
-                // Create audio player
-                const audioContainer = document.getElementById('debug-audio-container');
-                if (audioContainer) {
-                    const audioId = `debug-audio-${Date.now()}`;
-                    const audioDiv = document.createElement('div');
-                    audioDiv.innerHTML = `
-                        <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 5px 0;">
-                            <strong>GET Audio (${blob.size} bytes)</strong>
-                            <audio id="${audioId}" controls style="width: 100%; margin-top: 5px;">
-                                Your browser does not support audio.
-                            </audio>
-                        </div>
-                    `;
-                    audioContainer.appendChild(audioDiv);
+                // Add audio player
+                const playersDiv = document.getElementById('debug-players');
+                if (playersDiv) {
+                    const audioEl = document.createElement('audio');
+                    audioEl.controls = true;
+                    audioEl.src = URL.createObjectURL(blob);
                     
-                    const audioElement = document.getElementById(audioId);
-                    audioElement.src = URL.createObjectURL(blob);
+                    const label = document.createElement('div');
+                    label.textContent = `GET Audio (${blob.size} bytes)`;
+                    label.style.marginBottom = '5px';
+                    label.style.fontWeight = 'bold';
+                    
+                    playersDiv.appendChild(label);
+                    playersDiv.appendChild(audioEl);
                 }
-                
-                debugUpdateStatus('GET request successful', 'success');
             } else {
                 const errorText = await response.text();
-                debugLog(`Failed: ${errorText}`, 'error');
-                debugUpdateStatus(`GET failed: ${response.status}`, 'error');
+                simpleLog(`GET failed: ${errorText}`, 'error');
             }
         } catch (error) {
-            debugLog(`Error: ${error.message}`, 'error');
-            debugUpdateStatus(`Error: ${error.message}`, 'error');
+            simpleLog(`GET error: ${error.message}`, 'error');
         }
     };
     
-    window.debugTestHEAD = async () => {
-        debugLog('=== TESTING HEAD REQUEST ===');
-        debugUpdateStatus('Testing HEAD request...', 'info');
+    window.testStreamingPOST = async () => {
+        simpleLog('Testing POST endpoint...');
         
-        const url = buildDebugStreamingUrl();
-        
-        try {
-            const response = await fetch(url, {
-                method: 'HEAD',
-                cache: 'no-cache'
-            });
-            
-            debugLog(`HEAD Response: ${response.status} ${response.statusText}`);
-            for (const [key, value] of response.headers.entries()) {
-                debugLog(`${key}: ${value}`, 'debug');
-            }
-            
-            if (response.ok) {
-                debugLog('HEAD request successful', 'success');
-                debugUpdateStatus('HEAD request successful', 'success');
-            } else {
-                debugLog(`HEAD failed: ${response.status}`, 'error');
-                debugUpdateStatus(`HEAD failed: ${response.status}`, 'error');
-            }
-        } catch (error) {
-            debugLog(`HEAD Error: ${error.message}`, 'error');
-            debugUpdateStatus(`HEAD Error: ${error.message}`, 'error');
-        }
-    };
-    
-    window.debugTestPOST = async () => {
-        debugLog('=== TESTING POST REQUEST ===');
-        debugUpdateStatus('Testing POST request...', 'info');
-        
-        const params = getDebugParams();
+        const params = getSimpleParams();
         
         try {
             const response = await fetch('/api/generate-story', {
@@ -1323,64 +1254,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             
-            if (!response.ok) throw new Error(`POST failed: ${response.status}`);
+            if (!response.ok) throw new Error(`POST ${response.status}`);
             
             const data = await response.json();
-            debugLog(`POST Success: ${data.story?.length || 0} chars, ${data.fileSize || 0} bytes`);
-            debugUpdateStatus('POST request successful', 'success');
+            simpleLog(`POST success: ${data.fileSize || 0} bytes`, 'success');
+            
+            // Add audio player from base64
+            if (data.audio) {
+                const playersDiv = document.getElementById('debug-players');
+                if (playersDiv) {
+                    const audioBlob = b64toBlob(data.audio, 'audio/mpeg');
+                    const audioEl = document.createElement('audio');
+                    audioEl.controls = true;
+                    audioEl.src = URL.createObjectURL(audioBlob);
+                    
+                    const label = document.createElement('div');
+                    label.textContent = `POST Audio (${audioBlob.size} bytes)`;
+                    label.style.marginBottom = '5px';
+                    label.style.fontWeight = 'bold';
+                    
+                    playersDiv.appendChild(label);
+                    playersDiv.appendChild(audioEl);
+                }
+            }
         } catch (error) {
-            debugLog(`POST Error: ${error.message}`, 'error');
-            debugUpdateStatus(`POST Error: ${error.message}`, 'error');
+            simpleLog(`POST error: ${error.message}`, 'error');
         }
     };
     
-    window.debugCompareEndpoints = async () => {
-        debugLog('=== COMPARING POST vs GET ===');
-        debugUpdateStatus('Comparing endpoints...', 'info');
-        
-        try {
-            await debugTestPOST();
-            await debugTestGET();
-            debugUpdateStatus('Comparison complete - check logs', 'success');
-        } catch (error) {
-            debugLog(`Comparison Error: ${error.message}`, 'error');
-            debugUpdateStatus(`Comparison Error: ${error.message}`, 'error');
-        }
+    window.compareStreaming = async () => {
+        simpleLog('=== COMPARING ENDPOINTS ===');
+        await testStreamingPOST();
+        await testStreamingGET();
+        simpleLog('Comparison complete!', 'success');
     };
     
-    window.debugClearLogs = () => {
-        const logsDiv = document.getElementById('debug-logs');
+    window.clearDebugLogs = () => {
+        const logsDiv = document.getElementById('debug-logs-simple');
+        const playersDiv = document.getElementById('debug-players');
         if (logsDiv) logsDiv.textContent = '🧹 Logs cleared\n';
-        debugLogCount = 0;
-        debugUpdateStatus('Logs cleared', 'info');
+        if (playersDiv) playersDiv.innerHTML = '';
+        simpleLogCount = 0;
     };
     
-    // Initialize debug panel
-    const initDebugPanel = () => {
-        // Show debug panel if ?debug=true in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('debug') === 'true') {
-            const panel = document.getElementById('debug-panel');
-            if (panel) {
-                panel.classList.add('show');
-                debugLog('Debug panel auto-opened from URL parameter', 'info');
-            }
+    // Show debug section if ?debug=true
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+        const debugSection = document.getElementById('debug-section');
+        if (debugSection) {
+            debugSection.classList.remove('hidden');
+            simpleLog('Debug mode activated!', 'success');
         }
-        
-        // Keyboard shortcut: Ctrl+Shift+D
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                window.toggleDebugPanel();
-                debugLog('Debug panel toggled via keyboard shortcut', 'info');
-            }
-        });
-        
-        debugLog('Debug panel initialized. Use Ctrl+Shift+D or ?debug=true to open', 'info');
-    };
-    
-    // Initialize debug panel
-    initDebugPanel();
+    }
     
     // Initialize mode selection after all functions are defined
     initializeModeSelection();

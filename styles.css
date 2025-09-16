@@ -1312,165 +1312,99 @@ button[type="submit"]:hover {
   transform: scale(1.1);
 }
 
-/* 🔧 DEBUG PANEL */
-.debug-panel {
-  position: fixed;
-  top: 60px;
-  right: 20px;
-  width: 400px;
-  max-height: 80vh;
-  background: var(--bg-paper);
-  border: 3px solid var(--accent-color);
-  border-radius: 15px;
-  box-shadow: 0 8px 20px var(--shadow-dark);
-  z-index: 9999;
-  overflow-y: auto;
-  transform: translateX(420px);
-  transition: transform 0.3s ease;
-  font-size: 0.9em;
+/* 🔧 SIMPLE DEBUG SECTION */
+.debug-simple {
+  margin: 20px 0;
 }
 
-.debug-panel.show {
-  transform: translateX(0);
-}
-
-.debug-header {
-  background: var(--accent-color);
-  color: white;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 12px 12px 0 0;
-}
-
-.debug-header h2 {
-  margin: 0;
-  font-size: 1.2em;
+.debug-simple h3 {
+  margin: 0 0 15px 0;
+  color: var(--text-primary);
   font-family: var(--font-title);
 }
 
-.debug-close {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.2em;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 3px;
-  transition: background 0.3s;
+.debug-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.debug-close:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-.debug-section {
-  padding: 15px;
-  border-bottom: 1px solid var(--shadow-light);
-}
-
-.debug-section h3 {
-  margin: 0 0 10px 0;
-  font-size: 1em;
-  color: var(--text-primary);
-}
-
-.debug-params {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.debug-params input {
-  padding: 8px;
-  border: 2px solid var(--shadow-light);
-  border-radius: 6px;
-  font-family: var(--font-body);
-  font-size: 0.9em;
+.debug-controls input {
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   background: var(--bg-secondary);
   color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9em;
 }
 
 .debug-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
 .debug-buttons button {
   background: var(--accent-secondary);
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 0.8em;
-  cursor: pointer;
-  transition: background 0.3s;
+  padding: 10px 15px;
+  border-radius: 8px;
   font-family: var(--font-body);
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px var(--shadow-light);
 }
 
 .debug-buttons button:hover {
   background: var(--accent-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--shadow-medium);
 }
 
-.debug-url, .debug-status {
+.debug-output {
   background: var(--bg-secondary);
-  padding: 8px;
-  border-radius: 4px;
-  margin: 5px 0;
-  font-size: 0.8em;
-  word-break: break-all;
-  font-family: monospace;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
 }
 
-.debug-status.success {
-  background: #d4edda;
-  color: #155724;
-}
-
-.debug-status.error {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.debug-status.warning {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.debug-logs {
+#debug-logs-simple {
   background: #1a1a1a;
   color: #00ff00;
   padding: 10px;
   border-radius: 6px;
-  height: 200px;
+  min-height: 100px;
+  max-height: 300px;
   overflow-y: auto;
   font-family: 'Courier New', monospace;
-  font-size: 0.75em;
+  font-size: 0.8em;
   line-height: 1.4;
   white-space: pre-wrap;
 }
 
-.debug-audio-container {
-  margin: 10px 0;
+#debug-players {
+  margin-top: 15px;
 }
 
-.debug-audio-container audio {
+#debug-players audio {
   width: 100%;
-  margin: 5px 0;
+  margin: 10px 0;
+  border-radius: 6px;
 }
 
 @media (max-width: 768px) {
-  .debug-panel {
-    width: 90vw;
-    right: 5vw;
-    transform: translateX(calc(90vw + 20px));
+  .debug-controls {
+    grid-template-columns: 1fr;
   }
   
-  .debug-panel.show {
-    transform: translateX(0);
+  .debug-buttons {
+    justify-content: center;
   }
 }
 

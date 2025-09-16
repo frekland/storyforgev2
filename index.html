@@ -217,45 +217,30 @@
             </div>
         </div>
         
-        <!-- Hidden Debug Panel - Access with ?debug=true or Ctrl+Shift+D -->
-        <div id="debug-panel" class="debug-panel hidden">
-            <div class="debug-header">
-                <h2>🔧 StoryForge Debug Panel</h2>
-                <button onclick="toggleDebugPanel()" class="debug-close">❌</button>
-            </div>
-            
-            <div class="debug-section">
-                <h3>📝 Test Parameters</h3>
-                <div class="debug-params">
-                    <input type="text" id="debug-heroName" placeholder="Hero Name" value="Test Hero" />
-                    <input type="text" id="debug-promptSetup" placeholder="Setup" value="a magical forest" />
-                    <input type="text" id="debug-promptRising" placeholder="Rising Action" value="a lost treasure" />
-                    <input type="text" id="debug-promptClimax" placeholder="Climax" value="friendship saves the day" />
-                    <input type="text" id="debug-age" placeholder="Age" value="6" />
+        <!-- Simple Debug Section - Shows when ?debug=true -->
+        <div id="debug-section" class="debug-simple hidden">
+            <div class="paper-scrap">
+                <h3>🔧 Debug Tools</h3>
+                
+                <div class="debug-controls">
+                    <input type="text" id="debug-hero" placeholder="Hero: Test Hero" value="Test Hero" />
+                    <input type="text" id="debug-setup" placeholder="Setup: magical forest" value="magical forest" />
+                    <input type="text" id="debug-rising" placeholder="Rising: lost treasure" value="lost treasure" />
+                    <input type="text" id="debug-climax" placeholder="Climax: friendship" value="friendship saves day" />
                 </div>
-            </div>
-            
-            <div class="debug-section">
-                <h3>🧪 Streaming Tests</h3>
+                
                 <div class="debug-buttons">
-                    <button onclick="debugTestGET()">Test GET Request</button>
-                    <button onclick="debugTestHEAD()">Test HEAD Request</button>
-                    <button onclick="debugTestPOST()">Test POST Request</button>
-                    <button onclick="debugCompareEndpoints()">Compare Endpoints</button>
-                    <button onclick="debugClearLogs()">Clear Logs</button>
+                    <button onclick="testStreamingGET()">🧪 Test GET</button>
+                    <button onclick="testStreamingPOST()">📝 Test POST</button>
+                    <button onclick="compareStreaming()">⚖️ Compare Both</button>
+                    <button onclick="clearDebugLogs()">🧹 Clear</button>
                 </div>
                 
-                <div id="debug-url" class="debug-url">No URL generated</div>
-                <div id="debug-status" class="debug-status">Ready to debug</div>
-                
-                <div id="debug-audio-container" class="debug-audio-container">
-                    <!-- Debug audio players will appear here -->
+                <div id="debug-output" class="debug-output">
+                    <div id="debug-logs-simple">🚀 Debug ready...</div>
                 </div>
-            </div>
-            
-            <div class="debug-section">
-                <h3>📋 Debug Logs</h3>
-                <div id="debug-logs" class="debug-logs">🚀 Debug panel initialized</div>
+                
+                <div id="debug-players"></div>
             </div>
         </div>
     </main>
