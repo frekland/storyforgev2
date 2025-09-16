@@ -1380,21 +1380,23 @@ document.addEventListener('DOMContentLoaded', () => {
         simpleLog('Comparison complete!', 'success');
     };
     
-    window.testDummyAudio = async () => {
-        simpleLog('Testing dummy audio endpoint...');
+    window.testDummyAudio = async (format = '') => {
+        const formatName = format || 'default';
+        simpleLog(`Testing ${formatName} audio endpoint...`);
         
         try {
+            const url = format ? `/api/test-audio?format=${format}` : '/api/test-audio';
             const startTime = Date.now();
-            const response = await fetch('/api/test-audio');
+            const response = await fetch(url);
             const duration = Date.now() - startTime;
             
-            simpleLog(`Dummy GET ${response.status} ${response.statusText} (${duration}ms)`);
+            simpleLog(`${formatName.toUpperCase()} ${response.status} ${response.statusText} (${duration}ms)`);
             simpleLog(`Content-Type: ${response.headers.get('content-type')}`);
             simpleLog(`Content-Length: ${response.headers.get('content-length')}`);
             
             if (response.ok) {
                 const blob = await response.blob();
-                simpleLog(`Dummy success: ${blob.size} bytes audio`, 'success');
+                simpleLog(`${formatName} success: ${blob.size} bytes audio`, 'success');
                 
                 // Add audio player
                 const playersDiv = document.getElementById('debug-players');
@@ -1404,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     audioEl.src = URL.createObjectURL(blob);
                     
                     const label = document.createElement('div');
-                    label.textContent = `Dummy Audio (${blob.size} bytes) - 5sec 440Hz tone`;
+                    label.textContent = `${formatName} Audio (${blob.size} bytes) - 5sec 440Hz tone`;
                     label.style.marginBottom = '5px';
                     label.style.fontWeight = 'bold';
                     
@@ -1413,36 +1415,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 const errorText = await response.text();
-                simpleLog(`Dummy failed: ${errorText}`, 'error');
+                simpleLog(`${formatName} failed: ${errorText}`, 'error');
             }
         } catch (error) {
-            simpleLog(`Dummy error: ${error.message}`, 'error');
+            simpleLog(`${formatName} error: ${error.message}`, 'error');
         }
     };
     
-    window.testYotoDummy = async () => {
+    window.testYotoDummy = async (format = '') => {
         if (!accessToken) {
             simpleLog('Please log in to Yoto first!', 'error');
             return;
         }
         
-        simpleLog('Creating Yoto playlist with dummy audio...');
+        const formatName = format || 'default';
+        simpleLog(`Creating Yoto playlist with ${formatName} audio...`);
+        
+        const audioUrl = format ? 
+            `${window.location.origin}/api/test-audio?format=${format}` :
+            `${window.location.origin}/api/test-audio`;
         
         const dummyStoryData = {
-            heroName: 'Test Tone',
-            text: 'This is a test story with a 5-second 440Hz audio tone.',
-            audioStreamUrl: `${window.location.origin}/api/test-audio`,
+            heroName: `Test ${formatName.toUpperCase()}`,
+            text: `This is a test story with a 5-second 440Hz audio tone in ${formatName} format.`,
+            audioStreamUrl: audioUrl,
             surpriseMode: false
         };
         
         try {
             const result = await createOrUpdateStoryForgePlaylist(dummyStoryData, accessToken);
-            simpleLog(`Yoto dummy test success!`, 'success');
+            simpleLog(`Yoto ${formatName} test success!`, 'success');
             simpleLog(`Card ID: ${result.card?.cardId || 'unknown'}`);
         } catch (error) {
-            simpleLog(`Yoto dummy error: ${error.message}`, 'error');
+            simpleLog(`Yoto ${formatName} error: ${error.message}`, 'error');
         }
     };
+    
+    // Format-specific test functions
+    window.testWAV22 = () => testDummyAudio('wav22');
+    window.testWAV44 = () => testDummyAudio('wav44');
+    window.testYotoWAV22 = () => testYotoDummy('wav22');
+    window.testYotoWAV44 = () => testYotoDummy('wav44');
     
     window.clearDebugLogs = () => {
         const logsDiv = document.getElementById('debug-logs-simple');
