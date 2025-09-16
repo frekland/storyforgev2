@@ -1497,15 +1497,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 title: `${PLAYLIST_TITLE} - ${testData.heroName}`,
                 content: {
                     chapters: [{
+                        key: "01",
                         title: testData.heroName,
-                        audio: testData.audioStreamUrl,
-                        duration: 5 // 5 second test tone
+                        tracks: [{
+                            key: "01",
+                            title: "Test Audio",
+                            trackUrl: testData.audioStreamUrl,
+                            type: "stream",
+                            format: "wav",
+                            duration: 5,
+                            fileSize: 100000
+                        }],
+                        display: {
+                            icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8"
+                        }
                     }]
+                },
+                metadata: {
+                    description: "Audio format test from StoryForge",
+                    media: {
+                        duration: 5,
+                        fileSize: 100000
+                    }
                 }
             };
             
             console.log('📝 Creating test playlist...');
-            const createResponse = await fetch('https://api.yotoplay.com/content/makeYourOwn', {
+            const createResponse = await fetch('https://api.yotoplay.com/content', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
