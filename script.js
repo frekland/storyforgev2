@@ -312,16 +312,46 @@ document.addEventListener('DOMContentLoaded', () => {
             // NOTE: Excluding heroImage from URL params to avoid 400 errors from overly long URLs
             // The Yoto streaming endpoint will generate stories without the image if needed
             const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
-            streamingUrl.searchParams.set('heroName', storyData.heroName || 'Hero');
-            streamingUrl.searchParams.set('promptSetup', storyData.promptSetup || '');
-            streamingUrl.searchParams.set('promptRising', storyData.promptRising || '');
-            streamingUrl.searchParams.set('promptClimax', storyData.promptClimax || '');
-            streamingUrl.searchParams.set('age', storyData.age || '6');
+            
+            // Ensure all parameters are properly encoded and not empty
+            const heroName = (storyData.heroName || 'Hero').trim();
+            const promptSetup = (storyData.promptSetup || '').trim();
+            const promptRising = (storyData.promptRising || '').trim();
+            const promptClimax = (storyData.promptClimax || '').trim();
+            const age = (storyData.age || '6').trim();
+            
+            streamingUrl.searchParams.set('heroName', heroName);
+            streamingUrl.searchParams.set('promptSetup', promptSetup);
+            streamingUrl.searchParams.set('promptRising', promptRising);
+            streamingUrl.searchParams.set('promptClimax', promptClimax);
+            streamingUrl.searchParams.set('age', age);
             streamingUrl.searchParams.set('audioOnly', 'true');
+            
             // Intentionally omitting heroImage to avoid URL length limits
             // Note: This means Yoto streaming will not include the uploaded image
             
             console.log('🎵 Created streaming URL:', streamingUrl.toString());
+            console.log('📏 Streaming URL length:', streamingUrl.toString().length);
+            
+            // Test the streaming URL to make sure it works before sending to Yoto
+            // Store streaming URL globally for debugging
+            window.lastStreamingUrl = streamingUrl.toString();
+            
+            console.log('🧪 Testing streaming URL...');
+            try {
+                const testResponse = await fetch(streamingUrl.toString(), {
+                    method: 'HEAD', // Just check if the endpoint responds
+                    timeout: 5000
+                });
+                console.log('✅ Streaming URL test response:', testResponse.status, testResponse.statusText);
+                if (!testResponse.ok) {
+                    console.warn('⚠️ Streaming URL test failed, but continuing...');
+                }
+            } catch (testError) {
+                console.warn('⚠️ Streaming URL test error (might be CORS, continuing anyway):', testError.message);
+            }
+            
+            console.log('🗺️ To manually test streaming URL, run: window.testStreamingUrl()');
             
             // Step 4: Build playlist structure
             let finalPlaylist;
@@ -1000,7 +1030,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('Created blob URL:', audioBlobUrl);
                     
                     audioPlayer.src = audioBlobUrl;
+                    
+                    // Make sure audio player is visible
                     audioPlayer.classList.remove('hidden');
+                    audioPlayer.style.display = 'block';
+                    audioPlayer.style.width = '100%';
+                    
+                    console.log('🎮 Audio player visibility set:', !audioPlayer.classList.contains('hidden'));
+                    console.log('🎮 Audio player display style:', audioPlayer.style.display);
                     
                     // Add comprehensive event listeners for debugging
                     audioPlayer.addEventListener('loadstart', () => {
@@ -1017,6 +1054,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     audioPlayer.addEventListener('canplay', () => {
                         console.log('▶️ Audio can start playing');
+                        
+                        // Try to test playback capability (will fail if no user gesture, but that's expected)
+                        audioPlayer.play().then(() => {
+                            console.log('✅ Audio autoplay successful');
+                            // Pause immediately since user didn't click play
+                            audioPlayer.pause();
+                            audioPlayer.currentTime = 0;
+                        }).catch(e => {
+                            console.log('⚠️ Audio autoplay blocked (this is normal):', e.message);
+                        });
                     });
                     
                     audioPlayer.addEventListener('error', (e) => {
@@ -1082,6 +1129,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     newUploadButton.textContent = 'Upload to Yoto';
                 }
             };
+        }
+    };
+    
+    // Global debugging function for streaming URL testing
+    window.testStreamingUrl = async () => {
+        if (!window.lastStreamingUrl) {
+            console.error('❌ No streaming URL available. Generate a story first.');
+            return;
+        }
+        
+        console.log('🧪 Manual streaming URL test:', window.lastStreamingUrl);
+        try {
+            const response = await fetch(window.lastStreamingUrl);
+            console.log('✅ Test response status:', response.status, response.statusText);
+            console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                console.log('🎵 Audio blob size:', blob.size, 'bytes');
+                console.log('🎵 Audio blob type:', blob.type);
+                
+                // Create a temporary audio element to test playback
+                const testAudio = new Audio(URL.createObjectURL(blob));
+                testAudio.addEventListener('loadedmetadata', () => {
+                    console.log('✅ Test audio duration:', testAudio.duration, 'seconds');
+                });
+                testAudio.load();
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Test failed with error:', errorText);
+            }
+        } catch (error) {
+            console.error('❌ Streaming URL test error:', error);
         }
     };
     

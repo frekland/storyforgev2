@@ -424,16 +424,44 @@ module.exports = async function handler(req, res) {
       res.status(500).json({ message: 'Failed to generate story and audio.' });
     }
 
-  } else if (req.method === 'GET') {
+  } else if (req.method === 'GET' || req.method === 'HEAD') {
     // Mode 2: Yoto servers request audio stream
     try {
+      console.log('🎵 GET request received for audio streaming');
+      console.log('📋 Query parameters:', req.query);
+      console.log('🌐 Request headers:', {
+        'user-agent': req.headers['user-agent'],
+        'accept': req.headers['accept'],
+        'origin': req.headers['origin'],
+        'referer': req.headers['referer']
+      });
+      
       const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, audioOnly } = req.query;
 
       if (!audioOnly || audioOnly !== 'true') {
-        return res.status(400).json({ message: 'This endpoint is for audio streaming only.' });
+        console.error('❌ Missing audioOnly=true parameter');
+        return res.status(400).json({ message: 'This endpoint is for audio streaming only. Set audioOnly=true.' });
+      }
+      
+      // Validate that we have at least one story element
+      const hasAtLeastOneElement = 
+        (heroName && heroName.trim()) || 
+        (promptSetup && promptSetup.trim()) || 
+        (promptRising && promptRising.trim()) || 
+        (promptClimax && promptClimax.trim());
+      
+      if (!hasAtLeastOneElement) {
+        console.error('❌ No story elements provided for streaming');
+        return res.status(400).json({ message: 'At least one story element is required for streaming.' });
       }
 
-      console.log("Streaming audio for Yoto servers...");
+      console.log('✅ Streaming audio for Yoto servers with story:', {
+        heroName: heroName || 'N/A',
+        hasSetup: !!(promptSetup && promptSetup.trim()),
+        hasRising: !!(promptRising && promptRising.trim()),
+        hasClimax: !!(promptClimax && promptClimax.trim()),
+        age: age || '6'
+      });
       // Re-generate the audio on-demand using the same parameters
       const { audioContent } = await generateStoryAndAudio({
         heroName, promptSetup, promptRising, promptClimax, heroImage, age
@@ -445,15 +473,29 @@ module.exports = async function handler(req, res) {
       // Cache the response to reduce load and improve performance
       res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
 
-      // Send the audio buffer as the response
-      res.status(200).send(audioContent);
+      if (req.method === 'HEAD') {
+        // For HEAD requests, just return headers without body
+        console.log('🔍 HEAD request - returning headers only');
+        res.status(200).end();
+      } else {
+        // Send the audio buffer as the response
+        console.log('✅ Successfully streaming audio:', {
+          contentLength: audioContent.length,
+          contentType: 'audio/mpeg'
+        });
+        res.status(200).send(audioContent);
+      }
 
     } catch (error) {
-      console.error('Error in audio streaming:', error);
-      res.status(500).json({ message: 'Failed to stream audio.' });
+      console.error('❌ Error in audio streaming:', {
+        message: error.message,
+        stack: error.stack,
+        query: req.query
+      });
+      res.status(500).json({ message: 'Failed to stream audio.', error: error.message });
     }
   } else {
-    res.setHeader('Allow', ['GET', 'POST']);
+    res.setHeader('Allow', ['GET', 'POST', 'HEAD']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 };
