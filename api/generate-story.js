@@ -1,18 +1,14 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const textToSpeech = require('@google-cloud/text-to-speech');
 require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// --- Set up Google Cloud (TTS) Client using environment variables ---
-const ttsClient = new textToSpeech.TextToSpeechClient({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  },
-});
+// --- OpenAI TTS Configuration ---
+// Using ttsopenai.com API for better audio compatibility with Yoto
+const OPENAI_TTS_API_URL = 'https://api.ttsopenai.com/v1/audio/speech';
+const OPENAI_API_KEY = 'tts-c12443d1d4e2e42d385fe3d040ce401e';
 
 // Helper function for Gemini image processing
 function fileToGenerativePart(base64Data, mimeType) {
@@ -53,118 +49,50 @@ async function createStoryPlaceholderImage(heroName, setting, age) {
   return `data:image/svg+xml;base64,${base64Svg}`;
 }
 
-// Helper function to get age-appropriate voice settings (British English only)
+// Helper function to get age-appropriate OpenAI TTS voice settings
 function getVoiceSettings(age) {
   switch (age) {
     case '3':
       return {
-        languageCode: 'en-GB',
-        name: 'en-GB-Wavenet-A', // Warm, friendly British female voice
-        ssmlGender: 'FEMALE'
+        voice: 'nova', // Warm, friendly female voice - good for young children
+        speed: 0.85    // Slower for young children
       };
     case '6':
       return {
-        languageCode: 'en-GB',
-        name: 'en-GB-Wavenet-C', // Clear, engaging British female voice
-        ssmlGender: 'FEMALE'
+        voice: 'nova', // Clear, engaging female voice
+        speed: 0.9
       };
     case '9':
       return {
-        languageCode: 'en-GB',
-        name: 'en-GB-Wavenet-B', // Professional, engaging British male voice
-        ssmlGender: 'MALE'
+        voice: 'onyx', // Professional, engaging male voice
+        speed: 0.95
       };
     case '12':
       return {
-        languageCode: 'en-GB',
-        name: 'en-GB-Wavenet-D', // Mature, sophisticated British male voice
-        ssmlGender: 'MALE'
+        voice: 'echo', // Mature, sophisticated male voice
+        speed: 1.0
       };
     default:
       return {
-        languageCode: 'en-GB',
-        name: 'en-GB-Wavenet-C',
-        ssmlGender: 'FEMALE'
+        voice: 'nova', // Default to clear female voice
+        speed: 0.9
       };
   }
 }
 
-// Helper function to clean story text and add SSML prosody
-function processStoryForTTS(storyText, age) {
-  // Remove non-pronounceable characters and format for TTS
-  let cleanText = storyText
-    // Remove asterisks and other special characters
+// Helper function to clean story text for OpenAI TTS
+function processStoryForTTS(storyText) {
+  // Clean text for natural speech - OpenAI TTS handles this well
+  const cleanText = storyText
+    // Remove asterisks and other formatting
     .replace(/\*/g, '')
     .replace(/[^a-zA-Z0-9\s.,!?;:'"-]/g, '')
-    // Fix common TTS issues
+    // Fix spacing and punctuation
     .replace(/\s+/g, ' ')
     .replace(/([.!?])([A-Z])/g, '$1 $2')
     .trim();
 
-  // Check if text is too long for SSML (conservative 4000 byte limit to account for SSML markup)
-  const textByteLength = Buffer.byteLength(cleanText, 'utf8');
-  const useSimpleSSML = textByteLength > 3000; // Conservative limit
-  
-  if (useSimpleSSML) {
-    // For longer text, use minimal SSML to avoid 5000 byte limit
-    // Age-specific speaking rate only
-    let baseRate;
-    switch (age) {
-      case '3': baseRate = '0.8'; break;
-      case '6': baseRate = '0.9'; break;
-      case '9': baseRate = '0.95'; break;
-      case '12': baseRate = '1.0'; break;
-      default: baseRate = '0.9';
-    }
-    
-    const simpleSSML = `<speak><prosody rate="${baseRate}">${cleanText}</prosody></speak>`;
-    
-    return {
-      displayText: cleanText,
-      ttsText: simpleSSML
-    };
-  }
-
-  // For shorter text, use enhanced SSML with dramatic effects
-  let processedText = cleanText;
-  
-  // Add selective dramatic emphasis (only key words to keep SSML compact)
-  processedText = processedText
-    .replace(/(suddenly|amazing|wonderful|magical|incredible)/gi, '<emphasis level="strong">$1</emphasis>')
-    .replace(/(whispered|quietly)/gi, '<prosody volume="-2dB">$1</prosody>')
-    .replace(/(shouted|yelled)/gi, '<prosody volume="+2dB">$1</prosody>');
-
-  // Age-specific minimal SSML
-  let baseRate, basePitch;
-  switch (age) {
-    case '3':
-      baseRate = '0.8';
-      basePitch = '+2st';
-      break;
-    case '6':
-      baseRate = '0.9';
-      basePitch = '+1st';
-      break;
-    case '9':
-      baseRate = '0.95';
-      basePitch = '+0.5st';
-      break;
-    case '12':
-      baseRate = '1.0';
-      basePitch = '0st';
-      break;
-    default:
-      baseRate = '0.9';
-      basePitch = '+1st';
-  }
-
-  // Create compact SSML
-  const ssmlText = `<speak><prosody rate="${baseRate}" pitch="${basePitch}">${processedText}</prosody></speak>`;
-
-  return {
-    displayText: cleanText,
-    ttsText: ssmlText
-  };
+  return cleanText; // OpenAI TTS doesn't need SSML
 }
 
 // Helper function to generate random story elements for surprise mode
@@ -320,64 +248,57 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     }
   }
 
-  // Process story text for TTS and UI display
-  const processedStory = processStoryForTTS(storyText, age);
+  // Process story text for TTS
+  const cleanStoryText = processStoryForTTS(storyText);
   
   // Get age-appropriate voice settings
   const voiceSettings = getVoiceSettings(age);
   
-  // Convert Story Text to Speech with SSML and improved voice settings
+  console.log('🎵 Generating audio with OpenAI TTS:', {
+    voice: voiceSettings.voice,
+    speed: voiceSettings.speed,
+    textLength: cleanStoryText.length
+  });
+  
+  // Convert Story Text to Speech using OpenAI TTS
   let audioContent;
   
   try {
-    // Try SSML first
-    const ssmlRequest = {
-      input: { ssml: processedStory.ttsText },
-      voice: {
-        languageCode: voiceSettings.languageCode,
-        name: voiceSettings.name,
-        ssmlGender: voiceSettings.ssmlGender,
+    const ttsResponse = await fetch(OPENAI_TTS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
       },
-      audioConfig: {
-        audioEncoding: 'MP3',
-        speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95, // Slower for younger children
-        pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0, // Higher pitch for younger children
-        volumeGainDb: 2.0, // Slightly louder for clarity
-        // Yoto-optimized settings for better compatibility
-        sampleRateHertz: 22050, // Standard rate compatible with most players
-        effectsProfileId: ['telephony-class-application'] // Optimize for device playback
-      },
-    };
-    const [ssmlResponse] = await ttsClient.synthesizeSpeech(ssmlRequest);
-    audioContent = ssmlResponse.audioContent;
+      body: JSON.stringify({
+        model: 'tts-1', // Using the standard TTS model
+        input: cleanStoryText,
+        voice: voiceSettings.voice,
+        speed: voiceSettings.speed,
+        response_format: 'mp3' // MP3 format for better compatibility
+      })
+    });
+    
+    if (!ttsResponse.ok) {
+      const errorData = await ttsResponse.text();
+      throw new Error(`OpenAI TTS API error: ${ttsResponse.status} - ${errorData}`);
+    }
+    
+    // Get the audio buffer
+    audioContent = Buffer.from(await ttsResponse.arrayBuffer());
+    
+    console.log('✅ OpenAI TTS generation successful:', {
+      audioSize: audioContent.length,
+      format: 'mp3'
+    });
     
   } catch (error) {
-    console.warn('SSML TTS failed, falling back to plain text:', error.message);
-    
-    // Fallback to plain text TTS
-    const textRequest = {
-      input: { text: processedStory.displayText },
-      voice: {
-        languageCode: voiceSettings.languageCode,
-        name: voiceSettings.name,
-        ssmlGender: voiceSettings.ssmlGender,
-      },
-      audioConfig: {
-        audioEncoding: 'MP3',
-        speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
-        pitch: age === '3' ? 2.0 : age === '6' ? 1.0 : 0.0,
-        volumeGainDb: 2.0,
-        // Yoto-optimized settings for better compatibility
-        sampleRateHertz: 22050, // Standard rate compatible with most players
-        effectsProfileId: ['telephony-class-application'] // Optimize for device playback
-      },
-    };
-    const [textResponse] = await ttsClient.synthesizeSpeech(textRequest);
-    audioContent = textResponse.audioContent;
+    console.error('❌ OpenAI TTS generation failed:', error.message);
+    throw new Error(`Audio generation failed: ${error.message}`);
   }
   
   return { 
-    storyText: processedStory.displayText, // Return clean text for UI
+    storyText: cleanStoryText, // Return clean text for UI
     audioContent,
     generatedImage: generatedImageBase64 // Include generated image for surprise mode
   };
