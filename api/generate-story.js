@@ -7,7 +7,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // --- OpenAI TTS Configuration ---
 // Using ttsopenai.com API for better audio compatibility with Yoto
-const OPENAI_TTS_API_URL = 'https://api.ttsopenai.com/v1/audio/speech';
+const OPENAI_TTS_API_URL = 'https://ttsopenai.com/api/tts';
 const OPENAI_API_KEY = 'tts-c12443d1d4e2e42d385fe3d040ce401e';
 
 // Helper function for Gemini image processing
@@ -264,37 +264,66 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   let audioContent;
   
   try {
+    const requestBody = {
+      model: 'tts-1',
+      input: cleanStoryText.substring(0, 4096), // Limit text length to prevent issues
+      voice: voiceSettings.voice,
+      speed: voiceSettings.speed,
+      response_format: 'mp3'
+    };
+    
+    console.log('🚀 Making OpenAI TTS request:', {
+      url: OPENAI_TTS_API_URL,
+      model: requestBody.model,
+      voice: requestBody.voice,
+      speed: requestBody.speed,
+      inputLength: requestBody.input.length
+    });
+    
     const ttsResponse = await fetch(OPENAI_TTS_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'StoryForge/1.0'
       },
-      body: JSON.stringify({
-        model: 'tts-1', // Using the standard TTS model
-        input: cleanStoryText,
-        voice: voiceSettings.voice,
-        speed: voiceSettings.speed,
-        response_format: 'mp3' // MP3 format for better compatibility
-      })
+      body: JSON.stringify(requestBody)
     });
+    
+    console.log('📊 TTS Response status:', ttsResponse.status, ttsResponse.statusText);
+    console.log('📊 Response headers:', Object.fromEntries(ttsResponse.headers.entries()));
     
     if (!ttsResponse.ok) {
       const errorData = await ttsResponse.text();
+      console.error('❌ OpenAI TTS API error response:', errorData);
       throw new Error(`OpenAI TTS API error: ${ttsResponse.status} - ${errorData}`);
     }
+    
+    // Check content type
+    const contentType = ttsResponse.headers.get('content-type');
+    console.log('🔊 Response content-type:', contentType);
     
     // Get the audio buffer
     audioContent = Buffer.from(await ttsResponse.arrayBuffer());
     
     console.log('✅ OpenAI TTS generation successful:', {
       audioSize: audioContent.length,
+      contentType: contentType,
       format: 'mp3'
     });
     
+    if (audioContent.length === 0) {
+      throw new Error('Received empty audio buffer');
+    }
+    
   } catch (error) {
-    console.error('❌ OpenAI TTS generation failed:', error.message);
-    throw new Error(`Audio generation failed: ${error.message}`);
+    console.error('❌ OpenAI TTS generation failed:', {
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Fallback error message
+    throw new Error(`Audio generation failed: ${error.message}. Please try again.`);
   }
   
   return { 
