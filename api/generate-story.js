@@ -18,7 +18,7 @@ const ttsClient = new textToSpeech.TextToSpeechClient({
 // Using ttsopenai.com API for better audio compatibility with Yoto
 const OPENAI_TTS_API_URL = 'https://ttsopenai.com/api/tts';
 const OPENAI_API_KEY = 'tts-c12443d1d4e2e42d385fe3d040ce401e';
-const USE_OPENAI_TTS = true; // Set to false to use Google TTS fallback
+const USE_OPENAI_TTS = false; // Set to false to use Google TTS fallback - temporarily disabled due to API issues
 
 // Helper function for Gemini image processing
 function fileToGenerativePart(base64Data, mimeType) {
@@ -277,9 +277,16 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     try {
       console.log('🎵 Attempting OpenAI TTS...');
       audioContent = await generateOpenAITTS(cleanStoryText, voiceSettings);
+      console.log('✅ OpenAI TTS successful, using OpenAI audio');
     } catch (openaiError) {
       console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS:', openaiError.message);
-      audioContent = await generateGoogleTTS(cleanStoryText, age);
+      try {
+        audioContent = await generateGoogleTTS(cleanStoryText, age);
+        console.log('✅ Google TTS fallback successful');
+      } catch (googleError) {
+        console.error('❌ Both TTS services failed:', googleError.message);
+        throw new Error(`Both TTS services failed. OpenAI: ${openaiError.message.substring(0, 100)}... Google: ${googleError.message}`);
+      }
     }
   } else {
     console.log('🎵 Using Google TTS (OpenAI disabled)');
