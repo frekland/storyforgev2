@@ -367,7 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         error: uploadError
                     });
                     
-                    // Fallback to streaming URL
+                    // Fallback to streaming URL with ALL story parameters
+                    console.log('🔄 Building streaming URL with full story parameters...');
                     const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
                     const params = {
                         heroName: (storyData.heroName || 'Hero').trim(),
@@ -378,8 +379,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         audioOnly: 'true'
                     };
                     
+                    // Log parameters being used
+                    console.log('📝 Story parameters for streaming:', {
+                        heroName: params.heroName,
+                        promptSetup: params.promptSetup || '[MISSING]',
+                        promptRising: params.promptRising || '[MISSING]',
+                        promptClimax: params.promptClimax || '[MISSING]',
+                        age: params.age
+                    });
+                    
                     Object.entries(params).forEach(([key, value]) => {
-                        if (value) streamingUrl.searchParams.set(key, value);
+                        if (value && value.trim()) { // Only add non-empty values
+                            streamingUrl.searchParams.set(key, value);
+                        }
                     });
                     
                     trackUrl = streamingUrl.toString();
@@ -389,7 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (uploadError) {
                 console.error('❌ Error in audio upload process:', uploadError);
                 
-                // Fallback to streaming URL
+                // Fallback to streaming URL with ALL story parameters
+                console.log('🔄 Building streaming URL with full story parameters (upload error fallback)...');
                 const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
                 const params = {
                     heroName: (storyData.heroName || 'Hero').trim(),
@@ -400,8 +413,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     audioOnly: 'true'
                 };
                 
+                // Log parameters being used
+                console.log('📝 Story parameters for streaming (error fallback):', {
+                    heroName: params.heroName,
+                    promptSetup: params.promptSetup || '[MISSING]',
+                    promptRising: params.promptRising || '[MISSING]',
+                    promptClimax: params.promptClimax || '[MISSING]',
+                    age: params.age
+                });
+                
                 Object.entries(params).forEach(([key, value]) => {
-                    if (value) streamingUrl.searchParams.set(key, value);
+                    if (value && value.trim()) { // Only add non-empty values
+                        streamingUrl.searchParams.set(key, value);
+                    }
                 });
                 
                 trackUrl = streamingUrl.toString();
