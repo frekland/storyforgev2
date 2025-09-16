@@ -309,6 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Step 3: Create streaming URL for new story
+            // NOTE: Excluding heroImage from URL params to avoid 400 errors from overly long URLs
+            // The Yoto streaming endpoint will generate stories without the image if needed
             const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
             streamingUrl.searchParams.set('heroName', storyData.heroName || 'Hero');
             streamingUrl.searchParams.set('promptSetup', storyData.promptSetup || '');
@@ -316,9 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
             streamingUrl.searchParams.set('promptClimax', storyData.promptClimax || '');
             streamingUrl.searchParams.set('age', storyData.age || '6');
             streamingUrl.searchParams.set('audioOnly', 'true');
-            if (storyData.heroImage) {
-                streamingUrl.searchParams.set('heroImage', storyData.heroImage);
-            }
+            // Intentionally omitting heroImage to avoid URL length limits
+            // Note: This means Yoto streaming will not include the uploaded image
             
             console.log('🎵 Created streaming URL:', streamingUrl.toString());
             
@@ -586,71 +587,101 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         
+                        <div class="form-instructions paper-scrap">
+                            <p class="instructions-text">
+                                <span class="instructions-icon">💡</span>
+                                <strong>How it works:</strong> Fill in at least one story element below, and I'll create a magical tale for you! The more details you give me, the better your story will be.
+                                <span class="instructions-sparkles">✨</span>
+                            </p>
+                        </div>
+                        
                         <form id="classic-story-form" class="story-form">
-                            <div class="input-group paper-scrap">
-                                <label for="classic-heroName" class="playful-label">
-                                    <span class="label-text">Hero's Name <span class="required">*</span></span>
-                                    <span class="label-doodle">🦸</span>
-                                </label>
-                                <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna..." required>
-                            </div>
-
-                            <div class="input-group paper-scrap">
-                                <label for="classic-promptSetup" class="playful-label">
-                                    <span class="label-text">The Beginning <span class="required">*</span></span>
-                                    <span class="label-doodle">🌅</span>
-                                </label>
-                                <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream..." required>
-                            </div>
-                            
-                            <div class="input-group paper-scrap">
-                                <label for="classic-promptRising" class="playful-label">
-                                    <span class="label-text">The Challenge</span>
-                                    <span class="label-doodle">⚡</span>
-                                </label>
-                                <input type="text" id="classic-promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
-                            </div>
-
-                            <div class="input-group paper-scrap">
-                                <label for="classic-promptClimax" class="playful-label">
-                                    <span class="label-text">The Climax</span>
-                                    <span class="label-doodle">🎆</span>
-                                </label>
-                                <input type="text" id="classic-promptClimax" class="paper-input" placeholder="e.g., the dragon was tickled until it laughed...">
-                            </div>
-                            
-                            <div class="input-group paper-scrap image-upload-section">
-                                <label for="classic-heroImage" class="playful-label">
-                                    <span class="label-text">Draw Your Character</span>
-                                    <span class="label-doodle">🎨</span>
-                                </label>
-                                <div id="classic-image-upload-area" class="paper-upload">
-                                    <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
-                                    <div class="upload-content">
-                                        <button type="button" class="upload-btn" onclick="document.getElementById('classic-heroImage').click()">
-                                            <span>📎 Upload Drawing</span>
-                                        </button>
-                                        <p class="upload-hint">or drag and drop your masterpiece here!</p>
-                                        <div id="classic-image-preview" class="preview-container hidden"></div>
+                            <!-- Story Elements Section - combines all story inputs -->
+                            <div class="story-elements-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">📚</span>
+                                    <span>Story Elements</span>
+                                </h3>
+                                
+                                <div class="input-row">
+                                    <div class="input-group">
+                                        <label for="classic-heroName" class="playful-label">
+                                            <span class="label-text">Hero's Name</span>
+                                            <span class="label-doodle">🦸</span>
+                                        </label>
+                                        <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
                                     </div>
-                                    <div class="upload-doodles">
-                                        <span class="doodle-arrow">→</span>
-                                        <span class="doodle-star">★</span>
+
+                                    <div class="input-group">
+                                        <label for="classic-promptSetup" class="playful-label">
+                                            <span class="label-text">The Beginning</span>
+                                            <span class="label-doodle">🌅</span>
+                                        </label>
+                                        <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                                    </div>
+                                </div>
+                                
+                                <div class="input-row">
+                                    <div class="input-group">
+                                        <label for="classic-promptRising" class="playful-label">
+                                            <span class="label-text">The Challenge</span>
+                                            <span class="label-doodle">⚡</span>
+                                        </label>
+                                        <input type="text" id="classic-promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
+                                    </div>
+
+                                    <div class="input-group">
+                                        <label for="classic-promptClimax" class="playful-label">
+                                            <span class="label-text">The Resolution</span>
+                                            <span class="label-doodle">🎆</span>
+                                        </label>
+                                        <input type="text" id="classic-promptClimax" class="paper-input" placeholder="e.g., the dragon became best friends with everyone...">
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Character & Settings Section - combines image upload and age settings -->
+                            <div class="character-settings-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">🎨</span>
+                                    <span>Character & Settings</span>
+                                </h3>
+                                
+                                <div class="settings-row">
+                                    <div class="image-upload-section">
+                                        <label for="classic-heroImage" class="playful-label">
+                                            <span class="label-text">Draw Your Character</span>
+                                            <span class="label-doodle">🎨</span>
+                                        </label>
+                                        <div id="classic-image-upload-area" class="paper-upload">
+                                            <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
+                                            <div class="upload-content">
+                                                <button type="button" class="upload-btn" onclick="document.getElementById('classic-heroImage').click()">
+                                                    <span>📎 Upload Drawing</span>
+                                                </button>
+                                                <p class="upload-hint">or drag and drop your masterpiece here!</p>
+                                                <div id="classic-image-preview" class="preview-container hidden"></div>
+                                            </div>
+                                            <div class="upload-doodles">
+                                                <span class="doodle-arrow">→</span>
+                                                <span class="doodle-star">★</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <div class="input-group paper-scrap">
-                                <label for="classic-story-age" class="playful-label">
-                                    <span class="label-text">Story Length</span>
-                                    <span class="label-doodle">📆</span>
-                                </label>
-                                <select id="classic-story-age" class="paper-select" required>
-                                    <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
-                                    <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
-                                    <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
-                                    <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
-                                </select>
+                                    <div class="age-selection">
+                                        <label for="classic-story-age" class="playful-label">
+                                            <span class="label-text">Story Length</span>
+                                            <span class="label-doodle">📆</span>
+                                        </label>
+                                        <select id="classic-story-age" class="paper-select" required>
+                                            <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
+                                            <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
+                                            <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
+                                            <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="submit-section paper-scrap">
@@ -853,12 +884,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                previewElement.style.backgroundImage = `url(${e.target.result})`;
+                // Create a nice preview with image and success message
+                previewElement.innerHTML = `
+                    <div class="image-preview-content">
+                        <div class="preview-image">
+                            <img src="${e.target.result}" alt="Uploaded character" class="uploaded-image">
+                        </div>
+                        <div class="preview-success">
+                            <span class="success-icon">✅</span>
+                            <span class="success-text">Image uploaded successfully!</span>
+                        </div>
+                        <div class="preview-filename">${file.name}</div>
+                    </div>
+                `;
                 previewElement.classList.remove('hidden');
                 // Store the base64 data for later use
                 heroImageBase64 = e.target.result;
+                
+                console.log('🖼️ Image uploaded and preview updated');
             };
             reader.readAsDataURL(file);
+        } else {
+            console.warn('⚠️ Invalid file type. Please upload an image.');
         }
     };
     
@@ -901,13 +948,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             // Validate required fields for non-surprise mode
+            // User needs at least one story element to generate a story
             if (!isSurpriseMode) {
-                if (!formData.heroName) {
-                    showAlert('Please enter a hero name for your story!');
-                    return;
-                }
-                if (!formData.promptSetup) {
-                    showAlert('Please describe the beginning of your story!');
+                const hasAtLeastOneElement = 
+                    formData.heroName.trim() || 
+                    formData.promptSetup.trim() || 
+                    formData.promptRising.trim() || 
+                    formData.promptClimax.trim();
+                
+                if (!hasAtLeastOneElement) {
+                    showAlert('Please fill in at least one story element to create your tale! \u2728');
                     return;
                 }
             }
@@ -937,23 +987,33 @@ document.addEventListener('DOMContentLoaded', () => {
             // Handle audio if available
             const audioPlayer = document.getElementById('story-audio-player');
             if (data.audio && audioPlayer) {
-                // Convert Base64 audio to blob URL for playback
-                const audioSrc = `data:audio/mp3;base64,${data.audio}`;
-                const base64toBlob = (base64) => {
-                    const byteString = atob(base64.split(',')[1]);
-                    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+                try {
+                    // Convert Base64 audio to blob URL for playback
+                    // The API returns raw base64, not data URL format
+                    const byteString = atob(data.audio);
                     const ab = new ArrayBuffer(byteString.length);
                     const ia = new Uint8Array(ab);
                     for (let i = 0; i < byteString.length; i++) { 
                         ia[i] = byteString.charCodeAt(i); 
                     }
-                    return new Blob([ab], { type: mimeString });
-                };
-                const audioBlob = base64toBlob(audioSrc);
-                const audioBlobUrl = URL.createObjectURL(audioBlob);
-                audioPlayer.src = audioBlobUrl;
-                audioPlayer.classList.remove('hidden');
-                console.log('Audio player loaded with generated story audio');
+                    const audioBlob = new Blob([ab], { type: 'audio/mpeg' });
+                    const audioBlobUrl = URL.createObjectURL(audioBlob);
+                    
+                    audioPlayer.src = audioBlobUrl;
+                    audioPlayer.classList.remove('hidden');
+                    
+                    // Add event listeners for debugging
+                    audioPlayer.addEventListener('loadedmetadata', () => {
+                        console.log('✅ Audio loaded successfully, duration:', audioPlayer.duration);
+                    });
+                    audioPlayer.addEventListener('error', (e) => {
+                        console.error('❌ Audio player error:', e);
+                    });
+                    
+                    console.log('🎵 Audio player setup complete with blob URL');
+                } catch (audioError) {
+                    console.error('❌ Error setting up audio player:', audioError);
+                }
             }
             
             // Show Yoto upload button if user is authenticated

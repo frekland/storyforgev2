@@ -153,58 +153,66 @@
             </div>
         
             <div id="story-output" class="story-output-container hidden">
-                <div class="story-header paper-scrap">
-                    <h2 class="story-title">
-                        <span>📚 Your Epic Tale! 📚</span>
-                        <div class="title-underline"></div>
-                    </h2>
-                    <div class="story-doodles">
-                        <span class="doodle">✨</span>
-                        <span class="doodle">🌟</span>
-                        <span class="doodle">✨</span>
-                    </div>
-                </div>
-                
-                <div class="loading-section paper-scrap" id="loading-section">
-                    <div id="loading-spinner" class="magical-spinner"></div>
-                    <p class="loading-text">
-                        <span class="loading-emoji">✨</span>
-                        <span>Brewing your magical story...</span>
-                        <span class="loading-emoji">✨</span>
-                    </p>
-                </div>
-                
-                <div class="story-content paper-scrap" id="story-content">
-                    <div class="story-text-container">
-                        <div class="story-decoration-top">
-                            <span>🌟</span>
-                            <span>✨</span>
-                            <span>🌟</span>
-                        </div>
-                        <p id="story-text" class="story-text"></p>
-                        <div class="story-decoration-bottom">
-                            <span>✨</span>
-                            <span>🌟</span>
-                            <span>✨</span>
+                <!-- Main Story Section - combines header, loading, and content -->
+                <div class="main-story-section paper-scrap">
+                    <div class="story-header">
+                        <h2 class="story-title">
+                            <span>📚 Your Epic Tale! 📚</span>
+                            <div class="title-underline"></div>
+                        </h2>
+                        <div class="story-doodles">
+                            <span class="doodle">✨</span>
+                            <span class="doodle">🌟</span>
+                            <span class="doodle">✨</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="audio-section paper-scrap" id="audio-section">
-                    <div class="audio-header">
-                        <span class="audio-icon">🎧</span>
-                        <span class="audio-text">Listen to Your Story</span>
-                        <span class="audio-icon">🎵</span>
+                    
+                    <div class="loading-section" id="loading-section">
+                        <div id="loading-spinner" class="magical-spinner"></div>
+                        <p class="loading-text">
+                            <span class="loading-emoji">✨</span>
+                            <span>Brewing your magical story...</span>
+                            <span class="loading-emoji">✨</span>
+                        </p>
                     </div>
-                    <audio id="story-audio-player" controls class="story-audio hidden"></audio>
+                    
+                    <div class="story-content" id="story-content">
+                        <div class="story-text-container">
+                            <div class="story-decoration-top">
+                                <span>🌟</span>
+                                <span>✨</span>
+                                <span>🌟</span>
+                            </div>
+                            <p id="story-text" class="story-text"></p>
+                            <div class="story-decoration-bottom">
+                                <span>✨</span>
+                                <span>🌟</span>
+                                <span>✨</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="yoto-section paper-scrap" id="yoto-section">
-                    <button id="upload-to-yoto-button" class="yoto-btn hidden">
-                        <span class="btn-icon">🎧</span>
-                        <span class="btn-text">Upload to Yoto</span>
-                        <span class="btn-magic">✨</span>
-                    </button>
+                <!-- Media & Actions Section - combines audio and Yoto upload -->
+                <div class="media-actions-section paper-scrap">
+                    <div class="audio-section" id="audio-section">
+                        <div class="audio-header">
+                            <span class="audio-icon">🎧</span>
+                            <span class="audio-text">Listen to Your Story</span>
+                            <span class="audio-icon">🎵</span>
+                        </div>
+                        <audio id="story-audio-player" controls class="story-audio hidden"></audio>
+                    </div>
+                    
+                    <div class="action-divider"></div>
+                    
+                    <div class="yoto-section" id="yoto-section">
+                        <button id="upload-to-yoto-button" class="yoto-btn hidden">
+                            <span class="btn-icon">🎧</span>
+                            <span class="btn-text">Upload to Yoto</span>
+                            <span class="btn-magic">✨</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
