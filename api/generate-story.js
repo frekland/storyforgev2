@@ -374,8 +374,8 @@ async function generateGoogleTTS(cleanStoryText, age) {
   
   const voiceSettings = {
     languageCode: 'en-GB',
-    name: age === '3' ? 'en-GB-Wavenet-A' : age === '6' ? 'en-GB-Wavenet-C' : 'en-GB-Wavenet-B',
-    ssmlGender: age === '9' || age === '12' ? 'MALE' : 'FEMALE'
+    name: 'en-GB-Chirp3-HD-Vindemiatrix', // High-quality Chirp3-HD voice for all ages
+    ssmlGender: 'FEMALE'
   };
   
   const request = {

@@ -1974,20 +1974,9 @@ function setupDebugSystem() {
         }
     };
     
-    // Auto-show debug panel if user is authenticated
-    setTimeout(() => {
-        if (window.checkYotoAuth()) {
-            window.showDebugPanel();
-            // Auto-run diagnostics
-            setTimeout(() => {
-                if (typeof window.runDiagnostics === 'function') {
-                    window.runDiagnostics();
-                }
-            }, 500);
-        } else {
-            console.log('🔧 Debug system ready - call window.showDebugPanel() to show');
-        }
-    }, 2000);
+    // Debug panel is now hidden by default
+    // Use window.showDebugPanel() to show it when needed
+    console.log('🔧 Debug system ready - call window.showDebugPanel() to show debug panel');
     
     console.log('✅ Debug system setup complete');
 }
