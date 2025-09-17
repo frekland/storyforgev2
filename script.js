@@ -35,12 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Modal Functionality ---
     const showAlert = (message) => {
-        alertMessage.textContent = message;
-        alertModal.classList.remove('hidden');
+        if (alertMessage) alertMessage.textContent = message;
+        if (alertModal) alertModal.classList.remove('hidden');
     };
-    closeButton.onclick = () => alertModal.classList.add('hidden');
+    
+    if (closeButton) {
+        closeButton.onclick = () => {
+            if (alertModal) alertModal.classList.add('hidden');
+        };
+    }
+    
     window.onclick = (event) => {
-        if (event.target === alertModal) {
+        if (event.target === alertModal && alertModal) {
             alertModal.classList.add('hidden');
         }
     };
@@ -58,13 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('storyforge-theme', newTheme);
         
         // Add a little celebration animation
-        themeToggle.style.transform = 'scale(1.2) rotate(360deg)';
-        setTimeout(() => {
-            themeToggle.style.transform = '';
-        }, 300);
+        if (themeToggle) {
+            themeToggle.style.transform = 'scale(1.2) rotate(360deg)';
+            setTimeout(() => {
+                if (themeToggle) themeToggle.style.transform = '';
+            }, 300);
+        }
     };
     
-    themeToggle.addEventListener('click', toggleTheme);
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
     initTheme();
 
     // --- Part 1: Authentication Logic ---
@@ -188,7 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    loginButton.addEventListener('click', handleLogin);
+    if (loginButton) {
+        loginButton.addEventListener('click', handleLogin);
+    }
     
     // Make logo clickable to return to mode selection
     if (logoHome) {

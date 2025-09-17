@@ -784,6 +784,46 @@ body {
   margin-bottom: 40px;
 }
 
+.login-btn {
+  background: linear-gradient(45deg, var(--accent-color), var(--accent-secondary));
+  border: 3px solid var(--border-color);
+  border-radius: 20px;
+  padding: 18px 40px;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 1.4em;
+  color: white;
+  box-shadow: 
+    0 8px 16px var(--shadow-dark),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.login-btn:hover {
+  transform: scale(1.05) rotate(-1deg);
+  box-shadow: 
+    0 12px 20px var(--shadow-dark),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+.login-btn .btn-icon,
+.login-btn .btn-magic {
+  font-size: 1.2em;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.login-btn .btn-text {
+  font-weight: 600;
+}
+
 .app-container {
   animation: fadeInUp 0.8s ease-out;
 }
