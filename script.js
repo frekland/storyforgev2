@@ -78,6 +78,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initTheme();
 
+    // --- Navigation Dropdown Functionality ---
+    const initializeNavigation = () => {
+        // Handle navigation dropdown clicks
+        const navItems = document.querySelectorAll('.nav-item[data-mode]');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const mode = item.dataset.mode;
+                showMode(mode);
+                // Hide dropdown after selection (will auto-hide on next mouse move anyway)
+            });
+        });
+        
+        // Settings button (dummy for now)
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                showAlert('⚙️ Settings panel coming soon! \n\nPlanned features:\n• Voice selection\n• Story length preferences\n• Custom themes\n• Export options');
+            });
+        }
+    };
+    
     // --- Part 1: Authentication Logic ---
     const handleLogin = async () => {
         try {
@@ -787,9 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update current mode display in top bar
         const modeNames = {
             'classic': '📚 Classic Story',
-            'wanted-poster': '🤠 Wanted Poster',
+            'adventure-me': '⚔️ Adventure Me',
             'homework-forge': '📝 Homework Forge',
             'sleep-forge': '🌙 Sleep Forge',
+            'dream-job': '🔮 Dream Job Detective',
             'monster-maker': '👹 Monster Maker',
             'help': '💡 Help & Templates'
         };
@@ -1560,6 +1582,236 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
 
+            case 'adventure-me':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">⚔️</span>
+                                <span>Adventure Me</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🌟</span>
+                                    <span><strong>You're the hero!</strong> Put yourself in the center of an epic adventure story.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🗺️</span>
+                                    <span><strong>Choose your adventure:</strong> Wild West, underwater kingdom, sky cities, or jungle exploration.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">⚡</span>
+                                    <span><strong>Add your skills:</strong> Tell us your special abilities to make the story uniquely yours!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="adventure-me-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">⚔️</span>
+                                    <span>Design Your Adventure</span>
+                                </h3>
+                                
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="adventure-child-name" class="compact-label">
+                                                <span>🌟 Your Name *</span>
+                                            </label>
+                                            <input type="text" id="adventure-child-name" class="paper-input" placeholder="Enter your name..." required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="adventure-theme" class="compact-label">
+                                                <span>🗺️ Adventure Theme *</span>
+                                            </label>
+                                            <select id="adventure-theme" class="paper-select" required>
+                                                <option value="">Choose your adventure...</option>
+                                                <option value="wild-west">🤠 Wild West Frontier</option>
+                                                <option value="underwater">🌊 Underwater Kingdom</option>
+                                                <option value="sky">☁️ Sky Cities</option>
+                                                <option value="jungle">🌴 Jungle Exploration</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="adventure-special-skill" class="compact-label">
+                                                <span>⚡ Your Special Skill</span>
+                                            </label>
+                                            <input type="text" id="adventure-special-skill" class="paper-input" placeholder="e.g., super speed, talking to animals, magic spells...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="age-selection-compact">
+                                    <label for="adventure-story-age" class="compact-label">
+                                        <span>Story Length:</span>
+                                    </label>
+                                    <select id="adventure-story-age" class="paper-select">
+                                        <option value="6" selected>🧒 Young Adventurers (6-8 years, ~500 words)</option>
+                                        <option value="9">🧒 Brave Explorers (8-12 years, ~1000 words)</option>
+                                        <option value="12">🧑 Epic Heroes (12+ years, ~2000 words)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">⚔️ Start My Adventure! ⚔️</span>
+                                    <div class="btn-sparkles">
+                                        <span>🌟</span>
+                                        <span>⚡</span>
+                                        <span>🌟</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+            case 'dream-job':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">🔮</span>
+                                <span>Dream Job Detective</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🔮</span>
+                                    <span><strong>Discover your future!</strong> Take our fun personality quiz to find your perfect career match.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🎯</span>
+                                    <span><strong>AI-powered matching:</strong> Our smart system analyzes your interests and suggests exciting jobs.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">📖</span>
+                                    <span><strong>Story time:</strong> Hear an inspiring story about your future career adventures!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="dream-job-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">🔮</span>
+                                    <span>Career Discovery Quiz</span>
+                                </h3>
+                                
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="dream-child-name" class="compact-label">
+                                                <span>🌟 Your Name *</span>
+                                            </label>
+                                            <input type="text" id="dream-child-name" class="paper-input" placeholder="Enter your name..." required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="dream-favorite-subject" class="compact-label">
+                                                <span>📚 Favorite Subject *</span>
+                                            </label>
+                                            <select id="dream-favorite-subject" class="paper-select" required>
+                                                <option value="">Choose your favorite...</option>
+                                                <option value="science">🔬 Science</option>
+                                                <option value="art">🎨 Art</option>
+                                                <option value="technology">💻 Technology</option>
+                                                <option value="nature">🌿 Nature</option>
+                                                <option value="music">🎵 Music</option>
+                                                <option value="storytelling">📖 Reading & Writing</option>
+                                                <option value="math">🧮 Math</option>
+                                                <option value="cooking">👨‍🍳 Cooking</option>
+                                                <option value="geography">🗺️ Geography</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="dream-activity" class="compact-label">
+                                                <span>⚡ Dream Activity *</span>
+                                            </label>
+                                            <select id="dream-activity" class="paper-select" required>
+                                                <option value="">What do you love to do?</option>
+                                                <option value="creating">🎨 Creating & Making Things</option>
+                                                <option value="exploring">🔍 Exploring & Discovering</option>
+                                                <option value="building">🏗️ Building & Engineering</option>
+                                                <option value="performing">🎭 Performing & Entertaining</option>
+                                                <option value="solving">🧩 Solving Problems</option>
+                                                <option value="teaching">👩‍🏫 Teaching & Helping Others</option>
+                                                <option value="cooking">👨‍🍳 Cooking & Food</option>
+                                                <option value="traveling">✈️ Traveling & Adventure</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="dream-work-environment" class="compact-label">
+                                                <span>🏢 Work Environment</span>
+                                            </label>
+                                            <select id="dream-work-environment" class="paper-select">
+                                                <option value="">Where do you like to be?</option>
+                                                <option value="outdoors">🌲 Outdoors in Nature</option>
+                                                <option value="indoors">🏢 Indoors & Cozy</option>
+                                                <option value="teams">👥 Working with Teams</option>
+                                                <option value="quiet">🤫 Quiet & Peaceful</option>
+                                                <option value="labs">🧪 Labs & Workshops</option>
+                                                <option value="creative">🎨 Creative Studios</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="dream-helping-style" class="compact-label">
+                                                <span>💝 How You Like to Help</span>
+                                            </label>
+                                            <select id="dream-helping-style" class="paper-select">
+                                                <option value="">How do you help others?</option>
+                                                <option value="inspiring">✨ Inspiring & Motivating</option>
+                                                <option value="protecting">🛡️ Protecting & Saving</option>
+                                                <option value="teaching">📖 Teaching & Educating</option>
+                                                <option value="creating">🎨 Creating Beautiful Things</option>
+                                                <option value="solving">🔧 Solving Problems</option>
+                                                <option value="entertaining">🎪 Entertaining & Fun</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="age-selection-compact">
+                                    <label for="dream-story-age" class="compact-label">
+                                        <span>Story Length:</span>
+                                    </label>
+                                    <select id="dream-story-age" class="paper-select">
+                                        <option value="9" selected>🧒 Future Dreamers (9-12 years, ~800 words)</option>
+                                        <option value="12">🧑 Career Explorers (12+ years, ~1200 words)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">🔮 Discover My Dream Job! 🔮</span>
+                                    <div class="btn-sparkles">
+                                        <span>💼</span>
+                                        <span>✨</span>
+                                        <span>💼</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
             default:
                 return `
                     <div class="mode-header paper-scrap">
@@ -1607,6 +1859,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'monster-maker':
                 setupMonsterMakerModeListeners();
+                break;
+            case 'adventure-me':
+                setupAdventureMeModeListeners();
+                break;
+            case 'dream-job':
+                setupDreamJobModeListeners();
                 break;
             // Additional modes will be added here
         }
@@ -1839,6 +2097,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (monsterLocationInput && monsterLocationPreview) {
             monsterLocationInput.addEventListener('change', (e) => {
                 handleImageUpload(e, monsterLocationPreview, 'location');
+            });
+        }
+    };
+    
+    const setupAdventureMeModeListeners = () => {
+        const adventureForm = document.getElementById('adventure-me-form');
+        
+        console.log('⚔️ Setting up Adventure Me mode listeners...');
+        
+        // Form submission
+        if (adventureForm) {
+            adventureForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateAdventureMe();
+            });
+        }
+    };
+    
+    const setupDreamJobModeListeners = () => {
+        const dreamJobForm = document.getElementById('dream-job-form');
+        
+        console.log('🔮 Setting up Dream Job Detective mode listeners...');
+        
+        // Form submission
+        if (dreamJobForm) {
+            dreamJobForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateDreamJob();
             });
         }
     };
@@ -2296,6 +2582,161 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Generate Adventure Me story
+    const generateAdventureMe = async () => {
+        console.log('⚔️ Generating Adventure Me story...');
+        
+        const childName = document.getElementById('adventure-child-name')?.value?.trim() || '';
+        const theme = document.getElementById('adventure-theme')?.value || '';
+        const specialSkill = document.getElementById('adventure-special-skill')?.value?.trim() || '';
+        const age = document.getElementById('adventure-story-age')?.value || '6';
+        
+        if (!childName || !theme) {
+            showAlert('Please enter your name and choose an adventure theme!');
+            return;
+        }
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Preparing your epic adventure...');
+        
+        try {
+            const formData = {
+                mode: 'adventure-me',
+                childName: childName,
+                theme: theme,
+                specialSkill: specialSkill,
+                age: age
+            };
+            
+            updateProgressStage(3, 'active', 'Crafting your personalized adventure story...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'adventure-me');
+            hideProgressModal();
+            
+            console.log('✨ Adventure Me story generated successfully!');
+            
+        } catch (error) {
+            console.error('Error generating Adventure Me story:', error);
+            hideProgressModal();
+            showAlert('Failed to create your adventure: ' + error.message);
+        }
+    };
+    
+    // Generate Dream Job Detective story
+    const generateDreamJob = async () => {
+        console.log('🔮 Generating Dream Job Detective story...');
+        
+        const childName = document.getElementById('dream-child-name')?.value?.trim() || '';
+        const favoriteSubject = document.getElementById('dream-favorite-subject')?.value || '';
+        const dreamActivity = document.getElementById('dream-activity')?.value || '';
+        const workEnvironment = document.getElementById('dream-work-environment')?.value || '';
+        const helpingStyle = document.getElementById('dream-helping-style')?.value || '';
+        const age = document.getElementById('dream-story-age')?.value || '9';
+        
+        if (!childName || !favoriteSubject || !dreamActivity) {
+            showAlert('Please enter your name and answer at least the first two quiz questions!');
+            return;
+        }
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Analyzing your personality and interests...');
+        
+        try {
+            const formData = {
+                mode: 'dream-job',
+                childName: childName,
+                favoriteSubject: favoriteSubject,
+                dreamActivity: dreamActivity,
+                workEnvironment: workEnvironment,
+                helpingStyle: helpingStyle,
+                age: age
+            };
+            
+            updateProgressStage(2, 'active', 'Matching you with the perfect career...');
+            updateProgressStage(3, 'active', 'Creating your inspirational career story...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'dream-job');
+            
+            // Show job match results
+            if (data.dreamJob) {
+                showJobMatchResults(data.dreamJob, data.allMatches);
+            }
+            
+            hideProgressModal();
+            
+            console.log('🎆 Dream Job Detective story generated successfully!');
+            
+        } catch (error) {
+            console.error('Error generating Dream Job story:', error);
+            hideProgressModal();
+            showAlert('Failed to discover your dream job: ' + error.message);
+        }
+    };
+    
+    // Helper function to show job match results
+    const showJobMatchResults = (topJob, allMatches) => {
+        const storyOutput = document.getElementById('story-output');
+        if (storyOutput && topJob) {
+            const jobResults = document.createElement('div');
+            jobResults.className = 'job-results paper-scrap';
+            jobResults.innerHTML = `
+                <div class="job-header">
+                    <span class="job-icon">🎯</span>
+                    <span class="job-text">Your Perfect Career Match!</span>
+                    <span class="job-icon">✨</span>
+                </div>
+                <div class="top-job">
+                    <h3 class="job-title">🎆 ${topJob.title}</h3>
+                    <p class="job-description">${topJob.description}</p>
+                </div>
+                <div class="other-matches">
+                    <h4>Other Great Matches:</h4>
+                    <div class="match-list">
+                        ${allMatches.slice(1, 3).map(job => `
+                            <div class="match-item">
+                                <span class="match-title">🎼 ${job.title}</span>
+                                <span class="match-desc">${job.description}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            storyOutput.appendChild(jobResults);
+        }
+    };
+    
     // Helper function to display story results
     const displayStoryResults = (data, mode) => {
         const storyOutput = document.getElementById('story-output');
@@ -2406,7 +2847,9 @@ document.addEventListener('DOMContentLoaded', () => {
             'wanted-poster': 'Wanted Poster',
             'homework-forge': 'Learning Summary',
             'sleep-forge': 'Bedtime Story',
-            'monster-maker': 'Monster Story'
+            'monster-maker': 'Monster Story',
+            'adventure-me': 'Adventure Story',
+            'dream-job': 'Career Story'
         };
         return names[mode] || 'Story';
     };
@@ -3162,6 +3605,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize mode selection after all functions are defined
     initializeModeSelection();
+    
+    // Initialize navigation dropdown
+    initializeNavigation();
     
     // Initial check on page load
     checkAuthentication();

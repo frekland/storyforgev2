@@ -504,6 +504,242 @@ async function handleMonsterMakerMode(requestBody) {
   };
 }
 
+async function handleAdventureMeMode(requestBody) {
+  const { childName, theme, role, specialSkill, age } = requestBody;
+  
+  console.log('🏔️ Adventure Me mode: Creating personalized adventure story...');
+  console.log('📋 Adventure details:', { childName, theme, role, specialSkill, age });
+  
+  if (!childName || !theme) {
+    throw new Error('Please provide your name and choose an adventure theme.');
+  }
+  
+  // Define adventure themes with child-centered prompts
+  const adventureThemes = {
+    'wild-west': {
+      setting: `the dusty frontier town of Sundown Valley, where ${childName} is the newest adventurer`,
+      challenge: `helping the townspeople solve the mystery of the missing golden horseshoe`,
+      resolution: `${childName} uses their cleverness and ${specialSkill || 'brave heart'} to save the day`,
+      characterDescription: `${childName}, a brave young adventurer in the Wild West with ${specialSkill ? `a special talent for ${specialSkill}` : 'a kind heart and quick thinking'}`
+    },
+    'underwater': {
+      setting: `the magical underwater kingdom of Coral Bay, where ${childName} has just discovered they can breathe underwater`,
+      challenge: `helping the sea creatures find their lost treasure chest before the tide turns`,
+      resolution: `${childName} uses their ${specialSkill || 'swimming skills'} and new underwater friends to recover the treasure`,
+      characterDescription: `${childName}, a young underwater explorer with ${specialSkill ? `amazing ${specialSkill} abilities` : 'the gift of talking to sea creatures'}`
+    },
+    'sky': {
+      setting: `the floating cloud city of Nimbus Heights, where ${childName} has learned to fly`,
+      challenge: `rescuing the rainbow birds whose colors have faded and need to be restored`,
+      resolution: `${childName} uses their ${specialSkill || 'flying abilities'} to gather starlight and restore the birds' beautiful colors`,
+      characterDescription: `${childName}, a courageous sky adventurer with ${specialSkill ? `incredible ${specialSkill} powers` : 'the ability to soar through the clouds'}`
+    },
+    'jungle': {
+      setting: `the lush Amazon jungle, where ${childName} is exploring with their trusty animal companions`,
+      challenge: `finding the lost Temple of Friendship and solving its ancient riddles`,
+      resolution: `${childName} uses their ${specialSkill || 'jungle knowledge'} and teamwork with animal friends to unlock the temple's secrets`,
+      characterDescription: `${childName}, a young jungle explorer with ${specialSkill ? `special ${specialSkill} talents` : 'the rare gift of understanding animal languages'}`
+    }
+  };
+  
+  const selectedTheme = adventureThemes[theme];
+  if (!selectedTheme) {
+    throw new Error('Please choose a valid adventure theme: wild-west, underwater, sky, or jungle.');
+  }
+  
+  console.log('✨ Generating personalized adventure with theme:', theme);
+  
+  // Generate the adventure story with the child as the main character
+  const { storyText, audioContent } = await generateStoryAndAudio({
+    heroName: childName,
+    promptSetup: selectedTheme.setting,
+    promptRising: selectedTheme.challenge,
+    promptClimax: selectedTheme.resolution,
+    characterDescription: selectedTheme.characterDescription,
+    age: age || '6'
+  });
+  
+  console.log('🎉 Adventure Me story generated successfully!');
+  
+  return {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    theme: theme,
+    duration: Math.ceil(storyText.split(' ').length / 2.5),
+    fileSize: audioContent.length,
+    debug: {
+      theme: theme,
+      childName: childName,
+      specialSkill: specialSkill
+    }
+  };
+}
+
+async function handleDreamJobMode(requestBody) {
+  const { childName, favoriteSubject, dreamActivity, workEnvironment, helpingStyle, age } = requestBody;
+  
+  console.log('🔮 Dream Job Detective mode: Analyzing career path...');
+  console.log('📋 Quiz responses:', { childName, favoriteSubject, dreamActivity, workEnvironment, helpingStyle, age });
+  
+  if (!childName || !favoriteSubject || !dreamActivity) {
+    throw new Error('Please provide your name and answer at least the first two quiz questions.');
+  }
+  
+  // AI-powered job matching based on quiz responses
+  const jobMatches = analyzeJobMatch({ favoriteSubject, dreamActivity, workEnvironment, helpingStyle });
+  const selectedJob = jobMatches[0]; // Get the top match
+  
+  console.log('🎯 Job analysis complete. Top match:', selectedJob.title);
+  
+  // Generate personalized career story
+  const careerStoryPrompt = `Create an inspiring story about ${childName} discovering their dream career as a ${selectedJob.title}. Show them using their love of ${favoriteSubject} and passion for ${dreamActivity} in their exciting work. Make it encouraging and show how they make a positive difference in the world. Include what a typical exciting day looks like in their job.`;
+  
+  const { storyText, audioContent } = await generateStoryAndAudio({
+    heroName: childName,
+    promptSetup: `a world where ${childName} has grown up and discovered their perfect career`,
+    promptRising: `learning all about being a ${selectedJob.title} and the amazing things they do`,
+    promptClimax: `${childName} realizes this is their true calling and starts making their dreams come true`,
+    characterDescription: `${childName}, a talented individual with a passion for ${favoriteSubject} and ${dreamActivity}, destined to become an amazing ${selectedJob.title}`,
+    age: age || '9'
+  });
+  
+  console.log('🎆 Dream Job story generated successfully!');
+  
+  return {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    dreamJob: selectedJob,
+    allMatches: jobMatches,
+    duration: Math.ceil(storyText.split(' ').length / 2.5),
+    fileSize: audioContent.length,
+    debug: {
+      topJob: selectedJob.title,
+      favoriteSubject: favoriteSubject,
+      dreamActivity: dreamActivity
+    }
+  };
+}
+
+// Helper function to analyze job matches based on quiz responses
+function analyzeJobMatch({ favoriteSubject, dreamActivity, workEnvironment, helpingStyle }) {
+  console.log('🧠 Analyzing personality and interests for job matching...');
+  
+  // Comprehensive job database with matching criteria
+  const jobDatabase = [
+    {
+      title: 'Video Game Designer',
+      subjects: ['technology', 'art', 'math'],
+      activities: ['creating', 'building', 'playing'],
+      environments: ['indoors', 'teams'],
+      helping: ['inspiring', 'creating'],
+      description: 'Design amazing video games that bring joy to millions of players worldwide!'
+    },
+    {
+      title: 'Marine Biologist',
+      subjects: ['science', 'nature'],
+      activities: ['exploring', 'discovering', 'swimming'],
+      environments: ['outdoors', 'water'],
+      helping: ['protecting', 'researching'],
+      description: 'Explore the ocean depths and protect amazing sea creatures!'
+    },
+    {
+      title: 'Space Engineer',
+      subjects: ['science', 'technology', 'math'],
+      activities: ['building', 'exploring', 'solving'],
+      environments: ['labs', 'space'],
+      helping: ['advancing', 'discovering'],
+      description: 'Build rockets and spacecraft to explore the mysteries of the universe!'
+    },
+    {
+      title: 'Children\'s Book Illustrator',
+      subjects: ['art', 'reading', 'storytelling'],
+      activities: ['creating', 'drawing', 'imagining'],
+      environments: ['indoors', 'quiet'],
+      helping: ['inspiring', 'educating'],
+      description: 'Create beautiful artwork that brings stories to life for children everywhere!'
+    },
+    {
+      title: 'Wildlife Photographer',
+      subjects: ['nature', 'art', 'geography'],
+      activities: ['exploring', 'creating', 'traveling'],
+      environments: ['outdoors', 'adventure'],
+      helping: ['protecting', 'educating'],
+      description: 'Travel the world capturing stunning photos of amazing animals in their natural habitats!'
+    },
+    {
+      title: 'Robot Engineer',
+      subjects: ['technology', 'science', 'math'],
+      activities: ['building', 'solving', 'inventing'],
+      environments: ['labs', 'teams'],
+      helping: ['solving', 'advancing'],
+      description: 'Design and build helpful robots that make life easier for everyone!'
+    },
+    {
+      title: 'Music Producer',
+      subjects: ['music', 'technology', 'art'],
+      activities: ['creating', 'performing', 'listening'],
+      environments: ['studios', 'teams'],
+      helping: ['inspiring', 'entertaining'],
+      description: 'Create amazing music and help artists share their talents with the world!'
+    },
+    {
+      title: 'Environmental Scientist',
+      subjects: ['science', 'nature', 'geography'],
+      activities: ['exploring', 'researching', 'solving'],
+      environments: ['outdoors', 'labs'],
+      helping: ['protecting', 'saving'],
+      description: 'Protect our planet and find solutions to help the environment!'
+    },
+    {
+      title: 'Theme Park Designer',
+      subjects: ['art', 'technology', 'math'],
+      activities: ['creating', 'building', 'entertaining'],
+      environments: ['teams', 'creative'],
+      helping: ['entertaining', 'inspiring'],
+      description: 'Design incredible theme parks and rides that create magical experiences!'
+    },
+    {
+      title: 'Chef and Restaurant Owner',
+      subjects: ['cooking', 'art', 'science'],
+      activities: ['creating', 'cooking', 'sharing'],
+      environments: ['kitchens', 'teams'],
+      helping: ['feeding', 'bringing joy'],
+      description: 'Create delicious food that brings people together and makes them happy!'
+    }
+  ];
+  
+  // Score each job based on how well it matches the quiz responses
+  const scoredJobs = jobDatabase.map(job => {
+    let score = 0;
+    
+    // Subject match (highest weight)
+    if (job.subjects.includes(favoriteSubject)) score += 3;
+    
+    // Activity match (high weight)
+    if (job.activities.includes(dreamActivity)) score += 3;
+    
+    // Environment match (medium weight)
+    if (workEnvironment && job.environments.includes(workEnvironment)) score += 2;
+    
+    // Helping style match (medium weight)
+    if (helpingStyle && job.helping.includes(helpingStyle)) score += 2;
+    
+    // Add small random factor for variety
+    score += Math.random() * 0.5;
+    
+    return { ...job, score };
+  });
+  
+  // Sort by score (highest first) and return top matches
+  const topMatches = scoredJobs
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  console.log('🏆 Top job matches calculated:', topMatches.map(job => `${job.title} (score: ${job.score.toFixed(2)})`));
+  
+  return topMatches;
+}
+
 // Helper function to generate story and audio
 async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode = false }) {
   const startTime = Date.now();
@@ -1154,6 +1390,12 @@ module.exports = async function handler(req, res) {
           break;
         case 'monster-maker':
           result = await handleMonsterMakerMode(req.body);
+          break;
+        case 'adventure-me':
+          result = await handleAdventureMeMode(req.body);
+          break;
+        case 'dream-job':
+          result = await handleDreamJobMode(req.body);
           break;
         default:
           return res.status(400).json({ message: `Unknown mode: ${mode}` });

@@ -59,6 +59,180 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* StoryForge Introduction Section */
+.storyforge-intro {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.intro-description {
+  font-size: 1.1em;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  color: var(--text-secondary);
+}
+
+.intro-features {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.feature-icon {
+  font-size: 2.5em;
+  animation: featureBounce 3s ease-in-out infinite;
+}
+
+.feature-item:nth-child(1) .feature-icon {
+  animation-delay: 0s;
+}
+
+.feature-item:nth-child(2) .feature-icon {
+  animation-delay: 0.5s;
+}
+
+.feature-item:nth-child(3) .feature-icon {
+  animation-delay: 1s;
+}
+
+.feature-text {
+  font-family: var(--font-title);
+  font-size: 0.9em;
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.modes-intro {
+  margin-top: 20px;
+  font-size: 1em;
+  color: var(--text-accent);
+  font-style: italic;
+}
+
+@keyframes doodleBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0px);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Job Results Styling */
+.job-results {
+  margin: 20px 0;
+  background: var(--bg-paper);
+  border: 2px solid var(--accent-color);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+}
+
+.job-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-family: var(--font-title);
+  font-size: 1.3em;
+  color: var(--accent-color);
+}
+
+.job-icon {
+  font-size: 1.2em;
+}
+
+.top-job {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--accent-secondary);
+  border-radius: 10px;
+  color: white;
+}
+
+.job-title {
+  margin: 0 0 10px 0;
+  font-family: var(--font-title);
+  font-size: 1.5em;
+}
+
+.job-description {
+  margin: 0;
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+
+.other-matches h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-accent);
+  font-family: var(--font-title);
+  text-align: center;
+}
+
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.match-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.match-title {
+  font-weight: bold;
+  color: var(--text-primary);
+  font-size: 1em;
+}
+
+.match-desc {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .intro-features {
+    gap: 20px;
+  }
+  
+  .feature-item {
+    min-width: 120px;
+  }
+  
+  .feature-icon {
+    font-size: 2em;
+  }
+  
+  .feature-text {
+    font-size: 0.8em;
+  }
+}
+
 /* Fun background pattern */
 body::before {
   content: '';
@@ -126,6 +300,99 @@ body::before {
   opacity: 0.8;
 }
 
+/* Navigation Dropdown */
+.nav-section {
+  display: flex;
+  align-items: center;
+}
+
+.storyforge-nav-container {
+  position: relative;
+}
+
+.storyforge-nav-trigger {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.storyforge-nav-trigger:hover {
+  color: var(--accent-secondary);
+}
+
+.storyforge-nav-trigger::after {
+  content: '▾';
+  font-size: 0.8em;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.storyforge-nav-container:hover .storyforge-nav-trigger::after {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--bg-paper);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--shadow-medium);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 1001;
+  margin-top: 8px;
+}
+
+.storyforge-nav-container:hover .nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  color: var(--text-primary);
+}
+
+.nav-item:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.nav-item:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.nav-item:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(4px);
+}
+
+.nav-icon {
+  font-size: 1.1em;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px 12px;
+  opacity: 0.3;
+}
+
 .current-mode {
   color: var(--accent-secondary);
   font-size: 0.9em;
@@ -137,6 +404,26 @@ body::before {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* Settings Button */
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 1.1em;
+}
+
+.settings-btn:hover {
+  background: var(--bg-secondary);
+  transform: rotate(45deg);
+}
+
+.settings-btn:active {
+  transform: rotate(45deg) scale(0.95);
 }
 
 .yoto-status {
