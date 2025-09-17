@@ -1208,39 +1208,110 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
     };
     
-    const handleImageUpload = (e, previewElement, imageType = 'character') => {
+    // Image compression function to reduce payload size for Vercel
+    const compressImage = (file, maxWidth = 800, quality = 0.8) => {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = () => {
+                // Calculate new dimensions while maintaining aspect ratio
+                let { width, height } = img;
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxWidth) {
+                        width = (width * maxWidth) / height;
+                        height = maxWidth;
+                    }
+                }
+                
+                // Set canvas size and draw compressed image
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to base64 with compression
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedBase64);
+            };
+            
+            img.src = URL.createObjectURL(file);
+        });
+    };
+    
+    const handleImageUpload = async (e, previewElement, imageType = 'character') => {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const altText = imageType === 'scene' ? 'Uploaded scene' : 'Uploaded character';
-                const successText = imageType === 'scene' ? 'Scene uploaded successfully!' : 'Character uploaded successfully!';
-                
-                // Create a nice preview with image and success message
+            try {
+                // Show processing state
+                const processingText = imageType === 'scene' ? 'Processing scene...' : 'Processing character...';
                 previewElement.innerHTML = `
                     <div class="image-preview-content">
-                        <div class="preview-image">
-                            <img src="${e.target.result}" alt="${altText}" class="uploaded-image">
+                        <div class="preview-loading">
+                            <span class="loading-icon">⏳</span>
+                            <span class="loading-text">${processingText}</span>
                         </div>
-                        <div class="preview-success">
-                            <span class="success-icon">✅</span>
-                            <span class="success-text">${successText}</span>
-                        </div>
-                        <div class="preview-filename">${file.name}</div>
                     </div>
                 `;
                 previewElement.classList.remove('hidden');
                 
-                // Store the base64 data for later use
+                // Compress image to ensure it fits within Vercel limits
+                const compressedBase64 = await compressImage(file, 600, 0.7); // More aggressive compression
+                
+                // Calculate compression stats
+                const originalSize = file.size;
+                const compressedSize = Math.round(compressedBase64.length * 0.75); // Rough base64 to bytes
+                const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                
+                const altText = imageType === 'scene' ? 'Uploaded scene' : 'Uploaded character';
+                const successText = imageType === 'scene' ? 'Scene ready!' : 'Character ready!';
+                
+                // Create success preview
+                previewElement.innerHTML = `
+                    <div class="image-preview-content">
+                        <div class="preview-image">
+                            <img src="${compressedBase64}" alt="${altText}" class="uploaded-image">
+                        </div>
+                        <div class="preview-success">
+                            <span class="success-icon">✅</span>
+                            <span class="success-text">${successText} (${reduction > 0 ? reduction + '% smaller' : 'optimized'})</span>
+                        </div>
+                        <div class="preview-filename">${file.name}</div>
+                    </div>
+                `;
+                
+                // Store compressed base64 data
                 if (imageType === 'scene') {
-                    sceneImageBase64 = e.target.result;
-                    console.log('🖼️ Scene image uploaded and preview updated');
+                    sceneImageBase64 = compressedBase64;
+                    console.log('🖼️ Scene image compressed and ready:', {
+                        original: Math.round(originalSize / 1024) + 'KB',
+                        compressed: Math.round(compressedSize / 1024) + 'KB',
+                        reduction: reduction + '%'
+                    });
                 } else {
-                    heroImageBase64 = e.target.result;
-                    console.log('🖼️ Character image uploaded and preview updated');
+                    heroImageBase64 = compressedBase64;
+                    console.log('🖼️ Character image compressed and ready:', {
+                        original: Math.round(originalSize / 1024) + 'KB',
+                        compressed: Math.round(compressedSize / 1024) + 'KB',
+                        reduction: reduction + '%'
+                    });
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('❌ Image processing failed:', error);
+                previewElement.innerHTML = `
+                    <div class="image-preview-content">
+                        <div class="preview-error">
+                            <span class="error-icon">❌</span>
+                            <span class="error-text">Failed to process image. Please try a smaller file.</span>
+                        </div>
+                    </div>
+                `;
+            }
         } else {
             console.warn('⚠️ Invalid file type. Please upload an image.');
         }
@@ -1287,14 +1358,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('🖼️ Starting image analysis...');
                 
                 try {
+                    // Create payload and check size before sending
+                    const payload = {
+                        heroImage: heroImageBase64,
+                        sceneImage: sceneImageBase64,
+                        imageType: 'both'
+                    };
+                    
+                    const payloadSize = JSON.stringify(payload).length;
+                    const maxSize = 5 * 1024 * 1024; // 5MB conservative limit
+                    
+                    console.log('📄 Image analysis payload size:', Math.round(payloadSize / 1024) + 'KB');
+                    
+                    if (payloadSize > maxSize) {
+                        throw new Error(`Images still too large after compression (${Math.round(payloadSize/1024/1024)}MB). Try smaller images.`);
+                    }
+                    
                     const imageAnalysisResponse = await fetch('/api/upload-image', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            heroImage: heroImageBase64,
-                            sceneImage: sceneImageBase64,
-                            imageType: 'both'
-                        })
+                        body: JSON.stringify(payload)
                     });
                     
                     if (!imageAnalysisResponse.ok) {
