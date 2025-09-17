@@ -2914,10 +2914,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Progress modal management functions
+    let progressModalState = {
+        isMinimized: false,
+        currentStage: 1,
+        currentStageText: 'Preparing...',
+        progress: 0
+    };
+    
     const showProgressModal = () => {
         const progressModal = document.getElementById('story-progress-modal');
+        const progressFooter = document.getElementById('progress-footer');
+        
         if (progressModal) {
             progressModal.classList.remove('hidden');
+            progressModal.classList.remove('minimizing');
+            
+            // Reset state
+            progressModalState.isMinimized = false;
+            progressModalState.currentStage = 1;
+            progressModalState.currentStageText = 'Preparing...';
+            progressModalState.progress = 0;
+            
             // Reset all stages
             for (let i = 1; i <= 5; i++) {
                 const stage = document.getElementById(`stage-${i}`);
@@ -2928,15 +2945,95 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             updateProgressBar(0);
+            updateFooterProgress();
+        }
+        
+        // Hide footer if visible
+        if (progressFooter) {
+            progressFooter.classList.remove('show');
         }
     };
     
     const hideProgressModal = () => {
         const progressModal = document.getElementById('story-progress-modal');
+        const progressFooter = document.getElementById('progress-footer');
+        
         if (progressModal) {
             setTimeout(() => {
                 progressModal.classList.add('hidden');
+                progressModalState.isMinimized = false;
             }, 2000); // Give time to see completion
+        }
+        
+        // Also hide footer
+        if (progressFooter) {
+            progressFooter.classList.remove('show');
+        }
+    };
+    
+    const minimizeProgressModal = () => {
+        const progressModal = document.getElementById('story-progress-modal');
+        const progressFooter = document.getElementById('progress-footer');
+        const modalContent = progressModal.querySelector('.modal-content');
+        
+        if (progressModal && progressFooter && modalContent) {
+            console.log('🔽 Minimizing progress modal to footer...');
+            
+            // Update state
+            progressModalState.isMinimized = true;
+            
+            // Add animation class and trigger animation
+            modalContent.classList.add('minimizing');
+            
+            // Show footer with slide-up animation
+            setTimeout(() => {
+                progressFooter.classList.add('show');
+                updateFooterProgress();
+            }, 200);
+            
+            // Hide modal after animation
+            setTimeout(() => {
+                progressModal.classList.add('hidden');
+                modalContent.classList.remove('minimizing');
+            }, 400);
+        }
+    };
+    
+    const expandProgressModal = () => {
+        const progressModal = document.getElementById('story-progress-modal');
+        const progressFooter = document.getElementById('progress-footer');
+        const modalContent = progressModal.querySelector('.modal-content');
+        
+        if (progressModal && progressFooter && modalContent) {
+            console.log('🔼 Expanding progress modal from footer...');
+            
+            // Hide footer with slide-down animation
+            progressFooter.classList.remove('show');
+            
+            // Show modal and trigger expand animation
+            setTimeout(() => {
+                progressModal.classList.remove('hidden');
+                modalContent.classList.add('expanding');
+                progressModalState.isMinimized = false;
+            }, 100);
+            
+            // Clean up animation class
+            setTimeout(() => {
+                modalContent.classList.remove('expanding');
+            }, 500);
+        }
+    };
+    
+    const updateFooterProgress = () => {
+        const footerStage = document.getElementById('footer-current-stage');
+        const footerProgressFill = document.getElementById('footer-progress-fill');
+        
+        if (footerStage) {
+            footerStage.textContent = progressModalState.currentStageText;
+        }
+        
+        if (footerProgressFill) {
+            footerProgressFill.style.width = `${progressModalState.progress}%`;
         }
     };
     
@@ -2947,6 +3044,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const spinner = stage.querySelector('.stage-spinner');
         const check = stage.querySelector('.stage-check');
         const progressText = document.getElementById('progress-text');
+        
+        // Update state for footer sync
+        progressModalState.currentStage = stageNum;
+        if (text) progressModalState.currentStageText = text;
         
         // Reset stage classes
         stage.classList.remove('active', 'completed');
@@ -2962,9 +3063,15 @@ document.addEventListener('DOMContentLoaded', () => {
             check?.classList.remove('hidden');
         }
         
-        // Update progress bar
+        // Update progress bar and footer
         const progress = (stageNum / 5) * 100;
+        progressModalState.progress = progress;
         updateProgressBar(progress);
+        
+        // Update footer if minimized
+        if (progressModalState.isMinimized) {
+            updateFooterProgress();
+        }
     };
     
     const updateProgressBar = (percentage) => {
@@ -3608,6 +3715,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize navigation dropdown
     initializeNavigation();
+    
+    // Initialize progress modal controls
+    const minimizeBtn = document.getElementById('minimize-progress-btn');
+    const expandBtn = document.getElementById('expand-progress-btn');
+    
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', minimizeProgressModal);
+    }
+    
+    if (expandBtn) {
+        expandBtn.addEventListener('click', expandProgressModal);
+    }
     
     // Initial check on page load
     checkAuthentication();

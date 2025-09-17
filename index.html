@@ -16,8 +16,8 @@
     <div class="top-bar">
         <div class="nav-section">
             <div class="compact-logo" id="logo-home" title="Return to mode selection">
-                <span class="title-word">The</span>
                 <div class="storyforge-nav-container">
+                    <span class="title-word">The</span>
                     <span class="title-word highlight storyforge-nav-trigger">Storyforge</span>
                     <div class="nav-dropdown" id="nav-dropdown">
                         <div class="nav-item" data-mode="classic">
@@ -350,6 +350,11 @@
             <div class="modal-header">
                 <span class="modal-icon">✨</span>
                 <h3 class="modal-title">Forging Your Epic Tale!</h3>
+                <div class="modal-controls">
+                    <button id="minimize-progress-btn" class="modal-control-btn" title="Minimize to footer">
+                        <span class="minimize-icon">🔽</span>
+                    </button>
+                </div>
                 <div class="modal-doodles">
                     <span>★</span>
                     <span>♡</span>
@@ -418,6 +423,25 @@
                 </div>
                 <div class="progress-text" id="progress-text">Preparing your magical adventure...</div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Minimized Progress Footer -->
+    <div id="progress-footer" class="progress-footer hidden">
+        <div class="progress-footer-content">
+            <div class="footer-icon">✨</div>
+            <div class="footer-text">
+                <div class="footer-title">Forging in Progress...</div>
+                <div class="footer-stage" id="footer-current-stage">Gathering magic ingredients...</div>
+            </div>
+            <div class="footer-progress">
+                <div class="footer-progress-bar">
+                    <div class="footer-progress-fill" id="footer-progress-fill"></div>
+                </div>
+            </div>
+            <button id="expand-progress-btn" class="footer-expand-btn" title="Show progress details">
+                <span class="expand-icon">🔼</span>
+            </button>
         </div>
     </div>
     

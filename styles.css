@@ -214,14 +214,79 @@ body {
   line-height: 1.4;
 }
 
-/* Responsive adjustments */
+/* Mobile Optimization */
 @media (max-width: 768px) {
+  /* Header adjustments for mobile */
+  .top-bar {
+    padding: 8px 15px;
+    flex-wrap: wrap;
+  }
+  
+  .compact-logo {
+    font-size: 1.2em;
+  }
+  
+  .storyforge-nav-container {
+    gap: 4px;
+  }
+  
+  .nav-dropdown {
+    left: -20px;
+    min-width: 140px;
+    max-width: 160px;
+  }
+  
+  .nav-item {
+    padding: 10px 12px;
+    font-size: 0.9em;
+  }
+  
+  .current-mode {
+    display: none; /* Hide on mobile to save space */
+  }
+  
+  .top-controls {
+    gap: 8px;
+  }
+  
+  .settings-btn, .theme-btn {
+    padding: 6px;
+    font-size: 1em;
+  }
+  
+  /* Main content mobile adjustments */
+  body {
+    padding-top: 50px;
+  }
+  
+  .main-content {
+    padding: 10px;
+  }
+  
+  /* Welcome section mobile */
+  .welcome-content {
+    padding: 20px 15px;
+  }
+  
+  .welcome-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+  }
+  
+  .intro-description {
+    font-size: 1em;
+    margin-bottom: 20px;
+  }
+  
   .intro-features {
     gap: 20px;
+    flex-direction: column;
+    align-items: center;
   }
   
   .feature-item {
     min-width: 120px;
+    max-width: 200px;
   }
   
   .feature-icon {
@@ -229,6 +294,335 @@ body {
   }
   
   .feature-text {
+    font-size: 0.8em;
+  }
+  
+  .modes-intro {
+    font-size: 0.9em;
+  }
+  
+  /* Mode selection grid mobile */
+  .mode-selection-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 0 10px;
+  }
+  
+  .mode-btn {
+    padding: 20px;
+  }
+  
+  .mode-title {
+    font-size: 1.3em;
+  }
+  
+  .mode-description {
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
+  
+  /* Form adjustments for mobile */
+  .mode-header-compact {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .mode-title-compact {
+    font-size: 1.5em;
+  }
+  
+  .input-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .paper-input, .paper-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Story output mobile */
+  .story-output-container {
+    margin: 15px 0;
+  }
+  
+  .main-story-section,
+  .media-actions-section {
+    padding: 15px;
+    margin: 10px 0;
+  }
+  
+  .story-title {
+    font-size: 1.4em;
+  }
+  
+  .story-text {
+    font-size: 1em;
+    line-height: 1.6;
+  }
+  
+  /* Job results mobile */
+  .job-results {
+    margin: 15px 0;
+    padding: 15px;
+  }
+  
+  .job-header {
+    font-size: 1.1em;
+  }
+  
+  .job-title {
+    font-size: 1.3em;
+  }
+  
+  .job-description {
+    font-size: 1em;
+  }
+  
+  /* Touch-friendly buttons */
+  .forge-btn-centered,
+  .surprise-btn-compact,
+  .upload-btn-full {
+    min-height: 48px; /* Minimum touch target size */
+    font-size: 1em;
+  }
+  
+  /* Navigation back button mobile */
+  .back-to-modes-btn {
+    font-size: 0.9em;
+    padding: 8px 12px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 6px 10px;
+  }
+  
+  .compact-logo {
+    font-size: 1.1em;
+  }
+  
+  .welcome-title {
+    font-size: 1.6em;
+  }
+  
+  .intro-description {
+    font-size: 0.95em;
+  }
+  
+  .mode-btn {
+    padding: 15px;
+  }
+  
+  .mode-title {
+    font-size: 1.2em;
+  }
+  
+  .mode-description {
+    font-size: 0.85em;
+  }
+  
+  .story-text {
+    font-size: 0.95em;
+  }
+  
+  .nav-dropdown {
+    left: -30px;
+  }
+}
+
+/* Progress Modal Controls */
+.modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.modal-control-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.9em;
+  opacity: 0.7;
+}
+
+.modal-control-btn:hover {
+  background: var(--bg-secondary);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Progress Footer */
+.progress-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-paper);
+  border-top: 2px solid var(--border-color);
+  box-shadow: 0 -4px 12px var(--shadow-medium);
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.progress-footer.show {
+  transform: translateY(0);
+}
+
+.progress-footer-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-icon {
+  font-size: 1.2em;
+  animation: footerPulse 2s ease-in-out infinite;
+}
+
+.footer-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.footer-title {
+  font-family: var(--font-title);
+  font-size: 0.9em;
+  color: var(--accent-color);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.footer-stage {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-progress {
+  flex: 0 0 120px;
+}
+
+.footer-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.footer-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.footer-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.9em;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.footer-expand-btn:hover {
+  background: var(--bg-secondary);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@keyframes footerPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Modal minimize animation */
+.progress-modal.minimizing {
+  animation: minimizeToFooter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.progress-modal.expanding {
+  animation: expandFromFooter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes minimizeToFooter {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.1) translateY(200px);
+    opacity: 0;
+  }
+}
+
+@keyframes expandFromFooter {
+  0% {
+    transform: scale(0.1) translateY(200px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile responsive for progress footer */
+@media (max-width: 768px) {
+  .progress-footer-content {
+    padding: 10px 15px;
+    gap: 8px;
+  }
+  
+  .footer-icon {
+    font-size: 1em;
+  }
+  
+  .footer-title {
+    font-size: 0.8em;
+  }
+  
+  .footer-stage {
+    font-size: 0.75em;
+  }
+  
+  .footer-progress {
+    flex: 0 0 100px;
+  }
+  
+  .footer-expand-btn {
+    padding: 4px 6px;
     font-size: 0.8em;
   }
 }
@@ -308,27 +702,28 @@ body::before {
 
 .storyforge-nav-container {
   position: relative;
-}
-
-.storyforge-nav-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
 }
 
-.storyforge-nav-trigger:hover {
+.storyforge-nav-container:hover {
   color: var(--accent-secondary);
 }
 
 .storyforge-nav-trigger::after {
   content: '▾';
-  font-size: 0.8em;
+  font-size: 0.7em;
   margin-left: 4px;
   transition: transform 0.2s ease;
+  opacity: 0.7;
 }
 
 .storyforge-nav-container:hover .storyforge-nav-trigger::after {
   transform: rotate(180deg);
+  opacity: 1;
 }
 
 .nav-dropdown {
@@ -337,15 +732,16 @@ body::before {
   left: 0;
   background: var(--bg-paper);
   border: 2px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px var(--shadow-medium);
-  min-width: 200px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--shadow-medium);
+  min-width: 160px;
+  max-width: 180px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
+  transform: translateY(-8px);
+  transition: all 0.25s ease;
   z-index: 1001;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .storyforge-nav-container:hover .nav-dropdown {
@@ -357,39 +753,47 @@ body::before {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 8px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: var(--font-body);
-  font-size: 0.9em;
+  font-size: 0.85em;
   color: var(--text-primary);
+  line-height: 1.3;
 }
 
 .nav-item:first-child {
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }
 
 .nav-item:last-child {
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
 }
 
 .nav-item:hover {
   background: var(--accent-color);
   color: white;
-  transform: translateX(4px);
+  transform: translateX(2px);
 }
 
 .nav-icon {
-  font-size: 1.1em;
+  font-size: 1em;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-divider {
   height: 1px;
   background: var(--border-color);
-  margin: 8px 12px;
+  margin: 4px 8px;
   opacity: 0.3;
 }
 
