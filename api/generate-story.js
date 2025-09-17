@@ -187,13 +187,28 @@ function processStoryWithPauses(rawStoryText, heroName = '') {
   // ALWAYS use ultra-conservative cleaning to preserve legitimate word usage
   console.log('🧠 Using ultra-conservative early processing for hero:', heroName);
   
-  // Only fix VERY obvious TTS errors at sentence boundaries
+  // SMART punctuation fixing - aggressive on errors, protective of legitimate usage
+  
+  // First, protect legitimate "dot" usage by temporarily replacing it
   cleanedRawText = rawStoryText
-    // Only fix sentence-ending errors where punctuation word is clearly meant as punctuation
+    // Protect "polka dots", "connect the dots", etc.
+    .replace(/\b(polka|connect the|tiny)\s+dots?\b/gi, '$1 PROTECTED_DOTS')
+    // Protect "dot" as verb: "fireflies dot the trees"
+    .replace(/\b(\w+)\s+dots?\s+(the|a|an|these|those)\s/gi, '$1 PROTECTED_DOT_VERB $2 ')
+    
+    // Now aggressively fix punctuation errors
     .replace(/([a-zA-Z])\s+(dot|period)\s*$/gim, '$1.')
-    .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n') 
+    .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n')
+    .replace(/([a-zA-Z])\s+(dot|period)\s+([A-Z][a-zA-Z]+)/g, '$1. $3')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*([,;!?])/gim, '$1.$3')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*(\[pause)/gim, '$1. $3')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*(["\'\"\'])/gim, '$1.$3')
     .replace(/([a-zA-Z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
-    .replace(/([a-zA-Z])\s+(question mark)\s*$/gim, '$1?');
+    .replace(/([a-zA-Z])\s+(question mark)\s*$/gim, '$1?')
+    
+    // Restore protected legitimate usage
+    .replace(/PROTECTED_DOTS/g, 'dots')
+    .replace(/PROTECTED_DOT_VERB/g, 'dot');
     
   console.log('🧠 Early processing preserved all legitimate word usage');
   
@@ -775,10 +790,15 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
   // 2. In patterns like "word dot word" where "dot" is clearly punctuation
   
   cleanedMarkupText = cleanedMarkupText
-    // ONLY fix clear sentence-ending errors: "word dot" at end of sentence/paragraph
+    // AGGRESSIVELY fix sentence-ending errors where AI wrote "dot" instead of "."
     .replace(/([a-zA-Z])\s+(dot|period)\s*$/gim, '$1.')
     .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n')
     .replace(/([a-zA-Z])\s+(dot|period)\s+([A-Z][a-zA-Z]+)/g, '$1. $3') // "word dot Word" -> "word. Word"
+    // Fix "word dot" at end of clauses (before punctuation or pause markers)
+    .replace(/([a-zA-Z])\s+(dot|period)\s*([,;!?])/gim, '$1.$3')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*(\[pause)/gim, '$1. $3')
+    // Fix "word dot" followed by quotes or other punctuation
+    .replace(/([a-zA-Z])\s+(dot|period)\s*(["\'\"\'])/gim, '$1.$3')
     
     // HELP TTS understand "dot" as a verb by using synonyms
     // Pattern: "noun dot the" (like "fireflies dot the trees") -> "fireflies speckle the trees"
