@@ -175,8 +175,16 @@ function getVoiceSettings(age) {
 
 // Helper function to process story text with pause control
 function processStoryWithPauses(rawStoryText) {
+  // First clean any 'dot' words from the raw text
+  const cleanedRawText = rawStoryText
+    // Remove instances of 'dot' or 'period' words that should be punctuation
+    .replace(/\b(dot|period)\b/gi, '.')
+    .replace(/\s+(dot|period)\s+/gi, '. ')
+    .replace(/\s+(dot|period)\./gi, '.')
+    .replace(/\.(dot|period)/gi, '.');
+  
   // Create display version (clean text without pause markers)
-  const displayText = rawStoryText
+  const displayText = cleanedRawText
     .replace(/\[pause short\]/g, '')
     .replace(/\[pause long\]/g, '')
     .replace(/\[pause\]/g, '')
@@ -184,8 +192,8 @@ function processStoryWithPauses(rawStoryText) {
     .trim();
     
   // Create TTS version (keep pause markers for Chirp3-HD)
-  const ttsText = rawStoryText
-    // Only remove asterisks and other problematic characters, be more careful with periods
+  const ttsText = cleanedRawText
+    // Only remove asterisks and other problematic characters
     .replace(/\*/g, '')
     // Fix spacing around pause markers first
     .replace(/\s*\[pause short\]\s*/g, '[pause short] ')
@@ -316,6 +324,8 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Include exciting dialogue with "said" instead of unusual speech tags
     - Write exactly around ${storyLength} words in ${readingLevel}
     - ${ttsInstructions}
+    - NEVER write the word "dot" or "period" - use only the actual punctuation mark (.)
+    - Use proper punctuation (. ! ?) not spelled-out punctuation names
     
     PAUSE CONTROL for Audio Narration:
     Add natural pauses using these markers to make the audio flow beautifully:
@@ -353,8 +363,15 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     rawLength: rawStoryText.length,
     displayLength: displayText.length,
     ttsLength: ttsText.length,
-    pauseMarkers: (ttsText.match(/\[pause[^\]]*\]/g) || []).length
+    pauseMarkers: (ttsText.match(/\[pause[^\]]*\]/g) || []).length,
+    dotWordsInRaw: (rawStoryText.match(/\bdot\b/gi) || []).length,
+    dotWordsInTTS: (ttsText.match(/\bdot\b/gi) || []).length
   });
+  
+  // Debug: Log sample of raw text to check for 'dot' words
+  if ((rawStoryText.match(/\bdot\b/gi) || []).length > 0) {
+    console.log('⚠️ RAW TEXT CONTAINS DOT WORDS - Sample:', JSON.stringify(rawStoryText.substring(0, 300)));
+  }
   
   // Generate image for surprise mode using Gemini 2.5 Flash
   let generatedImageBase64 = null;
@@ -548,15 +565,21 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     textLength: storyTextWithPauses.length
   });
   
-  // Normalize periods and clean up any text issues that might cause 'dot' to be spoken
+  // Aggressively normalize periods and eliminate any 'dot' references
   const cleanedMarkupText = storyTextWithPauses
-    // Ensure periods are properly formatted
+    // Remove any instances of the word 'dot' (case insensitive)
+    .replace(/\b(dot|period)\b/gi, '.')
+    // Clean up any potential 'dot' phrases
+    .replace(/\s+(dot|period)\s+/gi, '. ')
+    .replace(/\s+(dot|period)\./gi, '.')
+    .replace(/\.(dot|period)/gi, '.')
+    // Fix spacing around periods
     .replace(/\s*\.\s*/g, '. ')
-    // Remove any 'dot' words that might have been inadvertently added
-    .replace(/\bdot\b/gi, '.')
-    // Fix double periods
-    .replace(/\.+/g, '.')
-    // Ensure proper spacing
+    // Fix double or multiple periods
+    .replace(/\.{2,}/g, '.')
+    // Ensure no periods at start of words (except abbreviations)
+    .replace(/\s+\./g, '.')
+    // Clean up spacing
     .replace(/\s+/g, ' ')
     .trim();
   
