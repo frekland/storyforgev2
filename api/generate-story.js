@@ -440,6 +440,13 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   
   const storyGenStart = Date.now();
   console.log('📝 Starting Gemini story generation...');
+  console.log('🎭 Story context:', {
+    heroName: heroName || 'none',
+    hasCharacterDesc: !!finalCharacterDescription,
+    hasSceneDesc: !!finalSceneDescription,
+    characterDescSample: finalCharacterDescription ? finalCharacterDescription.substring(0, 100) : 'none',
+    sceneDescSample: finalSceneDescription ? finalSceneDescription.substring(0, 100) : 'none'
+  });
   
   const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
   const rawStoryText = (await result.response).text();

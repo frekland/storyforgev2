@@ -1441,18 +1441,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Show Yoto upload button if user is authenticated
-            if (uploadToYotoButton && accessToken) {
-                uploadToYotoButton.classList.remove('hidden');
-                // CRITICAL: Store the perfect audio for Yoto upload - no regeneration needed!
-                const completeStoryData = {
-                    ...formData,
-                    story: data.story,
-                    audio: data.audio, // The perfect base64 audio
-                    duration: data.duration,
-                    fileSize: data.fileSize
-                };
-                setupYotoUploadHandler(completeStoryData);
+            // Auto-upload to Yoto immediately if user is authenticated
+            if (accessToken) {
+                console.log('🚀 Auto-uploading to Yoto immediately...');
+                try {
+                    // Prepare complete story data with the perfect audio
+                    const completeStoryData = {
+                        ...formData,
+                        story: data.story,
+                        audio: data.audio, // The perfect base64 audio
+                        duration: data.duration,
+                        fileSize: data.fileSize
+                    };
+                    
+                    // Start Yoto upload immediately
+                    createOrUpdateStoryForgePlaylist(completeStoryData, accessToken)
+                        .then(() => {
+                            console.log('✅ Auto-uploaded to Yoto successfully!');
+                            showAlert('Story created and automatically uploaded to Yoto! 🎧');
+                        })
+                        .catch((yotoError) => {
+                            console.error('❌ Auto-upload to Yoto failed:', yotoError);
+                            showAlert('Story created successfully! Yoto upload failed - you can retry manually.');
+                        });
+                } catch (autoUploadError) {
+                    console.error('❌ Error in auto-upload setup:', autoUploadError);
+                }
             }
             
         } catch (error) {
