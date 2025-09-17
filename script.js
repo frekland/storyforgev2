@@ -1273,15 +1273,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            // Get form data in the format expected by the API
+            // First, analyze any uploaded images to get descriptions
+            let characterDescription = null;
+            let sceneDescription = null;
+            
+            if (heroImageBase64 || sceneImageBase64) {
+                // Show image analysis progress
+                const loadingText = document.querySelector('.loading-text span:nth-child(2)');
+                if (loadingText) {
+                    loadingText.textContent = 'Analyzing your artwork...';
+                }
+                
+                console.log('🖼️ Starting image analysis...');
+                
+                try {
+                    const imageAnalysisResponse = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            heroImage: heroImageBase64,
+                            sceneImage: sceneImageBase64,
+                            imageType: 'both'
+                        })
+                    });
+                    
+                    if (!imageAnalysisResponse.ok) {
+                        console.warn('⚠️ Image analysis failed, proceeding without descriptions');
+                    } else {
+                        const analysisResult = await imageAnalysisResponse.json();
+                        characterDescription = analysisResult.characterDescription;
+                        sceneDescription = analysisResult.sceneDescription;
+                        console.log('✅ Image analysis complete:', {
+                            hasCharacterDescription: !!characterDescription,
+                            hasSceneDescription: !!sceneDescription
+                        });
+                    }
+                } catch (imageError) {
+                    console.warn('⚠️ Image analysis error, proceeding without descriptions:', imageError);
+                }
+                
+                // Update loading text for story generation
+                if (loadingText) {
+                    loadingText.textContent = isSurpriseMode ? 
+                        'Creating a surprise adventure just for you...' : 
+                        'Brewing your magical story...';
+                }
+            }
+            
+            // Get form data in the format expected by the API (without large image data)
             const formData = {
                 heroName: document.getElementById('classic-heroName')?.value.trim() || '',
                 promptSetup: document.getElementById('classic-promptSetup')?.value.trim() || '',
                 promptRising: document.getElementById('classic-promptRising')?.value.trim() || '',
                 promptClimax: document.getElementById('classic-promptClimax')?.value.trim() || '',
                 age: document.getElementById('classic-story-age')?.value || '6',
-                heroImage: heroImageBase64,
-                sceneImage: sceneImageBase64,
+                characterDescription: characterDescription,
+                sceneDescription: sceneDescription,
                 surpriseMode: isSurpriseMode
             };
             

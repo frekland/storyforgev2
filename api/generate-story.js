@@ -229,7 +229,7 @@ function generateRandomStoryElements(age) {
 }
 
 // Helper function to generate story and audio
-async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode = false }) {
+async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode = false }) {
   // Handle surprise mode by generating random story elements
   if (surpriseMode) {
     const randomElements = generateRandomStoryElements(age);
@@ -263,16 +263,17 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       break;
   }
   
-  // ENHANCED: Analyze uploaded images to create rich descriptions
-  let characterDescription = null;
-  let sceneDescription = null;
+  // ENHANCED: Use pre-generated descriptions or analyze images if needed
+  let finalCharacterDescription = characterDescription;
+  let finalSceneDescription = sceneDescription;
   
-  if (heroImage) {
-    characterDescription = await analyzeCharacterImage(heroImage);
+  // Fallback to image analysis if descriptions not provided
+  if (!finalCharacterDescription && heroImage) {
+    finalCharacterDescription = await analyzeCharacterImage(heroImage);
   }
   
-  if (sceneImage) {
-    sceneDescription = await analyzeSceneImage(sceneImage);
+  if (!finalSceneDescription && sceneImage) {
+    finalSceneDescription = await analyzeSceneImage(sceneImage);
   }
   
   // Generate Story with Gemini - TTS-optimized prompts with enhanced image descriptions
@@ -291,8 +292,8 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - The Beginning: ${promptSetup || 'a surprising place'}
     - The Challenge: ${promptRising || 'an unexpected problem'}
     - The Climax: ${promptClimax || 'a clever solution'}
-    ${characterDescription ? `- Character Description: The main character looks like this: ${characterDescription}` : ''}
-    ${sceneDescription ? `- Setting Description: The story takes place in: ${sceneDescription}` : ''}
+    ${finalCharacterDescription ? `- Character Description: The main character looks like this: ${finalCharacterDescription}` : ''}
+    ${finalSceneDescription ? `- Setting Description: The story takes place in: ${finalSceneDescription}` : ''}
     
     Make it magical and engaging for children, with natural speech that flows beautifully when narrated!
   `;
@@ -502,7 +503,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     // Mode 1: Client requests story generation
     try {
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode } = req.body;
+      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode } = req.body;
       
       // Validate input (skip validation for surprise mode)
       // For regular mode, require at least one story element
@@ -520,7 +521,7 @@ module.exports = async function handler(req, res) {
 
       console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
       const { storyText, audioContent, generatedImage } = await generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode
+        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
       });
 
       // Return story text, Base64 audio, and generated image (if any) for the client to handle
@@ -594,7 +595,7 @@ module.exports = async function handler(req, res) {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Accept, User-Agent');
       res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type, Accept-Ranges');
       
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, audioOnly } = req.query;
+      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, audioOnly } = req.query;
 
       if (!audioOnly || audioOnly !== 'true') {
         console.error('❌ Missing audioOnly=true parameter');
@@ -622,7 +623,7 @@ module.exports = async function handler(req, res) {
       });
       // Re-generate the audio on-demand using the same parameters
       const { storyText, audioContent } = await generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age
+        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age
       });
       
       console.log('✅ Audio generation complete for streaming:', {

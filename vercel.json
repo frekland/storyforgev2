@@ -1,7 +1,12 @@
 {
   "functions": {
     "api/generate-story.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/upload-image.js": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "buildCommand": "npx vite build",
