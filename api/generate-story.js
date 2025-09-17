@@ -354,8 +354,13 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Include exciting dialogue with "said" instead of unusual speech tags
     - Write exactly around ${storyLength} words in ${readingLevel}
     - ${ttsInstructions}
-    - NEVER write the word "dot" or "period" - use only the actual punctuation mark (.)
-    - Use proper punctuation (. ! ?) not spelled-out punctuation names
+    
+    PUNCTUATION RULES (EXTREMELY IMPORTANT):
+    - NEVER EVER write the words "dot", "period", "comma", "exclamation" or any punctuation names
+    - Use ONLY the actual symbols: . ! ? , : ;
+    - When ending sentences, use a period (.) NOT the word "dot"
+    - Example: "Hello world." NOT "Hello world dot"
+    - This is critical for audio quality - punctuation names will be spoken aloud
     
     PAUSE CONTROL for Audio Narration:
     Add natural pauses using these markers to make the audio flow beautifully:
@@ -409,6 +414,9 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // Debug: Log sample of raw text to check for 'dot' words
   if ((rawStoryText.match(/\bdot\b/gi) || []).length > 0) {
     console.log('⚠️ RAW TEXT CONTAINS DOT WORDS - Sample:', JSON.stringify(rawStoryText.substring(0, 300)));
+    // Log all instances of 'dot' with context
+    const dotMatches = rawStoryText.match(/.{0,20}\bdot\b.{0,20}/gi) || [];
+    console.log('🔎 All DOT instances with context:', dotMatches);
   }
   
   // Generate image for surprise mode using Gemini 2.5 Flash
@@ -621,23 +629,49 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     textLength: storyTextWithPauses.length
   });
   
-  // Aggressively normalize periods and eliminate any 'dot' references
-  const cleanedMarkupText = storyTextWithPauses
-    // Remove any instances of the word 'dot' (case insensitive)
-    .replace(/\b(dot|period)\b/gi, '.')
-    // Clean up any potential 'dot' phrases
-    .replace(/\s+(dot|period)\s+/gi, '. ')
-    .replace(/\s+(dot|period)\./gi, '.')
-    .replace(/\.(dot|period)/gi, '.')
-    // Fix spacing around periods
+  // Ultra-aggressive dot cleaning with character inspection
+  let cleanedMarkupText = storyTextWithPauses;
+  
+  // Log character codes around any 'dot' instances for debugging
+  const dotInstances = cleanedMarkupText.match(/.{0,10}dot.{0,10}/gi) || [];
+  if (dotInstances.length > 0) {
+    console.log('🔍 DOT INSTANCES FOUND:', dotInstances);
+    dotInstances.forEach((instance, i) => {
+      const charCodes = instance.split('').map(c => `${c}(${c.charCodeAt(0)})`).join(' ');
+      console.log(`🔢 Instance ${i + 1} char codes:`, charCodes);
+    });
+  }
+  
+  // Multiple passes of aggressive cleaning
+  cleanedMarkupText = cleanedMarkupText
+    // Pass 1: Basic word boundary replacements
+    .replace(/\b(dot|period|DOT|PERIOD)\b/g, '.')
+    // Pass 2: With various spacing patterns
+    .replace(/\s+(dot|period|DOT|PERIOD)\s+/g, '. ')
+    .replace(/\s+(dot|period|DOT|PERIOD)\./g, '.')
+    .replace(/\.(dot|period|DOT|PERIOD)/g, '.')
+    .replace(/(dot|period|DOT|PERIOD)\s+/g, '. ')
+    .replace(/\s+(dot|period|DOT|PERIOD)/g, '.')
+    // Pass 3: Character by character replacement (in case of encoding issues)
+    .replace(/d\s*o\s*t/gi, '.')
+    .replace(/p\s*e\s*r\s*i\s*o\s*d/gi, '.')
+    // Pass 4: Fix spacing around periods
     .replace(/\s*\.\s*/g, '. ')
-    // Fix double or multiple periods
     .replace(/\.{2,}/g, '.')
-    // Ensure no periods at start of words (except abbreviations)
     .replace(/\s+\./g, '.')
-    // Clean up spacing
+    .replace(/\.\s*\./g, '.')
+    // Pass 5: Final cleanup
     .replace(/\s+/g, ' ')
     .trim();
+  
+  // Verify cleaning worked
+  const remainingDots = (cleanedMarkupText.match(/\bdot\b/gi) || []).length;
+  if (remainingDots > 0) {
+    console.log('❌ CLEANING FAILED - Still found', remainingDots, 'dot instances after cleaning');
+    console.log('🔍 Remaining sample:', JSON.stringify(cleanedMarkupText.substring(0, 300)));
+  } else {
+    console.log('✅ DOT CLEANING SUCCESSFUL - No dot words remaining');
+  }
   
   console.log('✨ Final cleaned markup text sample:', JSON.stringify(cleanedMarkupText.substring(0, 200)));
   
