@@ -475,6 +475,20 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // Process story to separate display text from TTS text with pauses
   const { displayText, ttsText } = processStoryWithPauses(rawStoryText, heroName);
   
+  // DEBUG: Check if there's a discrepancy between display and TTS text
+  const displayDots = (displayText.match(/\bdot\b/gi) || []).length;
+  const ttsDots = (ttsText.match(/\bdot\b/gi) || []).length;
+  console.log('🚨 TEXT PROCESSING DEBUG:', {
+    displayTextDots: displayDots,
+    ttsTextDots: ttsDots,
+    discrepancy: ttsDots > displayDots
+  });
+  
+  if (ttsDots > displayDots) {
+    console.log('🚨 FOUND DISCREPANCY! TTS text has more dot words than display text');
+    console.log('🚨 TTS text sample:', JSON.stringify(ttsText.substring(0, 300)));
+  }
+  
   const processingResults = {
     rawLength: rawStoryText.length,
     displayLength: displayText.length,
@@ -804,6 +818,17 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
   console.log('🚨 Full length:', cleanedMarkupText.length);
   console.log('🚨 First 500 chars:', JSON.stringify(cleanedMarkupText.substring(0, 500)));
   console.log('🚨 Last 500 chars:', JSON.stringify(cleanedMarkupText.substring(-500)));
+  
+  // Check if TTS input contains dot words that display text doesn't
+  const ttsHasDot = (cleanedMarkupText.match(/\bdot\b/gi) || []).length;
+  const ttsHasPeriod = (cleanedMarkupText.match(/\bperiod\b/gi) || []).length;
+  console.log('🚨 TTS TEXT DOT CHECK:', { ttsHasDot, ttsHasPeriod });
+  
+  if (ttsHasDot > 0 || ttsHasPeriod > 0) {
+    console.log('🚨 FOUND THE PROBLEM! TTS text contains dot/period words that display text does not!');
+    const dotMatches = cleanedMarkupText.match(/.{0,30}\b(dot|period)\b.{0,30}/gi) || [];
+    console.log('🚨 TTS dot contexts:', dotMatches);
+  }
   
   // Check for any remaining punctuation words in final text
   const finalDotCheck = (cleanedMarkupText.match(/\bdot\b/gi) || []);
