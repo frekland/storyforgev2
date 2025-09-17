@@ -572,7 +572,7 @@ async function generateOpenAITTS(cleanStoryText, voiceSettings) {
     console.log('🔊 Response content-type:', contentType);
     
     // Get the audio buffer
-    audioContent = Buffer.from(await ttsResponse.arrayBuffer());
+    const audioContent = Buffer.from(await ttsResponse.arrayBuffer());
     
     console.log('✅ OpenAI TTS generation successful:', {
       audioSize: audioContent.length,
