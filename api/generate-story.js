@@ -404,6 +404,25 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     storyLength: rawStoryText.length
   });
   
+  // IMMEDIATE CHECK: Did the AI ignore our instructions and include punctuation words?
+  const immediateCheck = {
+    dots: (rawStoryText.match(/\bdot\b/gi) || []).length,
+    periods: (rawStoryText.match(/\bperiod\b/gi) || []).length,
+    exclamationMarks: (rawStoryText.match(/\bexclamation\s*mark\b/gi) || []).length,
+    questionMarks: (rawStoryText.match(/\bquestion\s*mark\b/gi) || []).length
+  };
+  
+  if (immediateCheck.dots > 0 || immediateCheck.periods > 0 || immediateCheck.exclamationMarks > 0 || immediateCheck.questionMarks > 0) {
+    console.log('🚨 AI IGNORED INSTRUCTIONS - Generated punctuation words:', immediateCheck);
+    console.log('🚨 Raw AI output sample:', JSON.stringify(rawStoryText.substring(0, 300)));
+    
+    // Show all punctuation word instances with context
+    const allPunctuationMatches = rawStoryText.match(/.{0,20}\b(dot|period|exclamation\s*mark|question\s*mark)\b.{0,20}/gi) || [];
+    console.log('🚨 All AI punctuation violations:', allPunctuationMatches);
+  } else {
+    console.log('✅ AI FOLLOWED INSTRUCTIONS - No punctuation words in raw output');
+  }
+  
   // Process story to separate display text from TTS text with pauses
   const { displayText, ttsText } = processStoryWithPauses(rawStoryText);
   
@@ -705,11 +724,66 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
       total: totalPunctuationWords
     });
     console.log('🔍 Problem sample:', JSON.stringify(cleanedMarkupText.substring(0, 300)));
+    
+    // NUCLEAR OPTION: Apply extreme cleaning if normal cleaning failed
+    console.log('💥 APPLYING NUCLEAR CLEANING...');
+    cleanedMarkupText = cleanedMarkupText
+      // Ultra aggressive word-by-word replacement
+      .split(' ')
+      .map(word => {
+        // Remove punctuation from word boundaries for matching
+        const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        if (cleanWord === 'dot' || cleanWord === 'period') return '.';
+        if (cleanWord === 'exclamation' && word.toLowerCase().includes('mark')) return '!';
+        if (cleanWord === 'question' && word.toLowerCase().includes('mark')) return '?';
+        if (cleanWord === 'comma') return ',';
+        return word;
+      })
+      .join(' ')
+      // Clean up any remaining issues
+      .replace(/\s+([.!?])/g, '$1')
+      .replace(/([.!?])(?=[A-Z])/g, '$1 ');
+    
+    console.log('💥 Nuclear cleaning applied - rechecking...');
+    const postNuclearCheck = {
+      dots: (cleanedMarkupText.match(/\b(dot|period)\b/gi) || []).length,
+      exclamations: (cleanedMarkupText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
+      questions: (cleanedMarkupText.match(/\b(question mark)\b/gi) || []).length,
+      commas: (cleanedMarkupText.match(/\b(comma)\b/gi) || []).length
+    };
+    console.log('💥 Post-nuclear check:', postNuclearCheck);
   } else {
     console.log('✅ PUNCTUATION CLEANING SUCCESSFUL - No punctuation words remaining');
   }
   
   console.log('✨ Final cleaned markup text sample:', JSON.stringify(cleanedMarkupText.substring(0, 200)));
+  
+  // EMERGENCY DEBUGGING - Log the exact text being sent to TTS
+  console.log('🚨 EMERGENCY DEBUG - EXACT TTS INPUT TEXT:');
+  console.log('🚨 Full length:', cleanedMarkupText.length);
+  console.log('🚨 First 500 chars:', JSON.stringify(cleanedMarkupText.substring(0, 500)));
+  console.log('🚨 Last 500 chars:', JSON.stringify(cleanedMarkupText.substring(-500)));
+  
+  // Check for any remaining punctuation words in final text
+  const finalDotCheck = (cleanedMarkupText.match(/\bdot\b/gi) || []);
+  const finalPeriodCheck = (cleanedMarkupText.match(/\bperiod\b/gi) || []);
+  const finalExclamationCheck = (cleanedMarkupText.match(/\bexclamation\s*mark\b/gi) || []);
+  
+  if (finalDotCheck.length > 0 || finalPeriodCheck.length > 0 || finalExclamationCheck.length > 0) {
+    console.log('🚨 CRITICAL: PUNCTUATION WORDS STILL IN FINAL TTS TEXT!');
+    console.log('🚨 Found dots:', finalDotCheck);
+    console.log('🚨 Found periods:', finalPeriodCheck);
+    console.log('🚨 Found exclamations:', finalExclamationCheck);
+    
+    // Show exact context around each problem
+    finalDotCheck.forEach((match, i) => {
+      const index = cleanedMarkupText.toLowerCase().indexOf(match.toLowerCase());
+      const context = cleanedMarkupText.substring(Math.max(0, index - 30), index + 30);
+      console.log(`🚨 DOT CONTEXT ${i + 1}:`, JSON.stringify(context));
+    });
+  } else {
+    console.log('✅ FINAL CHECK PASSED - No punctuation words in TTS input');
+  }
   
   const request = {
     input: { markup: cleanedMarkupText }, // Use 'markup' instead of 'text' for pause control
