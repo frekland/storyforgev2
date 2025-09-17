@@ -842,13 +842,28 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span>Classic Story</span>
                             </h2>
                             <div class="mode-actions">
-                                <button class="help-btn" onclick="showModeHelp('classic')" title="How does Classic Story work?">
-                                    <span>?</span>
-                                </button>
-                                <button class="print-btn" onclick="printStoryWorksheet()" title="Print story arc worksheet">
+                                <button class="print-btn" onclick="printStoryWorksheet()" title="Download story arc worksheet">
                                     <span>🖨️</span>
-                                    <span>Print story arc worksheet</span>
+                                    <span>Print worksheet</span>
                                 </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Instructions Section -->
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">✨</span>
+                                    <span><strong>Just one element needed!</strong> Fill in at least one story element below - hero name, beginning, challenge, or resolution.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🌈</span>
+                                    <span><strong>More details = more magic!</strong> The more you add, the more personalized and fun your story becomes.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">👨‍👩‍👧‍👦</span>
+                                    <span><strong>Parents:</strong> Work with your children on their own story arc using our worksheet (🖨️ above) - it's a great way to plan together!</span>
+                                </div>
                             </div>
                         </div>
                         
@@ -906,32 +921,53 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                                 
-                                <!-- Character & Scene Images -->
-                                <div class="images-section">
-                                    <div class="image-uploads">
-                                        <div class="image-upload-compact">
-                                            <label for="classic-heroImage" class="compact-label">
-                                                <span>🎨 Character Drawing (Optional)</span>
+                                <!-- Character & Scene Images - Expanded Layout -->
+                                <div class="images-section-expanded">
+                                    <h4 class="images-title">
+                                        <span class="section-icon">🎨</span>
+                                        <span>Add Your Artwork (Optional)</span>
+                                    </h4>
+                                    
+                                    <div class="image-uploads-expanded">
+                                        <div class="image-upload-full">
+                                            <label for="classic-heroImage" class="upload-label">
+                                                <span class="label-text">Character Drawing</span>
+                                                <span class="label-doodle">🎨</span>
                                             </label>
-                                            <div id="classic-image-upload-area" class="upload-area-compact">
+                                            <div id="classic-image-upload-area" class="paper-upload-full">
                                                 <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
-                                                <button type="button" class="upload-btn-compact" onclick="document.getElementById('classic-heroImage').click()">
-                                                    <span>📎 Upload</span>
-                                                </button>
-                                                <div id="classic-image-preview" class="preview-container hidden"></div>
+                                                <div class="upload-content-full">
+                                                    <button type="button" class="upload-btn-full" onclick="document.getElementById('classic-heroImage').click()">
+                                                        <span>📎 Upload Character Drawing</span>
+                                                    </button>
+                                                    <p class="upload-hint">Draw or upload your hero character!</p>
+                                                    <div id="classic-image-preview" class="preview-container hidden"></div>
+                                                </div>
+                                                <div class="upload-doodles">
+                                                    <span class="doodle-arrow">→</span>
+                                                    <span class="doodle-star">★</span>
+                                                </div>
                                             </div>
                                         </div>
                                         
-                                        <div class="image-upload-compact">
-                                            <label for="classic-sceneImage" class="compact-label">
-                                                <span>🏖️ Scene Drawing (Optional)</span>
+                                        <div class="image-upload-full">
+                                            <label for="classic-sceneImage" class="upload-label">
+                                                <span class="label-text">Scene Drawing</span>
+                                                <span class="label-doodle">🖼️</span>
                                             </label>
-                                            <div id="classic-scene-upload-area" class="upload-area-compact">
+                                            <div id="classic-scene-upload-area" class="paper-upload-full">
                                                 <input type="file" id="classic-sceneImage" accept="image/*" class="hidden-input">
-                                                <button type="button" class="upload-btn-compact" onclick="document.getElementById('classic-sceneImage').click()">
-                                                    <span>🏖️ Upload</span>
-                                                </button>
-                                                <div id="classic-scene-preview" class="preview-container hidden"></div>
+                                                <div class="upload-content-full">
+                                                    <button type="button" class="upload-btn-full" onclick="document.getElementById('classic-sceneImage').click()">
+                                                        <span>🏖️ Upload Scene Drawing</span>
+                                                    </button>
+                                                    <p class="upload-hint">Draw or upload a magical place!</p>
+                                                    <div id="classic-scene-preview" class="preview-container hidden"></div>
+                                                </div>
+                                                <div class="upload-doodles">
+                                                    <span class="doodle-tree">🌳</span>
+                                                    <span class="doodle-castle">🏰</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
