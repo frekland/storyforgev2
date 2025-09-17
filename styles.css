@@ -2575,17 +2575,16 @@ button[type="submit"]:hover {
 }
 
 .mode-btn {
-  background: var(--bg-paper);
-  border: 3px solid var(--border-color);
-  border-radius: 20px;
-  padding: 25px;
+  /* Crayon/masking tape base styling */
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 250, 252, 0.95)
+  );
+  border: none;
+  border-radius: 12px;
+  padding: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 
-    0 4px 12px var(--shadow-medium),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  transform: var(--paper-rotation);
-  clip-path: var(--torn-edge);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -2593,18 +2592,107 @@ button[type="submit"]:hover {
   align-items: center;
   text-align: center;
   min-height: 200px;
+  transform: rotate(-1deg);
+  
+  /* Crayon texture effect */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  
+}
+
+/* Masking tape edges */
+.mode-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.1) 75%),
+    linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(0,0,0,0.05) 2%, 
+      transparent 4%, 
+      transparent 96%, 
+      rgba(0,0,0,0.05) 98%, 
+      transparent 100%
+    );
+  background-size: 8px 8px, 100% 100%;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* Washi tape color strips */
+.mode-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, 
+    var(--accent-color) 0%,
+    var(--accent-secondary) 100%
+  );
+  border-radius: 2px;
+  opacity: 0.7;
 }
 
 .mode-btn:nth-child(even) {
-  transform: var(--paper-rotation-alt);
+  transform: rotate(1deg);
+}
+
+.mode-btn:nth-child(even)::after {
+  left: auto;
+  right: -2px;
+  background: linear-gradient(180deg, 
+    #ff6b9d 0%,
+    #c44569 100%
+  );
+}
+
+/* Individual crayon colors for each button */
+.mode-btn:nth-child(1)::after {
+  background: linear-gradient(180deg, #ff6b6b 0%, #ee5a24 100%); /* Classic - Red */
+}
+
+.mode-btn:nth-child(2)::after {
+  background: linear-gradient(180deg, #4ecdc4 0%, #26d0ce 100%); /* Wanted - Teal */
+}
+
+.mode-btn:nth-child(3)::after {
+  background: linear-gradient(180deg, #45b7d1 0%, #3742fa 100%); /* Homework - Blue */
+}
+
+.mode-btn:nth-child(4)::after {
+  background: linear-gradient(180deg, #a55eea 0%, #8c7ae6 100%); /* Sleep - Purple */
+}
+
+.mode-btn:nth-child(5)::after {
+  background: linear-gradient(180deg, #fd79a8 0%, #e84393 100%); /* Monster - Pink */
+}
+
+.mode-btn:nth-child(6)::after {
+  background: linear-gradient(180deg, #fdcb6e 0%, #f39c12 100%); /* Help - Yellow */
 }
 
 .mode-btn:hover {
-  transform: var(--paper-rotation) translateY(-5px) scale(1.02);
+  transform: rotate(-1deg) translateY(-8px) scale(1.05);
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 1), 
+    rgba(248, 250, 252, 1)
+  );
   box-shadow: 
-    0 8px 25px var(--shadow-dark),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  border-color: var(--accent-color);
+    0 16px 48px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.mode-btn:nth-child(even):hover {
+  transform: rotate(1deg) translateY(-8px) scale(1.05);
 }
 
 .mode-btn:active {
@@ -2612,26 +2700,39 @@ button[type="submit"]:hover {
 }
 
 [data-theme="dark"] .mode-btn {
-  background: var(--bg-paper);
-  border-color: var(--border-color);
+  background: linear-gradient(135deg, 
+    rgba(45, 27, 78, 0.95), 
+    rgba(55, 35, 88, 0.95)
+  );
   box-shadow: 
-    0 4px 12px var(--shadow-medium),
-    0 0 20px rgba(167, 139, 250, 0.1),
-    inset 0 1px 0 rgba(167, 139, 250, 0.2);
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(167, 139, 250, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] .mode-btn:hover {
+  background: linear-gradient(135deg, 
+    rgba(55, 35, 88, 1), 
+    rgba(65, 45, 98, 1)
+  );
   box-shadow: 
-    0 8px 25px var(--shadow-dark),
-    0 0 30px rgba(167, 139, 250, 0.2),
-    inset 0 1px 0 rgba(167, 139, 250, 0.3);
-  border-color: var(--accent-color);
+    0 16px 48px rgba(0, 0, 0, 0.25),
+    0 0 30px rgba(167, 139, 250, 0.3),
+    inset 0 2px 0 rgba(167, 139, 250, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.15);
 }
 
 .mode-icon {
   font-size: 3em;
   margin-bottom: 15px;
-  animation: float 3s ease-in-out infinite;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mode-btn:hover .mode-icon {
+  animation: crayonBounce 0.6s ease-out;
+  transform: scale(1.1);
+  filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.15));
 }
 
 .mode-content {
@@ -2679,35 +2780,46 @@ button[type="submit"]:hover {
 .mode-doodles span {
   font-size: 1.3em;
   color: var(--accent-color);
-  animation: wiggle 4s ease-in-out infinite;
+  transition: all 0.2s ease;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.1));
 }
 
-.mode-doodles span:nth-child(2) {
-  animation-delay: 0.5s;
+.mode-btn:hover .mode-doodles span {
+  animation: doodleWiggle 0.8s ease-out;
 }
 
-.mode-doodles span:nth-child(3) {
-  animation-delay: 1s;
+.mode-btn:hover .mode-doodles span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.mode-btn:hover .mode-doodles span:nth-child(3) {
+  animation-delay: 0.2s;
 }
 
 /* Mode button active state */
 .mode-btn.active {
-  border-color: var(--accent-color);
-  background: linear-gradient(135deg, var(--bg-paper), rgba(255, 107, 107, 0.1));
-  transform: var(--paper-rotation) scale(1.02);
+  background: linear-gradient(135deg, 
+    rgba(255, 107, 107, 0.1), 
+    rgba(248, 250, 252, 1)
+  );
+  transform: rotate(-1deg) scale(1.02);
   box-shadow: 
-    0 6px 20px var(--shadow-dark),
+    0 12px 36px rgba(255, 107, 107, 0.2),
     0 0 25px rgba(255, 107, 107, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -2px 0 rgba(255, 107, 107, 0.1);
 }
 
 [data-theme="dark"] .mode-btn.active {
-  background: linear-gradient(135deg, var(--bg-paper), rgba(245, 158, 11, 0.1));
-  border-color: var(--accent-color);
+  background: linear-gradient(135deg, 
+    rgba(245, 158, 11, 0.1), 
+    rgba(55, 35, 88, 1)
+  );
   box-shadow: 
-    0 6px 20px var(--shadow-dark),
+    0 12px 36px rgba(245, 158, 11, 0.2),
     0 0 30px rgba(245, 158, 11, 0.3),
-    inset 0 1px 0 rgba(167, 139, 250, 0.3);
+    inset 0 2px 0 rgba(167, 139, 250, 0.4),
+    inset 0 -2px 0 rgba(245, 158, 11, 0.1);
 }
 
 /* 📝 MODE CONTENT CONTAINER */
@@ -2960,6 +3072,22 @@ button[type="submit"]:hover {
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
+}
+
+@keyframes crayonBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15) rotate(-2deg); }
+  60% { transform: scale(1.05) rotate(1deg); }
+  100% { transform: scale(1.1) rotate(0deg); }
+}
+
+@keyframes doodleWiggle {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(3deg) scale(1.1); }
+  40% { transform: rotate(-2deg) scale(1.05); }
+  60% { transform: rotate(1deg) scale(1.08); }
+  80% { transform: rotate(-1deg) scale(1.02); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
 /* Responsive help section */
