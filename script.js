@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagePreview = document.getElementById('image-preview');
     const imageUploadArea = document.getElementById('image-upload-area');
     const loginButton = document.getElementById("login-button");
-    const logoutButton = document.getElementById("logout-button");
+    const logoHome = document.getElementById("logo-home");
+    const currentModeSpan = document.getElementById("current-mode");
     const appContent = document.getElementById("app-content");
     const audioPlayer = document.getElementById('story-audio-player');
     const playButton = document.getElementById('play-story-button');
@@ -92,12 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTokens();
         appContent.classList.add('hidden');
         loginButton.classList.remove('hidden');
-        logoutButton.classList.add('hidden');
         
         // Hide Yoto connection status
         const yotoStatus = document.getElementById('yoto-status');
         if (yotoStatus) {
             yotoStatus.classList.add('hidden');
+        }
+        
+        // Clear current mode
+        if (currentModeSpan) {
+            currentModeSpan.textContent = '';
         }
     };
 
@@ -174,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showAppUI = () => {
         loginButton.classList.add('hidden');
-        logoutButton.classList.remove('hidden');
         appContent.classList.remove('hidden');
         
         // Show Yoto connection status
@@ -185,7 +189,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     loginButton.addEventListener('click', handleLogin);
-    logoutButton.addEventListener('click', handleLogout);
+    
+    // Make logo clickable to return to mode selection
+    if (logoHome) {
+        logoHome.addEventListener('click', () => {
+            if (currentMode) {
+                backToModeSelection();
+            }
+        });
+        logoHome.style.cursor = 'pointer';
+    }
     // 🎯 PROPER: Create or update StoryForge playlist with new stories as chapters
     async function createOrUpdateStoryForgePlaylist(storyData, accessToken) {
         const PLAYLIST_TITLE = "StoryForge";
@@ -758,6 +771,20 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMode = mode;
         console.log(`Switching to ${mode} mode`);
         
+        // Update current mode display in top bar
+        const modeNames = {
+            'classic': '📚 Classic Story',
+            'wanted-poster': '🤠 Wanted Poster',
+            'homework-forge': '📝 Homework Forge',
+            'sleep-forge': '🌙 Sleep Forge',
+            'monster-maker': '👹 Monster Maker',
+            'help': '💡 Help & Templates'
+        };
+        
+        if (currentModeSpan) {
+            currentModeSpan.textContent = ` → ${modeNames[mode] || mode}`;
+        }
+        
         const modeContentContainer = document.getElementById('mode-content');
         const modeSelectionGrid = document.querySelector('.mode-selection-grid');
         const welcomeSection = document.querySelector('.welcome-section');
@@ -792,6 +819,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show welcome section and mode grid
         if (welcomeSection) welcomeSection.classList.remove('hidden');
         if (modeSelectionGrid) modeSelectionGrid.classList.remove('hidden');
+        
+        // Clear current mode indicator
+        if (currentModeSpan) {
+            currentModeSpan.textContent = '';
+        }
         
         currentMode = null;
     };

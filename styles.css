@@ -117,6 +117,22 @@ body::before {
   animation: doodleBounce 2s ease-in-out infinite;
 }
 
+.compact-logo {
+  transition: all 0.3s ease;
+}
+
+.compact-logo:hover {
+  transform: translateY(-1px);
+  opacity: 0.8;
+}
+
+.current-mode {
+  color: var(--accent-secondary);
+  font-size: 0.9em;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
 .top-controls {
   display: flex;
   align-items: center;

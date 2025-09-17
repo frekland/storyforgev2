@@ -13,10 +13,11 @@
 <body>
     <!-- Top Bar with compact logo and controls -->
     <div class="top-bar">
-        <div class="compact-logo">
+        <div class="compact-logo" id="logo-home" title="Return to mode selection">
             <span class="title-word">The</span>
             <span class="title-word highlight">Storyforge</span>
             <span class="title-doodle">✨</span>
+            <span class="current-mode" id="current-mode"></span>
         </div>
         <div class="top-controls">
             <div id="yoto-status" class="yoto-status hidden" title="Connected to Yoto">
@@ -31,14 +32,6 @@
 
     <main class="main-content">
         <div class="auth-section paper-scrap">
-            <button id="login-button" class="login-btn paper-btn">
-                <span class="btn-text">Connect to Yoto</span>
-                <div class="btn-doodle">🔗</div>
-            </button>
-            <button id="logout-button" class="logout-btn paper-btn hidden">
-                <span class="btn-text">Disconnect</span>
-                <div class="btn-doodle">👋</div>
-            </button>
         </div>
 
         <div id="app-content" class="app-container hidden">
