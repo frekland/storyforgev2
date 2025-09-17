@@ -1,11 +1,11 @@
 {
   "functions": {
     "api/generate-story.js": {
-      "maxDuration": 60,
+      "maxDuration": 120,
       "memory": 1024
     },
     "api/upload-image.js": {
-      "maxDuration": 30,
+      "maxDuration": 60,
       "memory": 1024
     }
   },

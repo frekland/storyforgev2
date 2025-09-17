@@ -268,6 +268,8 @@ function generateRandomStoryElements(age) {
 
 // Helper function to generate story and audio
 async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode = false }) {
+  const startTime = Date.now();
+  console.log('⏱️ Story generation started:', { surpriseMode, hasCharacterDesc: !!characterDescription, hasSceneDesc: !!sceneDescription });
   // Handle surprise mode by generating random story elements
   if (surpriseMode) {
     const randomElements = generateRandomStoryElements(age);
@@ -301,17 +303,45 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       break;
   }
   
-  // ENHANCED: Use pre-generated descriptions or analyze images if needed
+  // ENHANCED: Use pre-generated descriptions or analyze images for magical personalization
   let finalCharacterDescription = characterDescription;
   let finalSceneDescription = sceneDescription;
   
-  // Fallback to image analysis if descriptions not provided
+  // Run image analysis in parallel for better performance
+  const imageAnalysisPromises = [];
+  
   if (!finalCharacterDescription && heroImage) {
-    finalCharacterDescription = await analyzeCharacterImage(heroImage);
+    console.log('🎨 Starting character image analysis...');
+    imageAnalysisPromises.push(
+      analyzeCharacterImage(heroImage).then(desc => ({ type: 'character', description: desc }))
+    );
   }
   
   if (!finalSceneDescription && sceneImage) {
-    finalSceneDescription = await analyzeSceneImage(sceneImage);
+    console.log('🏞️ Starting scene image analysis...');
+    imageAnalysisPromises.push(
+      analyzeSceneImage(sceneImage).then(desc => ({ type: 'scene', description: desc }))
+    );
+  }
+  
+  // Wait for all image analysis to complete in parallel
+  if (imageAnalysisPromises.length > 0) {
+    console.log(`🚀 Running ${imageAnalysisPromises.length} image analysis tasks in parallel...`);
+    const results = await Promise.all(imageAnalysisPromises);
+    
+    // Apply results
+    results.forEach(result => {
+      if (result.type === 'character') {
+        finalCharacterDescription = result.description;
+      } else if (result.type === 'scene') {
+        finalSceneDescription = result.description;
+      }
+    });
+    
+    console.log('✅ Parallel image analysis complete:', {
+      characterDesc: !!finalCharacterDescription,
+      sceneDesc: !!finalSceneDescription
+    });
   }
   
   // Generate Story with Gemini - TTS-optimized prompts with enhanced image descriptions
@@ -353,8 +383,16 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // Note: We now use dedicated image analysis functions above to create rich descriptions
   // The character and scene descriptions are embedded directly in the text prompt
   
+  const storyGenStart = Date.now();
+  console.log('📝 Starting Gemini story generation...');
+  
   const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
   const rawStoryText = (await result.response).text();
+  
+  console.log('✅ Gemini story generation complete:', {
+    timeMs: Date.now() - storyGenStart,
+    storyLength: rawStoryText.length
+  });
   
   // Process story to separate display text from TTS text with pauses
   const { displayText, ttsText } = processStoryWithPauses(rawStoryText);
@@ -436,6 +474,9 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   });
   
   // Convert Story Text to Speech using appropriate engine and text format
+  const ttsStart = Date.now();
+  console.log('🎵 Starting TTS generation...');
+  
   let audioContent;
   
   if (USE_OPENAI_TTS) {
@@ -457,6 +498,21 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     console.log('🎵 Using Google Chirp3-HD with pause control (using markup text)...');
     audioContent = await generateGoogleTTS(markupStoryText, age);
   }
+  
+  console.log('✅ TTS generation complete:', {
+    timeMs: Date.now() - ttsStart,
+    audioSizeKB: Math.round(audioContent.length / 1024)
+  });
+  
+  const totalTime = Date.now() - startTime;
+  console.log('✅ Story generation complete - Performance Summary:', {
+    totalTimeMs: totalTime,
+    totalTimeSec: Math.round(totalTime / 1000),
+    storyLength: displayText.length,
+    audioSizeKB: Math.round(audioContent.length / 1024),
+    hasCharacterDesc: !!finalCharacterDescription,
+    hasSceneDesc: !!finalSceneDescription
+  });
   
   return { 
     storyText: displayText, // Return display text without pause markers for UI
@@ -634,9 +690,20 @@ module.exports = async function handler(req, res) {
       }
 
       console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
-      const { storyText, audioContent, generatedImage } = await generateStoryAndAudio({
+      
+      // Add timeout protection (110 seconds - just under Vercel's 120s limit)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
+      );
+      
+      const storyPromise = generateStoryAndAudio({
         heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
       });
+      
+      const { storyText, audioContent, generatedImage } = await Promise.race([
+        storyPromise,
+        timeoutPromise
+      ]);
 
       // Return story text, Base64 audio, and generated image (if any) for the client to handle
       const response = {
