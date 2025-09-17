@@ -174,17 +174,36 @@ function getVoiceSettings(age) {
 }
 
 // Helper function to process story text with pause control
-function processStoryWithPauses(rawStoryText) {
-  // Only clean OBVIOUS punctuation word errors from the raw text (preserve legitimate periods)
-  const cleanedRawText = rawStoryText
-    // Only replace punctuation words when they're clearly errors (surrounded by spaces)
-    .replace(/\s+(dot|period)\s+/gi, '. ')
-    .replace(/\s+(dot|period)$/gi, '.')
-    .replace(/^(dot|period)\s+/gi, '. ')
-    .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
-    .replace(/\s+(question mark)\s+/gi, ' ? ')
-    .replace(/\s+(comma)\s+/gi, ', ')
-    // Clean up spacing issues only
+function processStoryWithPauses(rawStoryText, heroName = '') {
+  // Context-aware cleaning that preserves character names like 'Dot'
+  let cleanedRawText = rawStoryText;
+  
+  // If hero name contains punctuation words, be extra careful
+  const heroNameLower = heroName.toLowerCase();
+  const isProtectedName = heroNameLower.includes('dot') || heroNameLower.includes('period') || 
+                         heroNameLower.includes('comma') || heroNameLower.includes('question') ||
+                         heroNameLower.includes('exclamation');
+  
+  if (isProtectedName) {
+    console.log('🛡️ Hero name contains punctuation word - using conservative cleaning:', heroName);
+    // Very conservative cleaning when character name conflicts
+    cleanedRawText = rawStoryText
+      .replace(/([a-z])\s+(dot|period)\s*$/gim, '$1.')
+      .replace(/([a-z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
+      .replace(/([a-z])\s+(question mark)\s*$/gim, '$1?');
+  } else {
+    // Normal cleaning when no name conflicts
+    cleanedRawText = rawStoryText
+      .replace(/\s+(dot|period)\s+/gi, '. ')
+      .replace(/\s+(dot|period)$/gi, '.')
+      .replace(/^(dot|period)\s+/gi, '. ')
+      .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
+      .replace(/\s+(question mark)\s+/gi, ' ? ')
+      .replace(/\s+(comma)\s+/gi, ', ');
+  }
+  
+  // Common spacing cleanup
+  cleanedRawText = cleanedRawText
     .replace(/\s+([.!?])/g, '$1')
     .replace(/([.!?])([A-Z])/g, '$1 $2');
   
@@ -437,7 +456,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   }
   
   // Process story to separate display text from TTS text with pauses
-  const { displayText, ttsText } = processStoryWithPauses(rawStoryText);
+  const { displayText, ttsText } = processStoryWithPauses(rawStoryText, heroName);
   
   console.log('📝 Story processing complete:', {
     rawLength: rawStoryText.length,
@@ -551,7 +570,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     } catch (openaiError) {
       console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS with pause control:', openaiError.message);
       try {
-        audioContent = await generateGoogleTTS(markupStoryText, age);
+        audioContent = await generateGoogleTTS(markupStoryText, age, heroName);
         console.log('✅ Google TTS fallback successful with pause markers');
       } catch (googleError) {
         console.error('❌ Both TTS services failed:', googleError.message);
@@ -559,8 +578,8 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       }
     }
   } else {
-    console.log('🎵 Using Google Chirp3-HD with pause control (using markup text)...');
-    audioContent = await generateGoogleTTS(markupStoryText, age);
+    console.log('🎥 Using Google Chirp3-HD with pause control (using markup text)...');
+    audioContent = await generateGoogleTTS(markupStoryText, age, heroName);
   }
   
   console.log('✅ TTS generation complete:', {
@@ -654,7 +673,7 @@ async function generateOpenAITTS(cleanStoryText, voiceSettings) {
 }
 
 // Google TTS Function - Enhanced with Chirp3-HD pause control using proper markup syntax
-async function generateGoogleTTS(storyTextWithPauses, age) {
+async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
   console.log('🎵 Generating audio with Google Chirp3-HD (MP3 format with pause control)');
   
   const voiceSettings = {
@@ -703,25 +722,39 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     });
   }
   
-  // Conservative cleaning of ONLY obvious punctuation name mistakes
-  cleanedMarkupText = storyTextWithPauses
-    // Only replace punctuation words when they are clearly errors (surrounded by spaces or at word boundaries)
-    .replace(/\s+(dot|period)\s+/gi, '. ')
-    .replace(/\s+(dot|period)$/gi, '.')
-    .replace(/^(dot|period)\s+/gi, '. ')
-    .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
-    .replace(/\s+(exclamation mark|exclamation point)$/gi, '!')
-    .replace(/^(exclamation mark|exclamation point)\s+/gi, '! ')
-    .replace(/\s+(question mark)\s+/gi, ' ? ')
-    .replace(/\s+(question mark)$/gi, '?')
-    .replace(/^(question mark)\s+/gi, '? ')
-    .replace(/\s+(comma)\s+/gi, ', ')
-    // Fix spacing issues ONLY
+  // Context-aware cleaning that preserves character names like 'Dot'
+  cleanedMarkupText = storyTextWithPauses;
+  
+  // Get the hero name to avoid cleaning it
+  const heroNameFromContext = arguments[1] || ''; // Pass heroName as second parameter
+  const protectedNames = [heroNameFromContext.toLowerCase()].filter(name => name.length > 0);
+  
+  // Only clean punctuation words in specific contexts that are clearly errors
+  // Pattern: punctuation word at sentence boundaries or isolated by spaces
+  cleanedMarkupText = cleanedMarkupText
+    // Replace isolated punctuation words (surrounded by spaces) but protect character names
+    .replace(/\s+(dot|period)(?=\s+(and|but|so|then|however|meanwhile|suddenly|finally|later|next|after|before|when|while|as|since|because|although|though|if|unless|until|once|whenever))/gi, '. ')
+    .replace(/([.!?])\s+(dot|period)\s+/gi, '$1 . ')
+    .replace(/\s+(dot|period)\s+([a-z])/gi, (match, punctWord, nextChar) => {
+      // Don't replace if the next word starts with a capital (likely a name)
+      return nextChar === nextChar.toUpperCase() ? match : '. ' + nextChar;
+    })
+    // Handle sentence ending punctuation words
+    .replace(/([a-z])\s+(dot|period)$/gim, '$1.')
+    .replace(/([a-z])\s+(dot|period)\s*$/gim, '$1.')
+    // Handle exclamation and question marks more carefully
+    .replace(/([a-z])\s+(exclamation mark|exclamation point)$/gim, '$1!')
+    .replace(/([a-z])\s+(question mark)$/gim, '$1?')
+    // Clean up spacing issues
     .replace(/\s+([.!?])/g, '$1')
     .replace(/([.!?])([A-Z])/g, '$1 $2')
-    // Clean up excessive whitespace
     .replace(/\s+/g, ' ')
     .trim();
+    
+  // Log if we detected protected names
+  if (protectedNames.length > 0) {
+    console.log('🛡️ Protected character names from cleaning:', protectedNames);
+  }
   
   // Verify cleaning worked for all punctuation names
   const remainingDots = (cleanedMarkupText.match(/\b(dot|period)\b/gi) || []).length;
