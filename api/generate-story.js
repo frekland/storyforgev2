@@ -290,8 +290,8 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   const startTime = Date.now();
   
   // Initialize debug tracking
-  global.debugSteps = [];
-  global.debugSteps.push({ step: 'generation_start', heroName, age, timestamp: Date.now() });
+  const debugSteps = [];
+  debugSteps.push({ step: 'generation_start', heroName, age, timestamp: Date.now() });
   
   console.log('⏱️ Story generation started:', { surpriseMode, hasCharacterDesc: !!characterDescription, hasSceneDesc: !!sceneDescription });
   // Handle surprise mode by generating random story elements
@@ -445,7 +445,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   };
   
   // Track AI output for debugging
-  global.debugSteps.push({ 
+  debugSteps.push({ 
     step: 'ai_generation_complete', 
     rawTextLength: rawStoryText.length,
     punctuationCheck: immediateCheck,
@@ -460,13 +460,13 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     const allPunctuationMatches = rawStoryText.match(/.{0,20}\b(dot|period|exclamation\s*mark|question\s*mark)\b.{0,20}/gi) || [];
     console.log('🚨 All AI punctuation violations:', allPunctuationMatches);
     
-    global.debugSteps.push({ 
+    debugSteps.push({ 
       step: 'ai_violations_found', 
       violations: allPunctuationMatches
     });
   } else {
     console.log('✅ AI FOLLOWED INSTRUCTIONS - No punctuation words in raw output');
-    global.debugSteps.push({ step: 'ai_followed_instructions' });
+    debugSteps.push({ step: 'ai_followed_instructions' });
   }
   
   // Process story to separate display text from TTS text with pauses
@@ -495,7 +495,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   
   console.log('📝 Story processing complete:', processingResults);
   
-  global.debugSteps.push({ 
+  debugSteps.push({ 
     step: 'story_processing_complete', 
     results: processingResults
   });
@@ -815,10 +815,7 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     textLength: cleanedMarkupText.length
   };
   
-  global.debugSteps.push({ 
-    step: 'final_tts_input', 
-    debug: finalTTSDebug
-  });
+  // Debug info will be tracked in the main function
   
   if (finalDotCheck.length > 0 || finalPeriodCheck.length > 0 || finalExclamationCheck.length > 0) {
     console.log('🚨 CRITICAL: PUNCTUATION WORDS STILL IN FINAL TTS TEXT!');
@@ -919,7 +916,7 @@ module.exports = async function handler(req, res) {
             actualPeriods: (storyText.match(/\./g) || []).length,
             actualExclamations: (storyText.match(/!/g) || []).length
           },
-          processingSteps: global.debugSteps || []
+          processingSteps: debugSteps || []
         }
       };
       
