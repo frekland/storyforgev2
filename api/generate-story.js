@@ -217,28 +217,14 @@ function processStoryWithPauses(rawStoryText, heroName = '') {
     .replace(/\s+([.!?])/g, '$1')
     .replace(/([.!?])([A-Z])/g, '$1 $2');
   
-  // Create display version (clean text without pause markers)
-  const displayText = cleanedRawText
-    .replace(/\[pause short\]/g, '')
-    .replace(/\[pause long\]/g, '')
-    .replace(/\[pause\]/g, '')
-    .replace(/\s+/g, ' ')
+  // For Chirp3-HD, both display and TTS use the same clean text (no pause markers needed)
+  const finalText = cleanedRawText
+    .replace(/\*/g, '') // Remove any asterisks
+    .replace(/\s+/g, ' ') // Clean up spacing
+    .replace(/([.!?])([A-Z])/g, '$1 $2') // Ensure space after punctuation
     .trim();
     
-  // Create TTS version (keep pause markers for Chirp3-HD)
-  const ttsText = cleanedRawText
-    // Only remove asterisks and other problematic characters
-    .replace(/\*/g, '')
-    // Fix spacing around pause markers first
-    .replace(/\s*\[pause short\]\s*/g, '[pause short] ')
-    .replace(/\s*\[pause long\]\s*/g, '[pause long] ') 
-    .replace(/\s*\[pause\]\s*/g, '[pause] ')
-    // Fix general spacing and punctuation
-    .replace(/\s+/g, ' ')
-    .replace(/([.!?])([A-Z])/g, '$1 $2')
-    .trim();
-    
-  return { displayText, ttsText };
+  return { displayText: finalText, ttsText: finalText };
 }
 
 // Helper function to clean story text for OpenAI TTS (fallback)
@@ -403,15 +389,18 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Example: "Hello world! How are you?" NOT "Hello world exclamation mark How are you question mark"
     - This is CRITICAL for audio quality - punctuation names will be read aloud and sound terrible
     
-    PAUSE CONTROL for Audio Narration:
-    Add natural pauses using these markers to make the audio flow beautifully:
-    - [pause short] after commas, before dialogue, or for brief dramatic effect
-    - [pause] for sentence endings, paragraph breaks, or moderate emphasis  
-    - [pause long] for chapter breaks, major scene changes, or dramatic moments
+    NATURAL SPEECH for Audio Narration:
+    Write with natural rhythm using proper punctuation for beautiful speech pacing:
+    - Use commas (,) for brief, natural pauses in speech
+    - Use periods (.) for sentence endings and natural breaks
+    - Use exclamation marks (!) for excitement and emphasis
+    - Use question marks (?) for questions
+    - Use paragraph breaks for longer, natural pauses between thoughts
+    - Vary sentence lengths to create engaging, natural speech rhythm
     
-    Example with pauses: "Once upon a time[pause short] in a magical forest[pause] there lived a brave little mouse named Pip. [pause long] One sunny morning[pause short] Pip discovered something extraordinary..."
+    Example: "Once upon a time, in a magical forest, there lived a brave little mouse named Pip.
     
-    Important: These pause markers will be used for audio narration only and will be hidden from readers.
+    One sunny morning, Pip discovered something extraordinary!"
     
     Create an exciting story based on these elements:
     - Hero's Name: ${heroName || 'a mysterious hero'}
@@ -889,12 +878,24 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     console.log('✅ FINAL CHECK PASSED - No punctuation words in TTS input');
   }
   
+  // CRITICAL FIX: Chirp3-HD only supports plain text, not markup!
+  // Remove all pause markers and send as plain text for natural speech
+  const plainTextForChirp = cleanedMarkupText
+    .replace(/\[pause short\]/g, '')
+    .replace(/\[pause long\]/g, '')
+    .replace(/\[pause\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  console.log('🎯 CHIRP3-HD FIX: Using plain text format (no markup)');
+  console.log('🎯 Plain text sample:', JSON.stringify(plainTextForChirp.substring(0, 200)));
+  
   const request = {
-    input: { markup: cleanedMarkupText }, // Use 'markup' instead of 'text' for pause control
+    input: { text: plainTextForChirp }, // Use plain 'text' format for Chirp3-HD
     voice: voiceSettings,
     audioConfig: {
-      audioEncoding: 'MP3',           // Changed to MP3 to match Yoto's example
-      sampleRateHertz: 22050,         // Same as Yoto's example (22kHz)
+      audioEncoding: 'MP3',
+      sampleRateHertz: 22050,
       speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
       volumeGainDb: 2.0
     }
