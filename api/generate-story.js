@@ -175,13 +175,16 @@ function getVoiceSettings(age) {
 
 // Helper function to process story text with pause control
 function processStoryWithPauses(rawStoryText) {
-  // First clean any 'dot' words from the raw text
+  // First clean any punctuation words from the raw text
   const cleanedRawText = rawStoryText
-    // Remove instances of 'dot' or 'period' words that should be punctuation
+    // Remove instances of punctuation words that should be symbols
     .replace(/\b(dot|period)\b/gi, '.')
-    .replace(/\s+(dot|period)\s+/gi, '. ')
-    .replace(/\s+(dot|period)\./gi, '.')
-    .replace(/\.(dot|period)/gi, '.');
+    .replace(/\b(exclamation mark|exclamation point)\b/gi, '!')
+    .replace(/\b(question mark)\b/gi, '?')
+    .replace(/\b(comma)\b/gi, ',')
+    // Clean up spacing around punctuation
+    .replace(/\s+([.!?])/g, '$1')
+    .replace(/([.!?])(?=[A-Z])/g, '$1 ');
   
   // Create display version (clean text without pause markers)
   const displayText = cleanedRawText
@@ -355,12 +358,14 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Write exactly around ${storyLength} words in ${readingLevel}
     - ${ttsInstructions}
     
-    PUNCTUATION RULES (EXTREMELY IMPORTANT):
-    - NEVER EVER write the words "dot", "period", "comma", "exclamation" or any punctuation names
-    - Use ONLY the actual symbols: . ! ? , : ;
-    - When ending sentences, use a period (.) NOT the word "dot"
-    - Example: "Hello world." NOT "Hello world dot"
-    - This is critical for audio quality - punctuation names will be spoken aloud
+    PUNCTUATION RULES (EXTREMELY IMPORTANT - AUDIO WILL SOUND BROKEN IF YOU VIOLATE THESE):
+    - NEVER EVER write punctuation names like: "dot", "period", "comma", "exclamation mark", "exclamation point", "question mark"
+    - ALWAYS use the actual punctuation symbols: . ! ? , : ;
+    - When ending sentences, use a period (.) NOT the word "dot" or "period"
+    - For excitement, use an exclamation mark (!) NOT "exclamation mark" or "exclamation point"
+    - For questions, use a question mark (?) NOT "question mark"
+    - Example: "Hello world! How are you?" NOT "Hello world exclamation mark How are you question mark"
+    - This is CRITICAL for audio quality - punctuation names will be read aloud and sound terrible
     
     PAUSE CONTROL for Audio Narration:
     Add natural pauses using these markers to make the audio flow beautifully:
@@ -407,16 +412,35 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     displayLength: displayText.length,
     ttsLength: ttsText.length,
     pauseMarkers: (ttsText.match(/\[pause[^\]]*\]/g) || []).length,
-    dotWordsInRaw: (rawStoryText.match(/\bdot\b/gi) || []).length,
-    dotWordsInTTS: (ttsText.match(/\bdot\b/gi) || []).length
+    punctuationWordsInRaw: {
+      dots: (rawStoryText.match(/\b(dot|period)\b/gi) || []).length,
+      exclamations: (rawStoryText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
+      questions: (rawStoryText.match(/\b(question mark)\b/gi) || []).length,
+      commas: (rawStoryText.match(/\b(comma)\b/gi) || []).length
+    },
+    punctuationWordsInTTS: {
+      dots: (ttsText.match(/\b(dot|period)\b/gi) || []).length,
+      exclamations: (ttsText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
+      questions: (ttsText.match(/\b(question mark)\b/gi) || []).length,
+      commas: (ttsText.match(/\b(comma)\b/gi) || []).length
+    }
   });
   
-  // Debug: Log sample of raw text to check for 'dot' words
-  if ((rawStoryText.match(/\bdot\b/gi) || []).length > 0) {
-    console.log('⚠️ RAW TEXT CONTAINS DOT WORDS - Sample:', JSON.stringify(rawStoryText.substring(0, 300)));
-    // Log all instances of 'dot' with context
-    const dotMatches = rawStoryText.match(/.{0,20}\bdot\b.{0,20}/gi) || [];
-    console.log('🔎 All DOT instances with context:', dotMatches);
+  // Debug: Log sample of raw text to check for punctuation words
+  const allPunctuationWords = [
+    ...(rawStoryText.match(/\b(dot|period)\b/gi) || []),
+    ...(rawStoryText.match(/\b(exclamation mark|exclamation point)\b/gi) || []),
+    ...(rawStoryText.match(/\b(question mark)\b/gi) || []),
+    ...(rawStoryText.match(/\b(comma)\b/gi) || [])
+  ];
+  
+  if (allPunctuationWords.length > 0) {
+    console.log('⚠️ RAW TEXT CONTAINS PUNCTUATION WORDS:', allPunctuationWords);
+    console.log('📝 Sample:', JSON.stringify(rawStoryText.substring(0, 300)));
+    
+    // Log all instances with context
+    const punctuationMatches = rawStoryText.match(/.{0,20}\b(dot|period|exclamation mark|exclamation point|question mark|comma)\b.{0,20}/gi) || [];
+    console.log('🔎 All punctuation word instances with context:', punctuationMatches);
   }
   
   // Generate image for surprise mode using Gemini 2.5 Flash
@@ -617,15 +641,20 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
   // Debug: Log first 200 characters of text to check for period issues
   console.log('🔍 TTS Text Sample (first 200 chars):', JSON.stringify(storyTextWithPauses.substring(0, 200)));
   
-  // Check for common period-related issues
+  // Check for all punctuation-related issues
   const periodCount = (storyTextWithPauses.match(/\./g) || []).length;
-  const dotWordCount = (storyTextWithPauses.match(/\bdot\b/gi) || []).length;
-  const weirdPeriodsCount = (storyTextWithPauses.match(/[^a-zA-Z0-9\s.,!?;:'"-\[\]]\./g) || []).length;
+  const exclamationCount = (storyTextWithPauses.match(/!/g) || []).length;
+  const questionCount = (storyTextWithPauses.match(/\?/g) || []).length;
+  const punctuationWordCounts = {
+    dots: (storyTextWithPauses.match(/\b(dot|period)\b/gi) || []).length,
+    exclamations: (storyTextWithPauses.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
+    questions: (storyTextWithPauses.match(/\b(question mark)\b/gi) || []).length,
+    commas: (storyTextWithPauses.match(/\b(comma)\b/gi) || []).length
+  };
   
-  console.log('🕵️ Period Analysis:', {
-    totalPeriods: periodCount,
-    wordDot: dotWordCount,
-    weirdPeriods: weirdPeriodsCount,
+  console.log('🕵️ Punctuation Analysis:', {
+    actualPunctuation: { periods: periodCount, exclamations: exclamationCount, questions: questionCount },
+    punctuationWords: punctuationWordCounts,
     textLength: storyTextWithPauses.length
   });
   
@@ -642,35 +671,42 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     });
   }
   
-  // Multiple passes of aggressive cleaning
+  // Targeted cleaning of punctuation names (more conservative approach)
   cleanedMarkupText = cleanedMarkupText
-    // Pass 1: Basic word boundary replacements
-    .replace(/\b(dot|period|DOT|PERIOD)\b/g, '.')
-    // Pass 2: With various spacing patterns
-    .replace(/\s+(dot|period|DOT|PERIOD)\s+/g, '. ')
-    .replace(/\s+(dot|period|DOT|PERIOD)\./g, '.')
-    .replace(/\.(dot|period|DOT|PERIOD)/g, '.')
-    .replace(/(dot|period|DOT|PERIOD)\s+/g, '. ')
-    .replace(/\s+(dot|period|DOT|PERIOD)/g, '.')
-    // Pass 3: Character by character replacement (in case of encoding issues)
-    .replace(/d\s*o\s*t/gi, '.')
-    .replace(/p\s*e\s*r\s*i\s*o\s*d/gi, '.')
-    // Pass 4: Fix spacing around periods
-    .replace(/\s*\.\s*/g, '. ')
-    .replace(/\.{2,}/g, '.')
-    .replace(/\s+\./g, '.')
-    .replace(/\.\s*\./g, '.')
-    // Pass 5: Final cleanup
+    // Pass 1: Only replace punctuation words when they're clearly meant to be punctuation
+    .replace(/\b(dot|period|DOT|PERIOD)\b(?=\s|$)/g, '.')
+    .replace(/\b(exclamation mark|exclamation point|EXCLAMATION MARK|EXCLAMATION POINT)\b/g, '!')
+    .replace(/\b(question mark|QUESTION MARK)\b/g, '?')
+    .replace(/\b(comma|COMMA)\b/g, ',')
+    // Pass 2: Fix spacing issues around punctuation (but preserve existing punctuation)
+    .replace(/\s+([.!?])/g, '$1')
+    .replace(/([.!?])(?=[A-Z])/g, '$1 ')
+    // Pass 3: Clean up double punctuation
+    .replace(/[.]{2,}/g, '.')
+    .replace(/[!]{2,}/g, '!')
+    .replace(/[?]{2,}/g, '?')
+    // Pass 4: Final cleanup
     .replace(/\s+/g, ' ')
     .trim();
   
-  // Verify cleaning worked
-  const remainingDots = (cleanedMarkupText.match(/\bdot\b/gi) || []).length;
-  if (remainingDots > 0) {
-    console.log('❌ CLEANING FAILED - Still found', remainingDots, 'dot instances after cleaning');
-    console.log('🔍 Remaining sample:', JSON.stringify(cleanedMarkupText.substring(0, 300)));
+  // Verify cleaning worked for all punctuation names
+  const remainingDots = (cleanedMarkupText.match(/\b(dot|period)\b/gi) || []).length;
+  const remainingExclamations = (cleanedMarkupText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length;
+  const remainingQuestions = (cleanedMarkupText.match(/\b(question mark)\b/gi) || []).length;
+  const remainingCommas = (cleanedMarkupText.match(/\b(comma)\b/gi) || []).length;
+  const totalPunctuationWords = remainingDots + remainingExclamations + remainingQuestions + remainingCommas;
+  
+  if (totalPunctuationWords > 0) {
+    console.log('❌ PUNCTUATION CLEANING FAILED:', {
+      dots: remainingDots,
+      exclamations: remainingExclamations, 
+      questions: remainingQuestions,
+      commas: remainingCommas,
+      total: totalPunctuationWords
+    });
+    console.log('🔍 Problem sample:', JSON.stringify(cleanedMarkupText.substring(0, 300)));
   } else {
-    console.log('✅ DOT CLEANING SUCCESSFUL - No dot words remaining');
+    console.log('✅ PUNCTUATION CLEANING SUCCESSFUL - No punctuation words remaining');
   }
   
   console.log('✨ Final cleaned markup text sample:', JSON.stringify(cleanedMarkupText.substring(0, 200)));
