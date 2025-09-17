@@ -308,23 +308,23 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // Determine the story length and reading level based on the age
   let storyLength = 150;
   let readingLevel = "a simple, conversational style for young children";
-  let ttsInstructions = "Write naturally flowing sentences that sound great when read aloud. Use simple, clear language without special characters or symbols.";
+  let ttsInstructions = "Use very simple sentences with gentle commas for natural pauses. Include fun dialogue and gentle excitement! Keep it warm and engaging for little ears.";
   
   switch (age) {
     case '6':
       storyLength = 500;
       readingLevel = "a slightly more detailed, engaging style for emerging readers";
-      ttsInstructions = "Write with natural speech patterns, including exciting exclamations and questions that will sound engaging when spoken.";
+      ttsInstructions = "Use simple, clear sentences with commas for natural rhythm. Include exciting dialogue and questions! Use ellipses for suspense... and hyphens for fun asides.";
       break;
     case '9':
       storyLength = 1000;
       readingLevel = "a captivating narrative with more complex vocabulary and sentence structures for confident readers";
-      ttsInstructions = "Write with varied sentence lengths and natural dialogue. Include descriptive passages that flow beautifully when narrated.";
+      ttsInstructions = "Create dramatic audio flow with ellipses for suspense..., hyphens for character thoughts - like this - and varied comma placement for perfect speech rhythm.";
       break;
     case '12':
       storyLength = 2000;
       readingLevel = "a rich, descriptive, and mature style suitable for young adult readers";
-      ttsInstructions = "Write with sophisticated narrative flow, natural dialogue, and descriptive language that creates vivid mental images when heard.";
+      ttsInstructions = "Master sophisticated audio pacing: ellipses for dramatic pauses..., strategic hyphens for emphasis - building tension, and complex comma-rich sentences that create beautiful, flowing narration when spoken aloud.";
       break;
   }
   
@@ -389,18 +389,25 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Example: "Hello world! How are you?" NOT "Hello world exclamation mark How are you question mark"
     - This is CRITICAL for audio quality - punctuation names will be read aloud and sound terrible
     
-    NATURAL SPEECH for Audio Narration:
-    Write with natural rhythm using proper punctuation for beautiful speech pacing:
-    - Use commas (,) for brief, natural pauses in speech
-    - Use periods (.) for sentence endings and natural breaks
-    - Use exclamation marks (!) for excitement and emphasis
-    - Use question marks (?) for questions
-    - Use paragraph breaks for longer, natural pauses between thoughts
-    - Vary sentence lengths to create engaging, natural speech rhythm
+    OPTIMIZE FOR BEAUTIFUL TTS AUDIO - Use these native Chirp3-HD punctuation features:
     
-    Example: "Once upon a time, in a magical forest, there lived a brave little mouse named Pip.
+    🎵 PAUSE CONTROL through Natural Punctuation:
+    - Periods (.): Full stop with standard sentence-ending pause - perfect for story beats
+    - Commas (,): Short, natural intra-sentence pauses - use generously for rhythm
+    - Ellipses (...): Prolonged, deliberate pauses for suspense, trailing thoughts, dramatic effect
+    - Hyphens (-): Brief breaks in thought - great for asides, emphasis, or character quirks
+    - Paragraph breaks: Longer natural pauses between story sections
     
-    One sunny morning, Pip discovered something extraordinary!"
+    🎭 STORYTELLING TECHNIQUES for Audio:
+    - Use ellipses for suspense: "The door slowly opened... and inside was..."
+    - Use hyphens for character thoughts: "Maybe - just maybe - this could work!"
+    - Use commas to build rhythm: "Slowly, carefully, quietly, she tiptoed forward."
+    - Vary sentence lengths: Short punchy sentences. Then longer, flowing descriptive passages.
+    
+    Example with perfect TTS optimization:
+    "Once upon a time, in a magical forest filled with secrets, there lived a brave little mouse named Pip.
+    
+    One sunny morning - the kind that makes everything sparkle - Pip discovered something extraordinary... something that would change everything."
     
     Create an exciting story based on these elements:
     - Hero's Name: ${heroName || 'a mysterious hero'}
