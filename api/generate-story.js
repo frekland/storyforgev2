@@ -318,15 +318,14 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - Write exactly around ${storyLength} words in ${readingLevel}
     - ${ttsInstructions}
     
-    PAUSE CONTROL for Audio Narration:
-    Add natural pauses using these markers to make the audio flow beautifully:
-    - [pause short] after commas, before dialogue, or for brief dramatic effect
-    - [pause] for sentence endings, paragraph breaks, or moderate emphasis  
-    - [pause long] for chapter breaks, major scene changes, or dramatic moments
+    NATURAL PACING for Audio Narration:
+    Write with natural rhythm and pacing that sounds great when read aloud:
+    - Use commas and periods for natural speech pauses
+    - Add dramatic sentence breaks for emphasis
+    - Include engaging dialogue with natural flow
+    - Structure paragraphs for clear story beats
     
-    Example with pauses: "Once upon a time[pause short] in a magical forest[pause] there lived a brave little mouse named Pip. [pause long] One sunny morning[pause short] Pip discovered something extraordinary..."
-    
-    Important: These pause markers will be used for audio narration only and will be hidden from readers.
+    Focus on creating text that flows beautifully when narrated, using punctuation and sentence structure for natural pacing.
     
     Create an exciting story based on these elements:
     - Hero's Name: ${heroName || 'a mysterious hero'}
@@ -345,16 +344,11 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // The character and scene descriptions are embedded directly in the text prompt
   
   const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
-  const rawStoryText = (await result.response).text();
+  const storyText = (await result.response).text();
   
-  // Process story to separate display text from TTS text with pauses
-  const { displayText, ttsText } = processStoryWithPauses(rawStoryText);
-  
-  console.log('📝 Story processing complete:', {
-    rawLength: rawStoryText.length,
-    displayLength: displayText.length,
-    ttsLength: ttsText.length,
-    pauseMarkers: (ttsText.match(/\[pause[^\]]*\]/g) || []).length
+  console.log('📝 Story generation complete:', {
+    storyLength: storyText.length,
+    wordCount: storyText.split(' ').length
   });
   
   // Generate image for surprise mode using Gemini 2.5 Flash
@@ -365,7 +359,7 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       
       const imagePrompt = `Create a beautiful, child-friendly illustration for this story:
       
-      Story: ${displayText.substring(0, 500)}...
+      Story: ${storyText.substring(0, 500)}...
       
       Style requirements:
       - Colorful and vibrant
@@ -403,18 +397,16 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     }
   }
 
-  // Use the TTS version with pause markers for Chirp3-HD, or clean version for OpenAI
-  const ttsStoryText = USE_OPENAI_TTS ? processStoryForTTS(ttsText) : ttsText;
+  // Process story text for TTS (clean version for both engines)
+  const cleanStoryText = processStoryForTTS(storyText);
   
   // Get age-appropriate voice settings
   const voiceSettings = getVoiceSettings(age);
   
-  console.log('🎵 Generating audio:', {
+  console.log('🎵 Generating audio with OpenAI TTS:', {
     voice: voiceSettings.voice,
     speed: voiceSettings.speed,
-    textLength: ttsStoryText.length,
-    pauseMarkers: USE_OPENAI_TTS ? 0 : (ttsStoryText.match(/\[pause[^\]]*\]/g) || []).length,
-    ttsEngine: USE_OPENAI_TTS ? 'OpenAI' : 'Google Chirp3-HD'
+    textLength: cleanStoryText.length
   });
   
   // Convert Story Text to Speech using OpenAI TTS (with Google TTS fallback)
@@ -423,26 +415,25 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   if (USE_OPENAI_TTS) {
     try {
       console.log('🎵 Attempting OpenAI TTS...');
-      audioContent = await generateOpenAITTS(ttsStoryText, voiceSettings);
+      audioContent = await generateOpenAITTS(cleanStoryText, voiceSettings);
       console.log('✅ OpenAI TTS successful, using OpenAI audio');
     } catch (openaiError) {
-      console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS with pause control:', openaiError.message);
+      console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS:', openaiError.message);
       try {
-        // Use the TTS version with pauses for Google fallback
-        audioContent = await generateGoogleTTS(ttsText, age);
-        console.log('✅ Google TTS fallback successful with pause markers');
+        audioContent = await generateGoogleTTS(cleanStoryText, age);
+        console.log('✅ Google TTS fallback successful');
       } catch (googleError) {
         console.error('❌ Both TTS services failed:', googleError.message);
         throw new Error(`Both TTS services failed. OpenAI: ${openaiError.message.substring(0, 100)}... Google: ${googleError.message}`);
       }
     }
   } else {
-    console.log('🎵 Using Google Chirp3-HD TTS with pause control');
-    audioContent = await generateGoogleTTS(ttsStoryText, age);
+    console.log('🎵 Using Google TTS (OpenAI disabled)');
+    audioContent = await generateGoogleTTS(cleanStoryText, age);
   }
   
   return { 
-    storyText: displayText, // Return display text without pause markers for UI
+    storyText: storyText, // Return clean story text for UI
     audioContent,
     generatedImage: generatedImageBase64 // Include generated image for surprise mode
   };
@@ -516,25 +507,18 @@ async function generateOpenAITTS(cleanStoryText, voiceSettings) {
   }
 }
 
-// Google TTS Function - Enhanced with Chirp3-HD pause control
-async function generateGoogleTTS(storyTextWithPauses, age) {
-  console.log('🎵 Generating audio with Google Chirp3-HD (MP3 format with pause control)');
+// Google TTS Fallback Function - Updated to match Yoto's official example
+async function generateGoogleTTS(cleanStoryText, age) {
+  console.log('🎵 Generating audio with Google TTS fallback (MP3 format for Yoto compatibility)');
   
   const voiceSettings = {
     languageCode: 'en-GB',
-    name: 'en-GB-Chirp3-HD-Vindemiatrix', // High-quality Chirp3-HD voice with pause support
+    name: 'en-GB-Chirp3-HD-Vindemiatrix', // High-quality Chirp3-HD voice for all ages
     ssmlGender: 'FEMALE'
   };
   
-  console.log('⏸️ Pause markers in text:', {
-    pauseShort: (storyTextWithPauses.match(/\[pause short\]/g) || []).length,
-    pause: (storyTextWithPauses.match(/\[pause\](?![^\]]*\])/g) || []).length,
-    pauseLong: (storyTextWithPauses.match(/\[pause long\]/g) || []).length,
-    totalMarkers: (storyTextWithPauses.match(/\[pause[^\]]*\]/g) || []).length
-  });
-  
   const request = {
-    input: { text: storyTextWithPauses }, // Use text with Chirp3-HD pause markers
+    input: { text: cleanStoryText },
     voice: voiceSettings,
     audioConfig: {
       audioEncoding: 'MP3',           // Changed to MP3 to match Yoto's example
@@ -549,12 +533,11 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
   // Return MP3 data directly (no WAV header needed)
   const mp3Data = response.audioContent;
   
-  console.log('✅ Google Chirp3-HD generation successful:', {
+  console.log('✅ Google TTS generation successful:', {
     audioSize: mp3Data.length,
     format: 'mp3',
     sampleRate: '22050Hz',
-    encoding: 'MP3',
-    pauseControlEnabled: true
+    encoding: 'MP3'
   });
   
   return mp3Data;
