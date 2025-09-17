@@ -175,16 +175,18 @@ function getVoiceSettings(age) {
 
 // Helper function to process story text with pause control
 function processStoryWithPauses(rawStoryText) {
-  // First clean any punctuation words from the raw text
+  // Only clean OBVIOUS punctuation word errors from the raw text (preserve legitimate periods)
   const cleanedRawText = rawStoryText
-    // Remove instances of punctuation words that should be symbols
-    .replace(/\b(dot|period)\b/gi, '.')
-    .replace(/\b(exclamation mark|exclamation point)\b/gi, '!')
-    .replace(/\b(question mark)\b/gi, '?')
-    .replace(/\b(comma)\b/gi, ',')
-    // Clean up spacing around punctuation
+    // Only replace punctuation words when they're clearly errors (surrounded by spaces)
+    .replace(/\s+(dot|period)\s+/gi, '. ')
+    .replace(/\s+(dot|period)$/gi, '.')
+    .replace(/^(dot|period)\s+/gi, '. ')
+    .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
+    .replace(/\s+(question mark)\s+/gi, ' ? ')
+    .replace(/\s+(comma)\s+/gi, ', ')
+    // Clean up spacing issues only
     .replace(/\s+([.!?])/g, '$1')
-    .replace(/([.!?])(?=[A-Z])/g, '$1 ');
+    .replace(/([.!?])([A-Z])/g, '$1 $2');
   
   // Create display version (clean text without pause markers)
   const displayText = cleanedRawText
@@ -382,10 +384,21 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - The Beginning: ${promptSetup || 'a surprising place'}
     - The Challenge: ${promptRising || 'an unexpected problem'}
     - The Climax: ${promptClimax || 'a clever solution'}
-    ${finalCharacterDescription ? `- Character Description: The main character looks like this: ${finalCharacterDescription}` : ''}
-    ${finalSceneDescription ? `- Setting Description: The story takes place in: ${finalSceneDescription}` : ''}
     
-    Make it magical and engaging for children, with natural speech that flows beautifully when narrated!
+    ${finalCharacterDescription && finalSceneDescription ? 
+      `IMPORTANT: Weave these visual elements seamlessly into your story narrative:
+      - Your main character (${heroName}) should be described as: ${finalCharacterDescription}
+      - The setting should incorporate: ${finalSceneDescription}
+      
+      Don't just list these descriptions - integrate them naturally into the story flow. For example, introduce the character's appearance as part of the action, and describe the setting as the character experiences it.` : 
+      finalCharacterDescription ? 
+        `IMPORTANT: Naturally describe your main character (${heroName}) as: ${finalCharacterDescription}. Weave this description into the story action, not as a separate paragraph.` :
+        finalSceneDescription ?
+          `IMPORTANT: The story takes place in: ${finalSceneDescription}. Describe this setting through the character's experience, not as a separate description.` :
+          ''
+    }
+    
+    Make it magical and engaging for children, with natural speech that flows beautifully when narrated! Remember to integrate all descriptions seamlessly into the narrative flow.
   `;
   
   const promptParts = [{ text: textPrompt }];
@@ -690,21 +703,23 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     });
   }
   
-  // Targeted cleaning of punctuation names (more conservative approach)
-  cleanedMarkupText = cleanedMarkupText
-    // Pass 1: Only replace punctuation words when they're clearly meant to be punctuation
-    .replace(/\b(dot|period|DOT|PERIOD)\b(?=\s|$)/g, '.')
-    .replace(/\b(exclamation mark|exclamation point|EXCLAMATION MARK|EXCLAMATION POINT)\b/g, '!')
-    .replace(/\b(question mark|QUESTION MARK)\b/g, '?')
-    .replace(/\b(comma|COMMA)\b/g, ',')
-    // Pass 2: Fix spacing issues around punctuation (but preserve existing punctuation)
+  // Conservative cleaning of ONLY obvious punctuation name mistakes
+  cleanedMarkupText = storyTextWithPauses
+    // Only replace punctuation words when they are clearly errors (surrounded by spaces or at word boundaries)
+    .replace(/\s+(dot|period)\s+/gi, '. ')
+    .replace(/\s+(dot|period)$/gi, '.')
+    .replace(/^(dot|period)\s+/gi, '. ')
+    .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
+    .replace(/\s+(exclamation mark|exclamation point)$/gi, '!')
+    .replace(/^(exclamation mark|exclamation point)\s+/gi, '! ')
+    .replace(/\s+(question mark)\s+/gi, ' ? ')
+    .replace(/\s+(question mark)$/gi, '?')
+    .replace(/^(question mark)\s+/gi, '? ')
+    .replace(/\s+(comma)\s+/gi, ', ')
+    // Fix spacing issues ONLY
     .replace(/\s+([.!?])/g, '$1')
-    .replace(/([.!?])(?=[A-Z])/g, '$1 ')
-    // Pass 3: Clean up double punctuation
-    .replace(/[.]{2,}/g, '.')
-    .replace(/[!]{2,}/g, '!')
-    .replace(/[?]{2,}/g, '?')
-    // Pass 4: Final cleanup
+    .replace(/([.!?])([A-Z])/g, '$1 $2')
+    // Clean up excessive whitespace
     .replace(/\s+/g, ' ')
     .trim();
   
@@ -724,34 +739,7 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
       total: totalPunctuationWords
     });
     console.log('🔍 Problem sample:', JSON.stringify(cleanedMarkupText.substring(0, 300)));
-    
-    // NUCLEAR OPTION: Apply extreme cleaning if normal cleaning failed
-    console.log('💥 APPLYING NUCLEAR CLEANING...');
-    cleanedMarkupText = cleanedMarkupText
-      // Ultra aggressive word-by-word replacement
-      .split(' ')
-      .map(word => {
-        // Remove punctuation from word boundaries for matching
-        const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
-        if (cleanWord === 'dot' || cleanWord === 'period') return '.';
-        if (cleanWord === 'exclamation' && word.toLowerCase().includes('mark')) return '!';
-        if (cleanWord === 'question' && word.toLowerCase().includes('mark')) return '?';
-        if (cleanWord === 'comma') return ',';
-        return word;
-      })
-      .join(' ')
-      // Clean up any remaining issues
-      .replace(/\s+([.!?])/g, '$1')
-      .replace(/([.!?])(?=[A-Z])/g, '$1 ');
-    
-    console.log('💥 Nuclear cleaning applied - rechecking...');
-    const postNuclearCheck = {
-      dots: (cleanedMarkupText.match(/\b(dot|period)\b/gi) || []).length,
-      exclamations: (cleanedMarkupText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
-      questions: (cleanedMarkupText.match(/\b(question mark)\b/gi) || []).length,
-      commas: (cleanedMarkupText.match(/\b(comma)\b/gi) || []).length
-    };
-    console.log('💥 Post-nuclear check:', postNuclearCheck);
+    console.log('⚠️ Continuing with best-effort cleaning - some punctuation words may remain');
   } else {
     console.log('✅ PUNCTUATION CLEANING SUCCESSFUL - No punctuation words remaining');
   }
