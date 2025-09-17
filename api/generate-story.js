@@ -1421,21 +1421,25 @@ function extractImageFromGeminiResponse(response, context = 'image generation') 
     console.log(`🔍 [${context}] Part ${i + 1}:`, {
       hasText: !!part.text,
       hasInlineData: !!part.inlineData,
+      hasInline_data: !!part.inline_data,
       partKeys: Object.keys(part)
     });
     
-    if (part.inlineData) {
-      console.log(`🔍 [${context}] InlineData structure:`, {
-        hasMimeType: !!part.inlineData.mimeType,
-        mimeType: part.inlineData.mimeType,
-        hasData: !!part.inlineData.data,
-        dataLength: part.inlineData.data ? part.inlineData.data.length : 0,
-        inlineDataKeys: Object.keys(part.inlineData)
+    // Check both inlineData (old format) and inline_data (new format from docs)
+    const imageData = part.inlineData || part.inline_data;
+    if (imageData) {
+      console.log(`🔍 [${context}] Image data structure:`, {
+        hasMimeType: !!imageData.mimeType,
+        mimeType: imageData.mimeType,
+        hasData: !!imageData.data,
+        dataLength: imageData.data ? imageData.data.length : 0,
+        imageDataKeys: Object.keys(imageData),
+        format: part.inlineData ? 'inlineData' : 'inline_data'
       });
       
-      if (part.inlineData.mimeType && part.inlineData.data) {
-        const base64Image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        console.log(`✅ [${context}] Successfully extracted image! MimeType: ${part.inlineData.mimeType}, Data size: ${part.inlineData.data.length} chars`);
+      if (imageData.mimeType && imageData.data) {
+        const base64Image = `data:${imageData.mimeType};base64,${imageData.data}`;
+        console.log(`✅ [${context}] Successfully extracted image! MimeType: ${imageData.mimeType}, Data size: ${imageData.data.length} chars`);
         return base64Image;
       }
     }
@@ -1452,32 +1456,22 @@ async function generateCharacterImage(name, wantedFor, skills) {
   console.log('🔧 Using Gemini 2.5 Flash model for image generation');
   
   try {
-    console.log('⚠️ NOTE: Gemini 2.5 Flash may not support image generation - trying anyway...');
+    console.log('🎨 Using correct Gemini 2.5 Flash Image Preview model for image generation');
     
-    // Use Gemini 2.5 Flash for image generation (experimental)
+    // Use the correct model for image generation: gemini-2.5-flash-image-preview
     const imageModel = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        temperature: 0.9,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-      }
+      model: "gemini-2.5-flash-image-preview"
     });
-    console.log('✅ Gemini 2.5 Flash model initialized successfully');
+    console.log('✅ Gemini 2.5 Flash Image Preview model initialized successfully');
     
-    const prompt = `Generate an image: Create a cartoon-style Wild West outlaw character portrait for a children's story. Character name: ${name}. They are wanted for: ${wantedFor}. ${skills ? `Special skills: ${skills}. ` : ''}Make it colorful, friendly, and suitable for children. Western theme with hat, bandana, etc. Style: vibrant cartoon illustration, child-friendly, non-threatening. No text or words in the image.`;
+    const prompt = `Create a cartoon-style Wild West outlaw character portrait for a children's story. Character name: ${name}. They are wanted for: ${wantedFor}. ${skills ? `Special skills: ${skills}. ` : ''}Make it colorful, friendly, and suitable for children. Western theme with hat, bandana, etc. Style: vibrant cartoon illustration, child-friendly, non-threatening. No text or words in the image.`;
     
     console.log('📝 Character image prompt:', prompt.substring(0, 100) + '...');
-    console.log('🚀 Sending request to Gemini 2.5 Flash for image generation...');
+    console.log('🚀 Sending request to Gemini 2.5 Flash Image Preview...');
     
+    // Use the correct API pattern from Google's documentation
     const result = await imageModel.generateContent({
-      contents: [{
-        role: "user",
-        parts: [{
-          text: prompt
-        }]
-      }]
+      contents: prompt  // Simplified contents format as per docs
     });
     
     console.log('✅ Gemini 2.5 Flash response received');
@@ -1519,8 +1513,9 @@ async function createWantedPoster({ name, wantedFor, skills, reward, characterIm
   console.log('📋 Creating wanted poster for:', name);
   
   try {
-    // Use Gemini 2.5 Flash to generate a wanted poster image
-    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Use the correct Gemini 2.5 Flash Image Preview model
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
+    console.log('✅ Wanted poster: Using Gemini 2.5 Flash Image Preview model');
     
     const posterPrompt = `Create a vintage Wild West WANTED poster with the following details:
     
@@ -1530,23 +1525,13 @@ async function createWantedPoster({ name, wantedFor, skills, reward, characterIm
     ${skills ? `Skills: ${skills}` : ''}
     ${reward ? `Reward: ${reward}` : 'Reward: To be determined'}
     
-    Style: Authentic vintage Wild West wanted poster design with weathered parchment background, bold western typography, decorative borders, and classic "WANTED" header. Include space for character portrait in the center. Make it look aged and authentic but child-friendly. No real photograph - cartoon/illustration style character portrait area.`;
+    Style: Authentic vintage Wild West wanted poster design with weathered parchment background, bold western typography, decorative borders, and classic "WANTED" header. Include a cartoon-style character portrait in the center. Make it look aged and authentic but child-friendly. Cartoon/illustration style character portrait.`;
     
-    const parts = [{ text: posterPrompt }];
+    console.log('📋 Wanted poster prompt:', posterPrompt.substring(0, 100) + '...');
     
-    // If we have a character image, include it for reference
-    if (characterImage) {
-      const mimeType = characterImage.substring(characterImage.indexOf(":") + 1, characterImage.indexOf(";"));
-      const imagePart = fileToGenerativePart(characterImage, mimeType);
-      parts.push(imagePart);
-      parts[0].text += " Use the provided character image as reference for the portrait on the poster.";
-    }
-    
+    // For now, use text-only generation. Image+text integration can be added later
     const result = await imageModel.generateContent({
-      contents: [{
-        role: "user",
-        parts: parts
-      }]
+      contents: posterPrompt
     });
     
     const response = await result.response;
@@ -1712,25 +1697,17 @@ async function generateMonsterImage(description, locationImage) {
   console.log('👹 Generating monster image...');
   
   try {
-    // Use Gemini 2.5 Flash for image generation
-    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Use the correct Gemini 2.5 Flash Image Preview model
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
+    console.log('✅ Monster image: Using Gemini 2.5 Flash Image Preview model');
     
-    const prompt = `Create a friendly, colorful monster based on this description: ${description}. Make it child-friendly, cute, and non-scary. Cartoon style, vibrant colors. ${locationImage ? 'Place the monster in the indoor/outdoor setting shown in the reference image.' : 'Place the monster in a magical, whimsical environment.'} Style: bright cartoon illustration, adorable and fun, suitable for children's stories. No text or words in the image.`;
+    const prompt = `Create a friendly, colorful monster based on this description: ${description}. Make it child-friendly, cute, and non-scary. Cartoon style, vibrant colors. ${locationImage ? 'Place the monster in a cozy indoor or outdoor setting.' : 'Place the monster in a magical, whimsical environment.'} Style: bright cartoon illustration, adorable and fun, suitable for children's stories. No text or words in the image.`;
     
-    const parts = [{ text: prompt }];
+    console.log('👹 Monster image prompt:', prompt.substring(0, 100) + '...');
     
-    // Include location image if provided
-    if (locationImage) {
-      const mimeType = locationImage.substring(locationImage.indexOf(":") + 1, locationImage.indexOf(";"));
-      const imagePart = fileToGenerativePart(locationImage, mimeType);
-      parts.push(imagePart);
-    }
-    
+    // For now, use text-only generation. Location image integration can be added later
     const result = await imageModel.generateContent({
-      contents: [{
-        role: "user",
-        parts: parts
-      }]
+      contents: prompt
     });
     
     const response = await result.response;
