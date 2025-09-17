@@ -286,6 +286,224 @@ function generateRandomStoryElements(age) {
   };
 }
 
+// Mode handler functions
+async function handleClassicMode(requestBody) {
+  const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode } = requestBody;
+  
+  // Validate input (skip validation for surprise mode)
+  if (!surpriseMode) {
+    const hasAtLeastOneElement = 
+      (heroName && heroName.trim()) || 
+      (promptSetup && promptSetup.trim()) || 
+      (promptRising && promptRising.trim()) || 
+      (promptClimax && promptClimax.trim());
+    
+    if (!hasAtLeastOneElement) {
+      throw new Error('Please provide at least one story element (hero name, setup, rising action, or climax).');
+    }
+  }
+
+  console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
+  
+  // Add timeout protection (110 seconds - just under Vercel's 120s limit)
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
+  );
+  
+  const storyPromise = generateStoryAndAudio({
+    heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
+  });
+  
+  const { storyText, audioContent, generatedImage } = await Promise.race([
+    storyPromise,
+    timeoutPromise
+  ]);
+
+  // Return story text, Base64 audio, and generated image (if any) for the client to handle
+  const response = {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    // Calculate estimated duration (rough approximation: ~150 words per minute)
+    duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
+    fileSize: audioContent.length,
+    // Add basic debugging information for client-side troubleshooting
+    debug: {
+      storyLength: storyText.length,
+      audioSize: audioContent.length,
+      heroName: heroName || '',
+      punctuationAnalysis: {
+        storyContainsDot: (storyText.match(/\bdot\b/gi) || []).length,
+        storyContainsPeriod: (storyText.match(/\bperiod\b/gi) || []).length,
+        actualPeriods: (storyText.match(/\./g) || []).length
+      }
+    }
+  };
+  
+  // Include generated image for surprise mode
+  if (generatedImage) {
+    response.generatedImage = generatedImage;
+  }
+  
+  return response;
+}
+
+async function handleWantedPosterMode(requestBody) {
+  const { name, wantedFor, skills, reward, useAI, heroImage, age } = requestBody;
+  
+  if (!name || !wantedFor) {
+    throw new Error('Please provide the outlaw\'s name and what they\'re wanted for.');
+  }
+  
+  console.log('Generating wanted poster for:', name);
+  
+  // Generate character image if AI is requested
+  let characterImage = heroImage;
+  if (useAI && !heroImage) {
+    console.log('🎨 Generating AI character image...');
+    characterImage = await generateCharacterImage(name, wantedFor, skills);
+  }
+  
+  // Generate wanted poster image
+  const posterImage = await createWantedPoster({
+    name,
+    wantedFor,
+    skills,
+    reward,
+    characterImage
+  });
+  
+  // Generate Wild West story
+  const storyPrompt = `Create an exciting Wild West adventure story about the outlaw ${name}. They are wanted for ${wantedFor}. ${skills ? `They are known for: ${skills}. ` : ''}${reward ? `There's a reward of ${reward} for their capture. ` : ''}Make it a thrilling tale suitable for children aged ${age || 6}-${parseInt(age || 6) + 2} years.`;
+  
+  const { storyText, audioContent } = await generateStoryAndAudio({
+    heroName: name,
+    promptSetup: 'the Wild West frontier',
+    promptRising: wantedFor,
+    promptClimax: 'justice and redemption',
+    characterDescription: `Outlaw named ${name}, wanted for ${wantedFor}`,
+    age: age || '6'
+  });
+  
+  return {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    posterImage: posterImage,
+    duration: Math.ceil(storyText.split(' ').length / 2.5),
+    fileSize: audioContent.length
+  };
+}
+
+async function handleHomeworkForgeMode(requestBody) {
+  const { type, files, subject, topic, age } = requestBody;
+  
+  let extractedText = '';
+  
+  if (type === 'upload') {
+    if (!files || files.length === 0) {
+      throw new Error('Please upload at least one homework file or document.');
+    }
+    
+    console.log('📚 Processing homework files...');
+    
+    // Extract text from uploaded files (OCR)
+    for (const file of files) {
+      if (file.type === 'image') {
+        const ocrText = await extractTextFromImage(file.data);
+        extractedText += ocrText + '\n\n';
+      }
+    }
+    
+    if (!extractedText.trim()) {
+      throw new Error('Could not extract any text from the uploaded files.');
+    }
+  } else {
+    if (!topic) {
+      throw new Error('Please enter a topic to learn about.');
+    }
+    extractedText = `Subject: ${subject}\nTopic: ${topic}`;
+  }
+  
+  // Generate educational summary story
+  const educationalSummary = await generateEducationalSummary(extractedText, age, subject);
+  
+  // Generate audio using educational TTS voice
+  const audioContent = await generateEducationalTTS(educationalSummary, age);
+  
+  return {
+    story: educationalSummary,
+    audio: audioContent.toString('base64'),
+    duration: Math.ceil(educationalSummary.split(' ').length / 2.0), // Educational content read slightly faster
+    fileSize: audioContent.length,
+    subject: subject
+  };
+}
+
+async function handleSleepForgeMode(requestBody) {
+  const { heroName, promptSetup, promptRising, promptClimax, age, surpriseMode, heroImage } = requestBody;
+  
+  // Validate input (skip validation for surprise mode)
+  if (!surpriseMode) {
+    const hasAtLeastOneElement = 
+      (heroName && heroName.trim()) || 
+      (promptSetup && promptSetup.trim()) || 
+      (promptRising && promptRising.trim()) || 
+      (promptClimax && promptClimax.trim());
+    
+    if (!hasAtLeastOneElement) {
+      throw new Error('Please provide at least one story element for your bedtime tale.');
+    }
+  }
+  
+  console.log('Generating calming bedtime story...');
+  
+  // Generate sleep-focused story with meditation elements
+  const { storyText, audioContent } = await generateSleepStoryAndAudio({
+    heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode
+  });
+  
+  return {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    duration: Math.ceil(storyText.split(' ').length / 1.8), // Slower reading for sleep stories
+    fileSize: audioContent.length
+  };
+}
+
+async function handleMonsterMakerMode(requestBody) {
+  const { description1, description2, description3, locationImage, age } = requestBody;
+  
+  if (!description1) {
+    throw new Error('Please describe your monster.');
+  }
+  
+  console.log('Creating monster and story...');
+  
+  const monsterDescription = [description1, description2, description3]
+    .filter(desc => desc && desc.trim())
+    .join('. ');
+  
+  // Generate monster image
+  const monsterImage = await generateMonsterImage(monsterDescription, locationImage);
+  
+  // Generate monster story
+  const { storyText, audioContent } = await generateStoryAndAudio({
+    heroName: 'your friendly monster',
+    promptSetup: locationImage ? 'in its favorite hiding spot' : 'in a magical place',
+    promptRising: 'meeting new friends and having adventures',
+    promptClimax: 'everyone becomes the best of friends',
+    characterDescription: monsterDescription,
+    age: age || '6'
+  });
+  
+  return {
+    story: storyText,
+    audio: audioContent.toString('base64'),
+    monsterImage: monsterImage,
+    duration: Math.ceil(storyText.split(' ').length / 2.5),
+    fileSize: audioContent.length
+  };
+}
+
 // Helper function to generate story and audio
 async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode = false }) {
   const startTime = Date.now();
@@ -914,37 +1132,34 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     // Mode 1: Client requests story generation
     try {
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode } = req.body;
+      // Extract mode from request body - defaults to 'classic' for backwards compatibility
+      const { mode = 'classic' } = req.body;
       
-      // Validate input (skip validation for surprise mode)
-      // For regular mode, require at least one story element
-      if (!surpriseMode) {
-        const hasAtLeastOneElement = 
-          (heroName && heroName.trim()) || 
-          (promptSetup && promptSetup.trim()) || 
-          (promptRising && promptRising.trim()) || 
-          (promptClimax && promptClimax.trim());
-        
-        if (!hasAtLeastOneElement) {
-          return res.status(400).json({ message: 'Please provide at least one story element (hero name, setup, rising action, or climax).' });
-        }
+      console.log(`🎭 Processing ${mode} mode request...`);
+      
+      // Route to appropriate handler based on mode
+      let result;
+      switch (mode) {
+        case 'classic':
+          result = await handleClassicMode(req.body);
+          break;
+        case 'wanted-poster':
+          result = await handleWantedPosterMode(req.body);
+          break;
+        case 'homework-forge':
+          result = await handleHomeworkForgeMode(req.body);
+          break;
+        case 'sleep-forge':
+          result = await handleSleepForgeMode(req.body);
+          break;
+        case 'monster-maker':
+          result = await handleMonsterMakerMode(req.body);
+          break;
+        default:
+          return res.status(400).json({ message: `Unknown mode: ${mode}` });
       }
-
-      console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
       
-      // Add timeout protection (110 seconds - just under Vercel's 120s limit)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
-      );
-      
-      const storyPromise = generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
-      });
-      
-      const { storyText, audioContent, generatedImage } = await Promise.race([
-        storyPromise,
-        timeoutPromise
-      ]);
+      res.status(200).json(result);
 
       // Return story text, Base64 audio, and generated image (if any) for the client to handle
       const response = {
@@ -980,11 +1195,14 @@ module.exports = async function handler(req, res) {
         hasGeneratedImage: !!generatedImage
       });
       
-      res.status(200).json(response);
+      res.status(200).json(result);
 
     } catch (error) {
-      console.error('Error in story generation:', error);
-      res.status(500).json({ message: 'Failed to generate story and audio.' });
+      console.error(`Error in ${req.body.mode || 'classic'} mode generation:`, error);
+      res.status(500).json({ 
+        message: `Failed to generate ${req.body.mode || 'classic'} content.`,
+        error: error.message 
+      });
     }
 
   } else if (req.method === 'GET' || req.method === 'HEAD') {
@@ -1166,5 +1384,291 @@ module.exports = async function handler(req, res) {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 };
+
+// Helper functions for new modes
+
+// Helper function to extract image data from Gemini response
+function extractImageFromGeminiResponse(response, context = 'image generation') {
+  if (!response || !response.candidates || !response.candidates[0]) {
+    console.warn(`⚠️ No candidates found in ${context} response`);
+    return null;
+  }
+  
+  const candidate = response.candidates[0];
+  
+  if (!candidate.content || !candidate.content.parts) {
+    console.warn(`⚠️ No content parts found in ${context} response`);
+    return null;
+  }
+  
+  for (const part of candidate.content.parts) {
+    if (part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
+      const base64Image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      console.log(`✅ Successfully extracted image from ${context}`);
+      return base64Image;
+    }
+  }
+  
+  console.warn(`⚠️ No image data found in ${context} response`);
+  return null;
+}
+
+// Character image generation using Gemini 2.5 Flash
+async function generateCharacterImage(name, wantedFor, skills) {
+  console.log('🎨 Generating AI character image for:', name);
+  
+  try {
+    // Use Gemini 2.5 Flash for image generation
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `Create a cartoon-style Wild West outlaw character portrait for a children's story. Character name: ${name}. They are wanted for: ${wantedFor}. ${skills ? `Special skills: ${skills}. ` : ''}Make it colorful, friendly, and suitable for children. Western theme with hat, bandana, etc. Style: vibrant cartoon illustration, child-friendly, non-threatening. No text or words in the image.`;
+    
+    const result = await imageModel.generateContent({
+      contents: [{
+        role: "user",
+        parts: [{
+          text: prompt
+        }]
+      }]
+    });
+    
+    const response = await result.response;
+    return extractImageFromGeminiResponse(response, 'character image generation');
+    
+  } catch (error) {
+    console.warn('⚠️ Character image generation failed:', error.message);
+    console.warn('Error details:', error);
+    return null;
+  }
+}
+
+// Create wanted poster using Gemini 2.5 Flash to generate poster image
+async function createWantedPoster({ name, wantedFor, skills, reward, characterImage }) {
+  console.log('📋 Creating wanted poster for:', name);
+  
+  try {
+    // Use Gemini 2.5 Flash to generate a wanted poster image
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const posterPrompt = `Create a vintage Wild West WANTED poster with the following details:
+    
+    WANTED
+    Name: ${name}
+    For: ${wantedFor}
+    ${skills ? `Skills: ${skills}` : ''}
+    ${reward ? `Reward: ${reward}` : 'Reward: To be determined'}
+    
+    Style: Authentic vintage Wild West wanted poster design with weathered parchment background, bold western typography, decorative borders, and classic "WANTED" header. Include space for character portrait in the center. Make it look aged and authentic but child-friendly. No real photograph - cartoon/illustration style character portrait area.`;
+    
+    const parts = [{ text: posterPrompt }];
+    
+    // If we have a character image, include it for reference
+    if (characterImage) {
+      const mimeType = characterImage.substring(characterImage.indexOf(":") + 1, characterImage.indexOf(";"));
+      const imagePart = fileToGenerativePart(characterImage, mimeType);
+      parts.push(imagePart);
+      parts[0].text += " Use the provided character image as reference for the portrait on the poster.";
+    }
+    
+    const result = await imageModel.generateContent({
+      contents: [{
+        role: "user",
+        parts: parts
+      }]
+    });
+    
+    const response = await result.response;
+    return extractImageFromGeminiResponse(response, 'wanted poster generation');
+    
+  } catch (error) {
+    console.warn('⚠️ Wanted poster creation failed:', error.message);
+    console.warn('Error details:', error);
+    return null;
+  }
+}
+
+// OCR text extraction from images
+async function extractTextFromImage(imageBase64) {
+  console.log('🔍 Extracting text from homework image...');
+  
+  try {
+    // Use Gemini for OCR/text extraction
+    const analysisPrompt = `Extract all text content from this homework/study material image. Return only the text content, maintaining structure like headings, bullet points, etc. If there are diagrams or charts, describe them briefly. Focus on educational content.`;
+    
+    const mimeType = imageBase64.substring(imageBase64.indexOf(":") + 1, imageBase64.indexOf(";"));
+    const imagePart = fileToGenerativePart(imageBase64, mimeType);
+    
+    const result = await model.generateContent({
+      contents: [{ 
+        role: "user", 
+        parts: [{ text: analysisPrompt }, imagePart] 
+      }]
+    });
+    
+    const extractedText = (await result.response).text().trim();
+    console.log('✅ Text extracted from homework image:', extractedText.substring(0, 100) + '...');
+    return extractedText;
+    
+  } catch (error) {
+    console.warn('⚠️ Text extraction failed:', error.message);
+    return '';
+  }
+}
+
+// Generate educational summary
+async function generateEducationalSummary(extractedText, age, subject) {
+  console.log('📖 Generating educational summary...');
+  
+  const ageGroups = {
+    '6': 'elementary school students (ages 6-8)',
+    '9': 'middle school students (ages 9-12)', 
+    '12': 'high school students (ages 13+)'
+  };
+  
+  const targetAudience = ageGroups[age] || ageGroups['6'];
+  
+  const educationalPrompt = `
+    You are an enthusiastic and knowledgeable teacher creating a fun audio summary of educational content.
+    
+    Source Material:
+    ${extractedText}
+    
+    Create an engaging, humorous, and age-appropriate summary for ${targetAudience}.
+    
+    Requirements:
+    - Make it FUN and engaging with humor appropriate for the age group
+    - Use simple, clear language that explains concepts well
+    - Include interesting facts and examples
+    - Keep it educational but entertaining
+    - Add enthusiasm and energy to make learning exciting
+    - Length: approximately 300-500 words
+    
+    Write ONLY in plain text with proper punctuation for audio narration.
+  `;
+  
+  const result = await model.generateContent({ contents: [{ role: "user", parts: [{ text: educationalPrompt }] }] });
+  const summary = (await result.response).text().trim();
+  
+  console.log('✅ Educational summary generated:', summary.length, 'characters');
+  return summary;
+}
+
+// Generate educational TTS with special voice
+async function generateEducationalTTS(text, age) {
+  console.log('🎧 Generating educational TTS with Chirp3-HD-Leda...');
+  
+  const voiceSettings = {
+    languageCode: 'en-GB',
+    name: 'en-GB-Chirp3-HD-Leda', // Special educational voice as requested
+    ssmlGender: 'FEMALE'
+  };
+  
+  const request = {
+    input: { text: text },
+    voice: voiceSettings,
+    audioConfig: {
+      audioEncoding: 'MP3',
+      sampleRateHertz: 22050,
+      speakingRate: age === '6' ? 0.9 : age === '9' ? 0.95 : 1.0, // Adjust speed for age
+      volumeGainDb: 2.0
+    }
+  };
+  
+  const [response] = await ttsClient.synthesizeSpeech(request);
+  console.log('✅ Educational TTS generated with Leda voice');
+  
+  return response.audioContent;
+}
+
+// Generate sleep-focused story and audio
+async function generateSleepStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode }) {
+  console.log('🌙 Generating calming bedtime story...');
+  
+  // Use existing generateStoryAndAudio but with sleep-specific prompting
+  const sleepPrompt = `Create a gentle, calming bedtime story that helps children relax and fall asleep. Use soft, peaceful language with a slow, meditative pace. Include natural breathing pauses and gentle imagery. Make it soothing and dreamy.`;
+  
+  // Generate story using existing function but with sleep modifications
+  const { storyText, audioContent } = await generateStoryAndAudio({
+    heroName: heroName || 'Sleepy Sam',
+    promptSetup: promptSetup || 'a peaceful cloud kingdom',
+    promptRising: promptRising || 'helping tired animals find their beds',
+    promptClimax: promptClimax || 'everyone falls peacefully asleep under the starlight',
+    heroImage,
+    age: age || '3',
+    surpriseMode,
+    sleepMode: true // Special flag for sleep stories
+  });
+  
+  // Generate slower, calmer TTS for sleep stories
+  const sleepAudio = await generateSleepTTS(storyText, age);
+  
+  return {
+    storyText,
+    audioContent: sleepAudio
+  };
+}
+
+// Generate calming sleep TTS
+async function generateSleepTTS(text, age) {
+  console.log('🌙 Generating calming sleep TTS...');
+  
+  const voiceSettings = {
+    languageCode: 'en-GB',
+    name: 'en-GB-Chirp3-HD-Vindemiatrix', // Calm, soothing voice
+    ssmlGender: 'FEMALE'
+  };
+  
+  const request = {
+    input: { text: text },
+    voice: voiceSettings,
+    audioConfig: {
+      audioEncoding: 'MP3',
+      sampleRateHertz: 22050,
+      speakingRate: 0.75, // Much slower for sleep stories
+      volumeGainDb: -2.0 // Slightly quieter
+    }
+  };
+  
+  const [response] = await ttsClient.synthesizeSpeech(request);
+  console.log('✅ Sleep TTS generated with calm pacing');
+  
+  return response.audioContent;
+}
+
+// Generate monster image using Gemini 2.5 Flash
+async function generateMonsterImage(description, locationImage) {
+  console.log('👹 Generating monster image...');
+  
+  try {
+    // Use Gemini 2.5 Flash for image generation
+    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `Create a friendly, colorful monster based on this description: ${description}. Make it child-friendly, cute, and non-scary. Cartoon style, vibrant colors. ${locationImage ? 'Place the monster in the indoor/outdoor setting shown in the reference image.' : 'Place the monster in a magical, whimsical environment.'} Style: bright cartoon illustration, adorable and fun, suitable for children's stories. No text or words in the image.`;
+    
+    const parts = [{ text: prompt }];
+    
+    // Include location image if provided
+    if (locationImage) {
+      const mimeType = locationImage.substring(locationImage.indexOf(":") + 1, locationImage.indexOf(";"));
+      const imagePart = fileToGenerativePart(locationImage, mimeType);
+      parts.push(imagePart);
+    }
+    
+    const result = await imageModel.generateContent({
+      contents: [{
+        role: "user",
+        parts: parts
+      }]
+    });
+    
+    const response = await result.response;
+    return extractImageFromGeminiResponse(response, 'monster image generation');
+    
+  } catch (error) {
+    console.warn('⚠️ Monster image generation failed:', error.message);
+    console.warn('Error details:', error);
+    return null;
+  }
+}
 
 // WAV header function removed - now using MP3 format to match Yoto's official example

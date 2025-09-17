@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let heroImageBase64 = null;
     let sceneImageBase64 = null;
+    let monsterLocationImageBase64 = null;
     let accessToken = null;
     let refreshToken = null;
     
@@ -1072,6 +1073,493 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             
+            case 'wanted-poster':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">🤠</span>
+                                <span>Wanted Poster</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">📋</span>
+                                    <span><strong>Fill in the details!</strong> Enter your character's name, what they're wanted for, their special skills, and the reward.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🎨</span>
+                                    <span><strong>Add artwork or generate!</strong> Draw your outlaw or let our AI create one for you.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">⭐</span>
+                                    <span><strong>Download your poster!</strong> Get a printable wanted poster plus an exciting story.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="wanted-poster-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">🤠</span>
+                                    <span>Create Your Wanted Poster</span>
+                                </h3>
+                                
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="wanted-name" class="compact-label">
+                                                <span>🤠 Outlaw's Name *</span>
+                                            </label>
+                                            <input type="text" id="wanted-name" class="paper-input" placeholder="e.g., Black Bart, Calamity Jane..." required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="wanted-for" class="compact-label">
+                                                <span>⚖️ Wanted For *</span>
+                                            </label>
+                                            <input type="text" id="wanted-for" class="paper-input" placeholder="e.g., stealing all the town's cookies..." required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="wanted-skills" class="compact-label">
+                                                <span>⚡ Special Skills</span>
+                                            </label>
+                                            <input type="text" id="wanted-skills" class="paper-input" placeholder="e.g., lightning-fast draw, expert horseback rider...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="wanted-reward" class="compact-label">
+                                                <span>💰 Reward</span>
+                                            </label>
+                                            <input type="text" id="wanted-reward" class="paper-input" placeholder="e.g., $1000, A lifetime supply of beans...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="images-section-expanded">
+                                    <h4 class="images-title">
+                                        <span class="section-icon">🎨</span>
+                                        <span>Outlaw Portrait</span>
+                                    </h4>
+                                    
+                                    <div class="image-choice-section">
+                                        <div class="choice-toggles">
+                                            <label class="choice-option">
+                                                <input type="radio" name="image-choice" value="upload" id="upload-choice" checked>
+                                                <span class="choice-label">
+                                                    <span class="choice-icon">📎</span>
+                                                    <span>Upload Drawing</span>
+                                                </span>
+                                            </label>
+                                            <label class="choice-option">
+                                                <input type="radio" name="image-choice" value="generate" id="generate-choice">
+                                                <span class="choice-label">
+                                                    <span class="choice-icon">🎭</span>
+                                                    <span>AI Generate</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        
+                                        <div id="upload-section" class="image-upload-full">
+                                            <div id="wanted-image-upload-area" class="paper-upload-full">
+                                                <input type="file" id="wanted-image" accept="image/*" class="hidden-input">
+                                                <div class="upload-content-full">
+                                                    <button type="button" class="upload-btn-full" onclick="document.getElementById('wanted-image').click()">
+                                                        <span>📎 Upload Outlaw Drawing</span>
+                                                    </button>
+                                                    <p class="upload-hint">Draw your wanted character!</p>
+                                                    <div id="wanted-image-preview" class="preview-container hidden"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="generate-section" class="generate-options hidden">
+                                            <p class="generate-hint">Our AI will create your outlaw based on the details above!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">🤠 Create Wanted Poster! 🤠</span>
+                                    <div class="btn-sparkles">
+                                        <span>⭐</span>
+                                        <span>🌟</span>
+                                        <span>⭐</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+            case 'homework-forge':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">📝</span>
+                                <span>Homework Forge</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">📸</span>
+                                    <span><strong>Upload your notes!</strong> Take photos of homework, worksheets, or textbook pages.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🎭</span>
+                                    <span><strong>Or choose a topic!</strong> Tell us what you want to learn about and we'll create a summary.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🎧</span>
+                                    <span><strong>Learn while listening!</strong> Get a fun, age-appropriate audio summary.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="homework-forge-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">📚</span>
+                                    <span>Create Your Learning Summary</span>
+                                </h3>
+                                
+                                <div class="homework-choice-section">
+                                    <div class="choice-toggles">
+                                        <label class="choice-option">
+                                            <input type="radio" name="homework-choice" value="upload" id="homework-upload-choice" checked>
+                                            <span class="choice-label">
+                                                <span class="choice-icon">📸</span>
+                                                <span>Upload Notes/Work</span>
+                                            </span>
+                                        </label>
+                                        <label class="choice-option">
+                                            <input type="radio" name="homework-choice" value="topic" id="homework-topic-choice">
+                                            <span class="choice-label">
+                                                <span class="choice-icon">💡</span>
+                                                <span>Choose Topic</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div id="homework-upload-section" class="homework-upload-area">
+                                        <div class="multiple-uploads">
+                                            <div class="upload-instruction">
+                                                <span class="instruction-icon">📝</span>
+                                                <span>Upload multiple pages or documents (up to 5 files)</span>
+                                            </div>
+                                            <input type="file" id="homework-files" accept="image/*,application/pdf" multiple class="hidden-input">
+                                            <button type="button" class="upload-btn-full" onclick="document.getElementById('homework-files').click()">
+                                                <span>📎 Upload Notes & Documents</span>
+                                            </button>
+                                            <div id="homework-files-preview" class="files-preview-container"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="homework-topic-section" class="topic-selection-area hidden">
+                                        <div class="input-group">
+                                            <label for="homework-subject" class="compact-label">
+                                                <span>📖 Subject</span>
+                                            </label>
+                                            <select id="homework-subject" class="paper-select">
+                                                <option value="">Choose a subject...</option>
+                                                <option value="math">🧮 Mathematics</option>
+                                                <option value="science">🔬 Science</option>
+                                                <option value="history">🏛️ History</option>
+                                                <option value="english">📝 English/Language Arts</option>
+                                                <option value="geography">🌍 Geography</option>
+                                                <option value="art">🎨 Art</option>
+                                                <option value="music">🎵 Music</option>
+                                                <option value="other">🌟 Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="homework-topic" class="compact-label">
+                                                <span>💡 What to Learn About</span>
+                                            </label>
+                                            <input type="text" id="homework-topic" class="paper-input" placeholder="e.g., How volcanoes work, The water cycle, Ancient Egypt...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="age-selection-compact">
+                                    <label for="homework-age" class="compact-label">
+                                        <span>Learning Level:</span>
+                                    </label>
+                                    <select id="homework-age" class="paper-select">
+                                        <option value="6" selected>🧒 Elementary (6-8 years)</option>
+                                        <option value="9">🧒 Middle School (9-12 years)</option>
+                                        <option value="12">🧑 High School (13+ years)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">📚 Create Learning Summary! 📚</span>
+                                    <div class="btn-sparkles">
+                                        <span>💡</span>
+                                        <span>⚡</span>
+                                        <span>💡</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+            case 'sleep-forge':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">🌙</span>
+                                <span>Sleep Forge</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🌙</span>
+                                    <span><strong>Gentle bedtime stories!</strong> Like classic stories but with soothing, calm narration.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">💤</span>
+                                    <span><strong>Sleep meditation style!</strong> Longer pauses and peaceful pacing to help you drift off.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">⭐</span>
+                                    <span><strong>Sweet dreams guaranteed!</strong> Perfect for winding down at bedtime.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="sleep-forge-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">🌙</span>
+                                    <span>Create Your Bedtime Story</span>
+                                </h3>
+                                
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="sleep-heroName" class="compact-label">
+                                                <span>✨ Hero's Name</span>
+                                            </label>
+                                            <input type="text" id="sleep-heroName" class="paper-input" placeholder="e.g., Sleepy Sam, Luna the Dreamer...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="sleep-promptSetup" class="compact-label">
+                                                <span>🌅 The Peaceful Beginning</span>
+                                            </label>
+                                            <input type="text" id="sleep-promptSetup" class="paper-input" placeholder="e.g., a cozy cloud kingdom, a gentle meadow...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="sleep-promptRising" class="compact-label">
+                                                <span>🌸 The Gentle Adventure</span>
+                                            </label>
+                                            <input type="text" id="sleep-promptRising" class="paper-input" placeholder="e.g., helping sleepy animals find their beds...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="sleep-promptClimax" class="compact-label">
+                                                <span>😴 The Peaceful Ending</span>
+                                            </label>
+                                            <input type="text" id="sleep-promptClimax" class="paper-input" placeholder="e.g., everyone falls asleep under the stars...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="images-section-expanded">
+                                    <h4 class="images-title">
+                                        <span class="section-icon">🎨</span>
+                                        <span>Add Your Dreamy Artwork (Optional)</span>
+                                    </h4>
+                                    
+                                    <div class="image-uploads-expanded">
+                                        <div class="image-upload-full">
+                                            <div id="sleep-image-upload-area" class="paper-upload-full">
+                                                <input type="file" id="sleep-heroImage" accept="image/*" class="hidden-input">
+                                                <div class="upload-content-full">
+                                                    <button type="button" class="upload-btn-full" onclick="document.getElementById('sleep-heroImage').click()">
+                                                        <span>🌙 Upload Dreamy Character</span>
+                                                    </button>
+                                                    <p class="upload-hint">Draw your sleepy hero!</p>
+                                                    <div id="sleep-image-preview" class="preview-container hidden"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="age-selection-compact">
+                                    <label for="sleep-story-age" class="compact-label">
+                                        <span>Story Length:</span>
+                                    </label>
+                                    <select id="sleep-story-age" class="paper-select">
+                                        <option value="3" selected>🧒 Little Dreamers (3-6 years, ~150 words)</option>
+                                        <option value="6">🧒 Young Sleepyheads (6-8 years, ~300 words)</option>
+                                        <option value="9">🧒 Peaceful Explorers (8-12 years, ~500 words)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">🌙 Create Bedtime Story! 🌙</span>
+                                    <div class="btn-sparkles">
+                                        <span>⭐</span>
+                                        <span>💤</span>
+                                        <span>⭐</span>
+                                    </div>
+                                </button>
+                                
+                                <div class="or-divider">
+                                    <span>or</span>
+                                </div>
+                                
+                                <button type="button" id="sleep-surprise-me-btn" class="surprise-btn-compact">
+                                    <span>🌙 Surprise Bedtime Story! 🌙</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+            case 'monster-maker':
+                return `
+                    <div class="mode-header-compact">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">👹</span>
+                                <span>Monster Maker</span>
+                            </h2>
+                        </div>
+                        
+                        <div class="instructions-section">
+                            <div class="instructions-content">
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">👹</span>
+                                    <span><strong>Describe your monster!</strong> Tell us about your creature's appearance, personality, and powers.</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">📸</span>
+                                    <span><strong>Where does it live?</strong> Upload a photo of where you want to see your monster (bedroom, garden, etc.).</span>
+                                </div>
+                                <div class="instruction-point">
+                                    <span class="instruction-icon">🎨</span>
+                                    <span><strong>AI brings it to life!</strong> We'll create an image and an exciting story about your monster.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="story-form-container">
+                        <form id="monster-maker-form" class="story-form">
+                            <div class="unified-story-group paper-scrap">
+                                <h3 class="section-title">
+                                    <span class="section-icon">👹</span>
+                                    <span>Design Your Monster</span>
+                                </h3>
+                                
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="monster-description1" class="compact-label">
+                                                <span>👹 Describe Your Monster *</span>
+                                            </label>
+                                            <input type="text" id="monster-description1" class="paper-input" placeholder="e.g., A fluffy purple monster with three eyes..." required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="monster-description2" class="compact-label">
+                                                <span>⚡ Special Powers or Traits</span>
+                                            </label>
+                                            <input type="text" id="monster-description2" class="paper-input" placeholder="e.g., Can turn invisible when scared, loves to dance...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="monster-description3" class="compact-label">
+                                                <span>💫 Personality</span>
+                                            </label>
+                                            <input type="text" id="monster-description3" class="paper-input" placeholder="e.g., Friendly but shy, mischievous but kind...">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="images-section-expanded">
+                                    <h4 class="images-title">
+                                        <span class="section-icon">🏡</span>
+                                        <span>Where Does Your Monster Live?</span>
+                                    </h4>
+                                    
+                                    <div class="image-uploads-expanded">
+                                        <div class="image-upload-full">
+                                            <div id="monster-location-upload-area" class="paper-upload-full">
+                                                <input type="file" id="monster-location" accept="image/*" class="hidden-input">
+                                                <div class="upload-content-full">
+                                                    <button type="button" class="upload-btn-full" onclick="document.getElementById('monster-location').click()">
+                                                        <span>📸 Upload Location Photo</span>
+                                                    </button>
+                                                    <p class="upload-hint">Take a photo of your bedroom, garden, or anywhere you want to see your monster!</p>
+                                                    <div id="monster-location-preview" class="preview-container hidden"></div>
+                                                </div>
+                                                <div class="upload-doodles">
+                                                    <span class="doodle-house">🏠</span>
+                                                    <span class="doodle-tree">🌳</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="age-selection-compact">
+                                    <label for="monster-story-age" class="compact-label">
+                                        <span>Story Length:</span>
+                                    </label>
+                                    <select id="monster-story-age" class="paper-select">
+                                        <option value="3">🧒 Little Monster Fans (3-6 years, ~150 words)</option>
+                                        <option value="6" selected>🧒 Young Adventurers (6-8 years, ~500 words)</option>
+                                        <option value="9">🧒 Monster Experts (8-12 years, ~1000 words)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
+                                    <span class="btn-text">👹 Create My Monster! 👹</span>
+                                    <div class="btn-sparkles">
+                                        <span>🎨</span>
+                                        <span>⚡</span>
+                                        <span>🎨</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
             default:
                 return `
                     <div class="mode-header paper-scrap">
@@ -1107,6 +1595,18 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (mode) {
             case 'classic':
                 setupClassicModeListeners();
+                break;
+            case 'wanted-poster':
+                setupWantedPosterModeListeners();
+                break;
+            case 'homework-forge':
+                setupHomeworkForgeModeListeners();
+                break;
+            case 'sleep-forge':
+                setupSleepForgeModeListeners();
+                break;
+            case 'monster-maker':
+                setupMonsterMakerModeListeners();
                 break;
             // Additional modes will be added here
         }
@@ -1207,6 +1707,142 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Setup functions for new modes
+    const setupWantedPosterModeListeners = () => {
+        const wantedForm = document.getElementById('wanted-poster-form');
+        const wantedImageInput = document.getElementById('wanted-image');
+        const wantedImagePreview = document.getElementById('wanted-image-preview');
+        const uploadChoice = document.getElementById('upload-choice');
+        const generateChoice = document.getElementById('generate-choice');
+        const uploadSection = document.getElementById('upload-section');
+        const generateSection = document.getElementById('generate-section');
+        
+        // Form submission
+        if (wantedForm) {
+            wantedForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateWantedPoster();
+            });
+        }
+        
+        // Image choice toggle
+        if (uploadChoice && generateChoice) {
+            uploadChoice.addEventListener('change', () => {
+                if (uploadChoice.checked) {
+                    uploadSection?.classList.remove('hidden');
+                    generateSection?.classList.add('hidden');
+                }
+            });
+            
+            generateChoice.addEventListener('change', () => {
+                if (generateChoice.checked) {
+                    uploadSection?.classList.add('hidden');
+                    generateSection?.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // Image upload handling
+        if (wantedImageInput && wantedImagePreview) {
+            wantedImageInput.addEventListener('change', (e) => {
+                handleImageUpload(e, wantedImagePreview, 'wanted');
+            });
+        }
+    };
+    
+    const setupHomeworkForgeModeListeners = () => {
+        const homeworkForm = document.getElementById('homework-forge-form');
+        const homeworkFilesInput = document.getElementById('homework-files');
+        const homeworkFilesPreview = document.getElementById('homework-files-preview');
+        const uploadChoice = document.getElementById('homework-upload-choice');
+        const topicChoice = document.getElementById('homework-topic-choice');
+        const uploadSection = document.getElementById('homework-upload-section');
+        const topicSection = document.getElementById('homework-topic-section');
+        
+        // Form submission
+        if (homeworkForm) {
+            homeworkForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateHomeworkForge();
+            });
+        }
+        
+        // Choice toggle
+        if (uploadChoice && topicChoice) {
+            uploadChoice.addEventListener('change', () => {
+                if (uploadChoice.checked) {
+                    uploadSection?.classList.remove('hidden');
+                    topicSection?.classList.add('hidden');
+                }
+            });
+            
+            topicChoice.addEventListener('change', () => {
+                if (topicChoice.checked) {
+                    uploadSection?.classList.add('hidden');
+                    topicSection?.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // File upload handling (multiple files)
+        if (homeworkFilesInput && homeworkFilesPreview) {
+            homeworkFilesInput.addEventListener('change', (e) => {
+                handleMultipleFileUpload(e, homeworkFilesPreview);
+            });
+        }
+    };
+    
+    const setupSleepForgeModeListeners = () => {
+        const sleepForm = document.getElementById('sleep-forge-form');
+        const sleepSurpriseBtn = document.getElementById('sleep-surprise-me-btn');
+        const sleepImageInput = document.getElementById('sleep-heroImage');
+        const sleepImagePreview = document.getElementById('sleep-image-preview');
+        
+        // Form submission
+        if (sleepForm) {
+            sleepForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateSleepForge(false);
+            });
+        }
+        
+        // Surprise Me button
+        if (sleepSurpriseBtn) {
+            sleepSurpriseBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await generateSleepForge(true);
+            });
+        }
+        
+        // Image upload handling
+        if (sleepImageInput && sleepImagePreview) {
+            sleepImageInput.addEventListener('change', (e) => {
+                handleImageUpload(e, sleepImagePreview, 'sleep');
+            });
+        }
+    };
+    
+    const setupMonsterMakerModeListeners = () => {
+        const monsterForm = document.getElementById('monster-maker-form');
+        const monsterLocationInput = document.getElementById('monster-location');
+        const monsterLocationPreview = document.getElementById('monster-location-preview');
+        
+        // Form submission
+        if (monsterForm) {
+            monsterForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await generateMonsterMaker();
+            });
+        }
+        
+        // Location image upload handling
+        if (monsterLocationInput && monsterLocationPreview) {
+            monsterLocationInput.addEventListener('change', (e) => {
+                handleImageUpload(e, monsterLocationPreview, 'location');
+            });
+        }
+    };
+    
     // Helper functions for image upload
     const preventDefaults = (e) => {
         e.preventDefault();
@@ -1247,6 +1883,69 @@ document.addEventListener('DOMContentLoaded', () => {
             
             img.src = URL.createObjectURL(file);
         });
+    };
+    
+    // Helper function for multiple file upload (Homework Forge)
+    const handleMultipleFileUpload = async (e, previewElement) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        console.log('📁 Processing', files.length, 'homework files...');
+        
+        // Clear previous preview
+        previewElement.innerHTML = '';
+        
+        try {
+            for (let i = 0; i < Math.min(files.length, 5); i++) { // Limit to 5 files
+                const file = files[i];
+                if (!file.type.startsWith('image/') && !file.type.includes('pdf')) {
+                    continue;
+                }
+                
+                const filePreview = document.createElement('div');
+                filePreview.className = 'file-preview-item';
+                
+                if (file.type.startsWith('image/')) {
+                    const compressedBase64 = await compressImage(file, 400, 0.6);
+                    filePreview.innerHTML = `
+                        <div class="file-thumbnail">
+                            <img src="${compressedBase64}" alt="${file.name}" class="homework-file-thumb">
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${Math.round(file.size / 1024)}KB</div>
+                        </div>
+                    `;
+                } else {
+                    filePreview.innerHTML = `
+                        <div class="file-thumbnail">
+                            <span class="file-icon">📄</span>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${Math.round(file.size / 1024)}KB</div>
+                        </div>
+                    `;
+                }
+                
+                previewElement.appendChild(filePreview);
+            }
+            
+            if (files.length > 5) {
+                const warning = document.createElement('div');
+                warning.className = 'upload-warning';
+                warning.textContent = `⚠️ Only first 5 files will be processed`;
+                previewElement.appendChild(warning);
+            }
+        } catch (error) {
+            console.error('❌ Multiple file processing failed:', error);
+            previewElement.innerHTML = `
+                <div class="upload-error">
+                    <span class="error-icon">❌</span>
+                    <span class="error-text">Failed to process files. Please try smaller files.</span>
+                </div>
+            `;
+        }
     };
     
     const handleImageUpload = async (e, previewElement, imageType = 'character') => {
@@ -1298,6 +1997,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         compressed: Math.round(compressedSize / 1024) + 'KB',
                         reduction: reduction + '%'
                     });
+                } else if (imageType === 'location') {
+                    monsterLocationImageBase64 = compressedBase64;
+                    console.log('🖼️ Monster location image compressed and ready:', {
+                        original: Math.round(originalSize / 1024) + 'KB',
+                        compressed: Math.round(compressedSize / 1024) + 'KB',
+                        reduction: reduction + '%'
+                    });
                 } else {
                     heroImageBase64 = compressedBase64;
                     console.log('🖼️ Character image compressed and ready:', {
@@ -1319,6 +2025,384 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             console.warn('⚠️ Invalid file type. Please upload an image.');
+        }
+    };
+    
+    // Story generation functions for new modes
+    const generateWantedPoster = async () => {
+        console.log('Generating wanted poster story...');
+        
+        // Get form data
+        const name = document.getElementById('wanted-name')?.value?.trim() || '';
+        const wantedFor = document.getElementById('wanted-for')?.value?.trim() || '';
+        const skills = document.getElementById('wanted-skills')?.value?.trim() || '';
+        const reward = document.getElementById('wanted-reward')?.value?.trim() || '';
+        const useAI = document.getElementById('generate-choice')?.checked || false;
+        
+        // Validate required fields
+        if (!name || !wantedFor) {
+            showAlert('Please fill in the outlaw\'s name and what they\'re wanted for!');
+            return;
+        }
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Gathering sheriff\'s reports...');
+        
+        try {
+            const formData = {
+                mode: 'wanted-poster',
+                name: name,
+                wantedFor: wantedFor,
+                skills: skills,
+                reward: reward,
+                useAI: useAI,
+                heroImage: heroImageBase64,
+                age: '6' // Default age for wanted poster stories
+            };
+            
+            updateProgressStage(2, 'active', 'Creating wanted poster...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'wanted-poster');
+            hideProgressModal();
+            
+        } catch (error) {
+            console.error('Error generating wanted poster:', error);
+            hideProgressModal();
+            showAlert('Failed to create wanted poster: ' + error.message);
+        }
+    };
+    
+    const generateHomeworkForge = async () => {
+        console.log('Generating homework summary...');
+        
+        const isUploadMode = document.getElementById('homework-upload-choice')?.checked;
+        let formData;
+        
+        if (isUploadMode) {
+            const filesInput = document.getElementById('homework-files');
+            if (!filesInput?.files || filesInput.files.length === 0) {
+                showAlert('Please upload at least one homework file or document!');
+                return;
+            }
+            
+            // Process uploaded files
+            const files = Array.from(filesInput.files).slice(0, 5);
+            const fileData = [];
+            
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    const compressedBase64 = await compressImage(file, 800, 0.7);
+                    fileData.push({
+                        type: 'image',
+                        data: compressedBase64,
+                        name: file.name
+                    });
+                }
+            }
+            
+            formData = {
+                mode: 'homework-forge',
+                type: 'upload',
+                files: fileData,
+                age: document.getElementById('homework-age')?.value || '6'
+            };
+        } else {
+            const subject = document.getElementById('homework-subject')?.value?.trim() || '';
+            const topic = document.getElementById('homework-topic')?.value?.trim() || '';
+            
+            if (!topic) {
+                showAlert('Please enter a topic to learn about!');
+                return;
+            }
+            
+            formData = {
+                mode: 'homework-forge',
+                type: 'topic',
+                subject: subject,
+                topic: topic,
+                age: document.getElementById('homework-age')?.value || '6'
+            };
+        }
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Analyzing your homework...');
+        
+        try {
+            updateProgressStage(2, 'active', 'Creating fun summary...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'homework-forge');
+            hideProgressModal();
+            
+        } catch (error) {
+            console.error('Error generating homework summary:', error);
+            hideProgressModal();
+            showAlert('Failed to create learning summary: ' + error.message);
+        }
+    };
+    
+    const generateSleepForge = async (isSurpriseMode) => {
+        console.log('Generating bedtime story, surprise mode:', isSurpriseMode);
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Gathering sleepy magic...');
+        
+        try {
+            const formData = {
+                mode: 'sleep-forge',
+                heroName: document.getElementById('sleep-heroName')?.value?.trim() || '',
+                promptSetup: document.getElementById('sleep-promptSetup')?.value?.trim() || '',
+                promptRising: document.getElementById('sleep-promptRising')?.value?.trim() || '',
+                promptClimax: document.getElementById('sleep-promptClimax')?.value?.trim() || '',
+                age: document.getElementById('sleep-story-age')?.value || '3',
+                surpriseMode: isSurpriseMode,
+                heroImage: heroImageBase64
+            };
+            
+            // Validate required fields for non-surprise mode
+            if (!isSurpriseMode) {
+                const hasAtLeastOneElement = 
+                    formData.heroName || formData.promptSetup || 
+                    formData.promptRising || formData.promptClimax;
+                
+                if (!hasAtLeastOneElement) {
+                    showAlert('Please fill in at least one story element for your bedtime tale! 🌙');
+                    return;
+                }
+            }
+            
+            updateProgressStage(2, 'active', 'Weaving peaceful dreams...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'sleep-forge');
+            hideProgressModal();
+            
+        } catch (error) {
+            console.error('Error generating sleep story:', error);
+            hideProgressModal();
+            showAlert('Failed to create bedtime story: ' + error.message);
+        }
+    };
+    
+    const generateMonsterMaker = async () => {
+        console.log('Generating monster story...');
+        
+        const description1 = document.getElementById('monster-description1')?.value?.trim() || '';
+        const description2 = document.getElementById('monster-description2')?.value?.trim() || '';
+        const description3 = document.getElementById('monster-description3')?.value?.trim() || '';
+        
+        if (!description1) {
+            showAlert('Please describe your monster!');
+            return;
+        }
+        
+        // Show progress modal
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Summoning your monster...');
+        
+        try {
+            const formData = {
+                mode: 'monster-maker',
+                description1: description1,
+                description2: description2,
+                description3: description3,
+                locationImage: monsterLocationImageBase64, // Use monsterLocationImageBase64 for location
+                age: document.getElementById('monster-story-age')?.value || '6'
+            };
+            
+            updateProgressStage(2, 'active', 'Creating monster image...');
+            
+            // Call the API
+            const response = await fetch('/api/generate-story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Handle successful response
+            updateProgressStage(5, 'completed');
+            displayStoryResults(data, 'monster-maker');
+            hideProgressModal();
+            
+        } catch (error) {
+            console.error('Error generating monster:', error);
+            hideProgressModal();
+            showAlert('Failed to create monster: ' + error.message);
+        }
+    };
+    
+    // Helper function to display story results
+    const displayStoryResults = (data, mode) => {
+        const storyOutput = document.getElementById('story-output');
+        const storyText = document.getElementById('story-text');
+        
+        if (storyOutput) storyOutput.classList.remove('hidden');
+        
+        if (data.story && storyText) {
+            storyText.textContent = data.story;
+        }
+        
+        // Handle audio if available
+        const audioPlayer = document.getElementById('story-audio-player');
+        if (data.audio && audioPlayer) {
+            try {
+                const audioBlob = b64toBlob(data.audio, 'audio/mpeg');
+                const audioBlobUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioBlobUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.style.display = 'block';
+                console.log('🎵 Audio player setup for', mode, 'mode');
+            } catch (audioError) {
+                console.error('❌ Error setting up audio player:', audioError);
+            }
+        }
+        
+        // Handle mode-specific results
+        if (mode === 'wanted-poster' && data.posterImage) {
+            // Show wanted poster download button
+            showDownloadButton(data.posterImage, 'wanted-poster.png');
+        } else if (mode === 'monster-maker' && data.monsterImage) {
+            // Show monster image download button
+            showDownloadButton(data.monsterImage, 'my-monster.png');
+        }
+        
+        // Auto-upload to Yoto if authenticated
+        if (accessToken) {
+            console.log('🚀 Auto-uploading', mode, 'to Yoto...');
+            createOrUpdateStoryForgePlaylist({
+                ...data,
+                mode: mode
+            }, accessToken)
+                .then(() => {
+                    console.log('✅ Auto-uploaded to Yoto successfully!');
+                    showAlert(`${getModeDisplayName(mode)} created and uploaded to Yoto! 🎧`);
+                })
+                .catch((yotoError) => {
+                    console.error('❌ Auto-upload to Yoto failed:', yotoError);
+                    showAlert(`${getModeDisplayName(mode)} created successfully! Yoto upload failed - you can retry manually.`);
+                });
+        }
+    };
+    
+    // Helper function to get display name for mode
+    const getModeDisplayName = (mode) => {
+        const names = {
+            'wanted-poster': 'Wanted Poster',
+            'homework-forge': 'Learning Summary',
+            'sleep-forge': 'Bedtime Story',
+            'monster-maker': 'Monster Story'
+        };
+        return names[mode] || 'Story';
+    };
+    
+    // Helper function to show download button
+    const showDownloadButton = (imageBase64, filename) => {
+        // Create download button in the story output area
+        const storyOutput = document.getElementById('story-output');
+        if (storyOutput && imageBase64) {
+            // Remove any existing download section first
+            const existingDownload = storyOutput.querySelector('.download-section');
+            if (existingDownload) {
+                existingDownload.remove();
+            }
+            
+            const downloadSection = document.createElement('div');
+            downloadSection.className = 'download-section paper-scrap';
+            
+            const buttonId = `download-image-btn-${Date.now()}`;
+            downloadSection.innerHTML = `
+                <div class="download-header">
+                    <span class="download-icon">📎</span>
+                    <span class="download-text">Download Your Creation</span>
+                    <span class="download-icon">⭐</span>
+                </div>
+                <button id="${buttonId}" class="download-btn">
+                    <span class="btn-icon">📄</span>
+                    <span class="btn-text">Download ${filename}</span>
+                </button>
+                <div class="download-preview">
+                    <img src="${imageBase64}" alt="Generated image preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-top: 10px;">
+                </div>
+            `;
+            
+            storyOutput.appendChild(downloadSection);
+            
+            // Add download functionality with unique ID
+            const downloadBtn = document.getElementById(buttonId);
+            if (downloadBtn) {
+                downloadBtn.onclick = () => {
+                    try {
+                        const link = document.createElement('a');
+                        link.href = imageBase64;
+                        link.download = filename;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        // Show success feedback
+                        downloadBtn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">Downloaded!</span>';
+                        setTimeout(() => {
+                            downloadBtn.innerHTML = `<span class="btn-icon">📄</span><span class="btn-text">Download ${filename}</span>`;
+                        }, 2000);
+                    } catch (error) {
+                        console.error('Download failed:', error);
+                        showAlert('Download failed. Please try again.');
+                    }
+                };
+            }
         }
     };
     
