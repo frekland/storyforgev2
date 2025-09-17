@@ -1,3 +1,9 @@
 .vercel
 # dependencies
 /node_modules
+
+# Temporary files
+*.webp
+unnamed.png
+repomix-output.xml
+*-backup.js
