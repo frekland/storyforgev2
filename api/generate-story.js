@@ -185,10 +185,9 @@ function processStoryWithPauses(rawStoryText) {
     
   // Create TTS version (keep pause markers for Chirp3-HD)
   const ttsText = rawStoryText
-    // Clean up formatting but keep pause markers
+    // Only remove asterisks and other problematic characters, be more careful with periods
     .replace(/\*/g, '')
-    .replace(/[^a-zA-Z0-9\s.,!?;:'"-\[\]]/g, '')
-    // Fix spacing around pause markers
+    // Fix spacing around pause markers first
     .replace(/\s*\[pause short\]\s*/g, '[pause short] ')
     .replace(/\s*\[pause long\]\s*/g, '[pause long] ') 
     .replace(/\s*\[pause\]\s*/g, '[pause] ')
@@ -534,8 +533,37 @@ async function generateGoogleTTS(storyTextWithPauses, age) {
     totalMarkers: (storyTextWithPauses.match(/\[pause[^\]]*\]/g) || []).length
   });
   
+  // Debug: Log first 200 characters of text to check for period issues
+  console.log('🔍 TTS Text Sample (first 200 chars):', JSON.stringify(storyTextWithPauses.substring(0, 200)));
+  
+  // Check for common period-related issues
+  const periodCount = (storyTextWithPauses.match(/\./g) || []).length;
+  const dotWordCount = (storyTextWithPauses.match(/\bdot\b/gi) || []).length;
+  const weirdPeriodsCount = (storyTextWithPauses.match(/[^a-zA-Z0-9\s.,!?;:'"-\[\]]\./g) || []).length;
+  
+  console.log('🕵️ Period Analysis:', {
+    totalPeriods: periodCount,
+    wordDot: dotWordCount,
+    weirdPeriods: weirdPeriodsCount,
+    textLength: storyTextWithPauses.length
+  });
+  
+  // Normalize periods and clean up any text issues that might cause 'dot' to be spoken
+  const cleanedMarkupText = storyTextWithPauses
+    // Ensure periods are properly formatted
+    .replace(/\s*\.\s*/g, '. ')
+    // Remove any 'dot' words that might have been inadvertently added
+    .replace(/\bdot\b/gi, '.')
+    // Fix double periods
+    .replace(/\.+/g, '.')
+    // Ensure proper spacing
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  console.log('✨ Final cleaned markup text sample:', JSON.stringify(cleanedMarkupText.substring(0, 200)));
+  
   const request = {
-    input: { markup: storyTextWithPauses }, // Use 'markup' instead of 'text' for pause control
+    input: { markup: cleanedMarkupText }, // Use 'markup' instead of 'text' for pause control
     voice: voiceSettings,
     audioConfig: {
       audioEncoding: 'MP3',           // Changed to MP3 to match Yoto's example
