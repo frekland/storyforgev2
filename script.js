@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     
     let heroImageBase64 = null;
+    let sceneImageBase64 = null;
     let accessToken = null;
     let refreshToken = null;
     
@@ -927,14 +928,35 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
                                             <div class="upload-content">
                                                 <button type="button" class="upload-btn" onclick="document.getElementById('classic-heroImage').click()">
-                                                    <span>📎 Upload Drawing</span>
+                                                    <span>📎 Upload Character Drawing</span>
                                                 </button>
-                                                <p class="upload-hint">or drag and drop your masterpiece here!</p>
+                                                <p class="upload-hint">Draw or upload your hero character!</p>
                                                 <div id="classic-image-preview" class="preview-container hidden"></div>
                                             </div>
                                             <div class="upload-doodles">
                                                 <span class="doodle-arrow">→</span>
                                                 <span class="doodle-star">★</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="image-upload-section">
+                                        <label for="classic-sceneImage" class="playful-label">
+                                            <span class="label-text">Draw a Scene (Optional)</span>
+                                            <span class="label-doodle">🖼️</span>
+                                        </label>
+                                        <div id="classic-scene-upload-area" class="paper-upload">
+                                            <input type="file" id="classic-sceneImage" accept="image/*" class="hidden-input">
+                                            <div class="upload-content">
+                                                <button type="button" class="upload-btn" onclick="document.getElementById('classic-sceneImage').click()">
+                                                    <span>🏞️ Upload Scene Drawing</span>
+                                                </button>
+                                                <p class="upload-hint">Draw or upload a magical place!</p>
+                                                <div id="classic-scene-preview" class="preview-container hidden"></div>
+                                            </div>
+                                            <div class="upload-doodles">
+                                                <span class="doodle-tree">🌳</span>
+                                                <span class="doodle-castle">🏰</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1091,6 +1113,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const classicImageInput = document.getElementById('classic-heroImage');
         const classicImageUploadArea = document.getElementById('classic-image-upload-area');
         const classicImagePreview = document.getElementById('classic-image-preview');
+        const classicSceneInput = document.getElementById('classic-sceneImage');
+        const classicSceneUploadArea = document.getElementById('classic-scene-upload-area');
+        const classicScenePreview = document.getElementById('classic-scene-preview');
         
         // Form submission
         if (classicForm) {
@@ -1108,10 +1133,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // Image upload handling
+        // Character image upload handling
         if (classicImageInput && classicImagePreview) {
             classicImageInput.addEventListener('change', (e) => {
-                handleImageUpload(e, classicImagePreview);
+                handleImageUpload(e, classicImagePreview, 'character');
+            });
+        }
+        
+        // Scene image upload handling
+        if (classicSceneInput && classicScenePreview) {
+            classicSceneInput.addEventListener('change', (e) => {
+                handleImageUpload(e, classicScenePreview, 'scene');
             });
         }
         
@@ -1137,7 +1169,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     classicImageInput.files = files;
-                    handleImageUpload({ target: { files: files } }, classicImagePreview);
+                    handleImageUpload({ target: { files: files } }, classicImagePreview, 'character');
+                }
+            }, false);
+        }
+        
+        // Drag and drop for scene image upload
+        if (classicSceneUploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                classicSceneUploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                classicSceneUploadArea.addEventListener(eventName, () => {
+                    classicSceneUploadArea.classList.add('drag-over');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                classicSceneUploadArea.addEventListener(eventName, () => {
+                    classicSceneUploadArea.classList.remove('drag-over');
+                }, false);
+            });
+            
+            classicSceneUploadArea.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    classicSceneInput.files = files;
+                    handleImageUpload({ target: { files: files } }, classicScenePreview, 'scene');
                 }
             }, false);
         }
@@ -1149,29 +1208,37 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
     };
     
-    const handleImageUpload = (e, previewElement) => {
+    const handleImageUpload = (e, previewElement, imageType = 'character') => {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
+                const altText = imageType === 'scene' ? 'Uploaded scene' : 'Uploaded character';
+                const successText = imageType === 'scene' ? 'Scene uploaded successfully!' : 'Character uploaded successfully!';
+                
                 // Create a nice preview with image and success message
                 previewElement.innerHTML = `
                     <div class="image-preview-content">
                         <div class="preview-image">
-                            <img src="${e.target.result}" alt="Uploaded character" class="uploaded-image">
+                            <img src="${e.target.result}" alt="${altText}" class="uploaded-image">
                         </div>
                         <div class="preview-success">
                             <span class="success-icon">✅</span>
-                            <span class="success-text">Image uploaded successfully!</span>
+                            <span class="success-text">${successText}</span>
                         </div>
                         <div class="preview-filename">${file.name}</div>
                     </div>
                 `;
                 previewElement.classList.remove('hidden');
-                // Store the base64 data for later use
-                heroImageBase64 = e.target.result;
                 
-                console.log('🖼️ Image uploaded and preview updated');
+                // Store the base64 data for later use
+                if (imageType === 'scene') {
+                    sceneImageBase64 = e.target.result;
+                    console.log('🖼️ Scene image uploaded and preview updated');
+                } else {
+                    heroImageBase64 = e.target.result;
+                    console.log('🖼️ Character image uploaded and preview updated');
+                }
             };
             reader.readAsDataURL(file);
         } else {
@@ -1214,6 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 promptClimax: document.getElementById('classic-promptClimax')?.value.trim() || '',
                 age: document.getElementById('classic-story-age')?.value || '6',
                 heroImage: heroImageBase64,
+                sceneImage: sceneImageBase64,
                 surpriseMode: isSurpriseMode
             };
             
