@@ -1242,43 +1242,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Progress modal management functions
+    const showProgressModal = () => {
+        const progressModal = document.getElementById('story-progress-modal');
+        if (progressModal) {
+            progressModal.classList.remove('hidden');
+            // Reset all stages
+            for (let i = 1; i <= 5; i++) {
+                const stage = document.getElementById(`stage-${i}`);
+                if (stage) {
+                    stage.classList.remove('active', 'completed');
+                    stage.querySelector('.stage-spinner')?.classList.add('hidden');
+                    stage.querySelector('.stage-check')?.classList.add('hidden');
+                }
+            }
+            updateProgressBar(0);
+        }
+    };
+    
+    const hideProgressModal = () => {
+        const progressModal = document.getElementById('story-progress-modal');
+        if (progressModal) {
+            setTimeout(() => {
+                progressModal.classList.add('hidden');
+            }, 2000); // Give time to see completion
+        }
+    };
+    
+    const updateProgressStage = (stageNum, status, text = '') => {
+        const stage = document.getElementById(`stage-${stageNum}`);
+        if (!stage) return;
+        
+        const spinner = stage.querySelector('.stage-spinner');
+        const check = stage.querySelector('.stage-check');
+        const progressText = document.getElementById('progress-text');
+        
+        // Reset stage classes
+        stage.classList.remove('active', 'completed');
+        spinner?.classList.add('hidden');
+        check?.classList.add('hidden');
+        
+        if (status === 'active') {
+            stage.classList.add('active');
+            spinner?.classList.remove('hidden');
+            if (progressText && text) progressText.textContent = text;
+        } else if (status === 'completed') {
+            stage.classList.add('completed');
+            check?.classList.remove('hidden');
+        }
+        
+        // Update progress bar
+        const progress = (stageNum / 5) * 100;
+        updateProgressBar(progress);
+    };
+    
+    const updateProgressBar = (percentage) => {
+        const progressBar = document.getElementById('overall-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+        }
+    };
+    
     // Main story generation function for Classic mode
     const generateClassicStory = async (isSurpriseMode) => {
         console.log(`Generating classic story, surprise mode: ${isSurpriseMode}`);
         
-        // Show story output section
+        // Show progress modal instead of old loading spinner
+        showProgressModal();
+        updateProgressStage(1, 'active', 'Gathering magical ingredients...');
+        
+        // Hide story output initially
         const storyOutput = document.getElementById('story-output');
-        const loadingSpinner = document.getElementById('loading-spinner');
         const storyText = document.getElementById('story-text');
         const uploadToYotoButton = document.getElementById('upload-to-yoto-button');
         
-        if (storyOutput) {
-            storyOutput.classList.remove('hidden');
-            storyOutput.scrollIntoView({ behavior: 'smooth' });
-        }
-        if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        if (storyOutput) storyOutput.classList.add('hidden');
         if (storyText) storyText.textContent = '';
         if (uploadToYotoButton) uploadToYotoButton.classList.add('hidden');
-        
-        // Update loading text
-        const loadingText = document.querySelector('.loading-text span:nth-child(2)');
-        if (loadingText) {
-            loadingText.textContent = isSurpriseMode ? 
-                'Creating a surprise adventure just for you...' : 
-                'Brewing your magical story...';
-        }
         
         try {
             // First, analyze any uploaded images to get descriptions
             let characterDescription = null;
             let sceneDescription = null;
             
+            // Complete stage 1
+            updateProgressStage(1, 'completed');
+            
             if (heroImageBase64 || sceneImageBase64) {
-                // Show image analysis progress
-                const loadingText = document.querySelector('.loading-text span:nth-child(2)');
-                if (loadingText) {
-                    loadingText.textContent = 'Analyzing your artwork...';
-                }
+                // Move to image analysis stage
+                updateProgressStage(2, 'active', 'Teaching our dragons to see your artwork...');
                 
                 console.log('🖼️ Starting image analysis...');
                 
@@ -1320,13 +1372,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn('⚠️ Image analysis error, proceeding without descriptions:', imageError);
                 }
                 
-                // Update loading text for story generation
-                if (loadingText) {
-                    loadingText.textContent = isSurpriseMode ? 
-                        'Creating a surprise adventure just for you...' : 
-                        'Brewing your magical story...';
-                }
+                // Complete image analysis stage
+                updateProgressStage(2, 'completed');
+            } else {
+                // Skip image analysis if no images
+                updateProgressStage(2, 'completed');
             }
+            
+            // Move to story creation stage
+            updateProgressStage(3, 'active', 'Our storytelling wizards are weaving your tale...');
             
             // Get form data in the format expected by the API (without large image data)
             const formData = {

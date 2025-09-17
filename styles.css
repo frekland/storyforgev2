@@ -371,6 +371,141 @@ body {
   box-shadow: 0 6px 12px var(--shadow-dark);
 }
 
+/* ✨ PROGRESS POPUP MODAL */
+.progress-modal {
+  max-width: 600px;
+  min-width: 500px;
+}
+
+.progress-stages {
+  margin: 20px 0;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px dashed var(--border-color);
+  transition: all 0.3s ease;
+  opacity: 0.4;
+}
+
+.stage:last-child {
+  border-bottom: none;
+}
+
+.stage.active {
+  opacity: 1;
+  background: rgba(255, 107, 107, 0.05);
+  border-radius: 10px;
+  padding: 15px 10px;
+  transform: scale(1.02);
+}
+
+.stage.completed {
+  opacity: 0.8;
+}
+
+.stage-icon {
+  font-size: 2em;
+  margin-right: 15px;
+  animation: bounce 2s infinite;
+}
+
+.stage.active .stage-icon {
+  animation: bounce 1s infinite, glow 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-5px); }
+  60% { transform: translateY(-3px); }
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 5px var(--accent-color)); }
+  50% { filter: drop-shadow(0 0 15px var(--accent-color)); }
+}
+
+.stage-text {
+  flex: 1;
+}
+
+.stage-title {
+  font-family: var(--font-title);
+  font-size: 1.1em;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.stage-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.stage-status {
+  width: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stage-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--bg-secondary);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.stage-check {
+  font-size: 1.2em;
+  animation: pop 0.5s ease-out;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); }
+  80% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.progress-footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.progress-bar-container {
+  background: var(--bg-secondary);
+  border-radius: 15px;
+  height: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(45deg, var(--accent-color), var(--accent-secondary));
+  border-radius: 15px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  margin-top: 10px;
+}
+
 .theme-btn {
   background: var(--bg-primary);
   border: 2px solid var(--border-color);

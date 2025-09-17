@@ -276,6 +276,83 @@
         <div class="doodle-element doodle-triangle" style="top: 60%; right: 3%;">△</div>
     </div>
     
+    <!-- Story Generation Progress Popup -->
+    <div id="story-progress-modal" class="modal hidden">
+        <div class="modal-content paper-scrap progress-modal">
+            <div class="modal-header">
+                <span class="modal-icon">✨</span>
+                <h3 class="modal-title">Forging Your Epic Tale!</h3>
+                <div class="modal-doodles">
+                    <span>★</span>
+                    <span>♡</span>
+                </div>
+            </div>
+            <div class="progress-stages">
+                <div class="stage" id="stage-1">
+                    <div class="stage-icon">🧿</div>
+                    <div class="stage-text">
+                        <div class="stage-title">Gathering Magic Ingredients</div>
+                        <div class="stage-subtitle">Collecting pixie dust and inspiration...</div>
+                    </div>
+                    <div class="stage-status">
+                        <div class="stage-spinner hidden"></div>
+                        <div class="stage-check hidden">✅</div>
+                    </div>
+                </div>
+                <div class="stage" id="stage-2">
+                    <div class="stage-icon">🎨</div>
+                    <div class="stage-text">
+                        <div class="stage-title">Analyzing Your Artwork</div>
+                        <div class="stage-subtitle">Teaching our dragons to see...</div>
+                    </div>
+                    <div class="stage-status">
+                        <div class="stage-spinner hidden"></div>
+                        <div class="stage-check hidden">✅</div>
+                    </div>
+                </div>
+                <div class="stage" id="stage-3">
+                    <div class="stage-icon">📝</div>
+                    <div class="stage-text">
+                        <div class="stage-title">Weaving the Tale</div>
+                        <div class="stage-subtitle">Our storytelling wizards are at work...</div>
+                    </div>
+                    <div class="stage-status">
+                        <div class="stage-spinner hidden"></div>
+                        <div class="stage-check hidden">✅</div>
+                    </div>
+                </div>
+                <div class="stage" id="stage-4">
+                    <div class="stage-icon">🎤</div>
+                    <div class="stage-text">
+                        <div class="stage-title">Bringing Words to Life</div>
+                        <div class="stage-subtitle">Training our voice sprites to sing...</div>
+                    </div>
+                    <div class="stage-status">
+                        <div class="stage-spinner hidden"></div>
+                        <div class="stage-check hidden">✅</div>
+                    </div>
+                </div>
+                <div class="stage" id="stage-5">
+                    <div class="stage-icon">🎧</div>
+                    <div class="stage-text">
+                        <div class="stage-title">Uploading to Yoto Kingdom</div>
+                        <div class="stage-subtitle">Sending via magical portal...</div>
+                    </div>
+                    <div class="stage-status">
+                        <div class="stage-spinner hidden"></div>
+                        <div class="stage-check hidden">✅</div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-footer">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="overall-progress-bar"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Preparing your magical adventure...</div>
+            </div>
+        </div>
+    </div>
+    
     <script type="module" src="script.js?v=20250916-1054"></script>
     <script type="module" src="tokens.js?v=20250916-1054"></script>
 </body>
