@@ -905,9 +905,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="submit-section paper-scrap">
-                                <button type="submit" class="forge-btn">
+                            
+                            <!-- Centered Forge Button -->
+                            <div class="forge-section">
+                                <button type="submit" class="forge-btn-centered">
                                     <span class="btn-text">✨ Forge My Story! ✨</span>
                                     <div class="btn-sparkles">
                                         <span>✨</span>
@@ -916,18 +917,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </button>
                                 
-                                <div class="button-divider">
-                                    <span class="divider-text">or</span>
-                                    <div class="divider-line"></div>
+                                <div class="or-divider">
+                                    <span>or</span>
                                 </div>
                                 
-                                <button type="button" id="classic-surprise-me-btn" class="surprise-btn">
-                                    <span class="btn-text">🎲 Surprise Me! 🎲</span>
-                                    <div class="btn-sparkles">
-                                        <span>🎊</span>
-                                        <span>🎉</span>
-                                        <span>🎊</span>
-                                    </div>
+                                <button type="button" id="classic-surprise-me-btn" class="surprise-btn-compact">
+                                    <span>🎲 Surprise Me! 🎲</span>
                                 </button>
                             </div>
                         </form>
@@ -1888,6 +1883,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initial check on page load
     checkAuthentication();
+    
+    // Helper functions for new UI elements
+    window.showModeHelp = (mode) => {
+        const helpMessages = {
+            classic: 'Classic Story mode creates traditional tales with heroes, adventures, and magical endings. Fill in at least one story element - the more details you provide, the richer your story will be!'
+        };
+        showAlert(helpMessages[mode] || 'Help information coming soon!');
+    };
+    
+    window.printStoryWorksheet = () => {
+        // This will be implemented when the worksheet file is ready
+        showAlert('Story arc worksheet coming soon! 📝 This will help you plan amazing stories.');
+    };
     
     // Add debug functionality directly in main script
     setupDebugSystem();
