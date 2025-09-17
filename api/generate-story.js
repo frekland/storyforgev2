@@ -405,15 +405,17 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - The Climax: ${promptClimax || 'a clever solution'}
     
     ${finalCharacterDescription && finalSceneDescription ? 
-      `IMPORTANT: Weave these visual elements seamlessly into your story narrative:
-      - Your main character (${heroName}) should be described as: ${finalCharacterDescription}
-      - The setting should incorporate: ${finalSceneDescription}
+      `CRITICAL STORYTELLING RULES:
+      1. CHARACTER INTEGRATION: Don't say "${finalCharacterDescription}" as a separate description. Instead, naturally weave these details into the action: "As ${heroName} [action], her [specific detail from description] [action]."
+      2. SETTING INTEGRATION: Don't describe the setting separately. Instead, reveal it through ${heroName}'s experience: "${heroName} stepped into [setting detail], noticing [another detail]."
+      3. SEAMLESS FLOW: Merge descriptions with plot - no information dumps or separate paragraphs.
       
-      Don't just list these descriptions - integrate them naturally into the story flow. For example, introduce the character's appearance as part of the action, and describe the setting as the character experiences it.` : 
+      Character details to weave in: ${finalCharacterDescription}
+      Setting details to weave in: ${finalSceneDescription}` : 
       finalCharacterDescription ? 
-        `IMPORTANT: Naturally describe your main character (${heroName}) as: ${finalCharacterDescription}. Weave this description into the story action, not as a separate paragraph.` :
+        `CRITICAL: Don't describe ${heroName} in a separate paragraph. Weave these details naturally into actions: "As ${heroName} [action], [character detail from: ${finalCharacterDescription}]"` :
         finalSceneDescription ?
-          `IMPORTANT: The story takes place in: ${finalSceneDescription}. Describe this setting through the character's experience, not as a separate description.` :
+          `CRITICAL: Don't describe the setting separately. Reveal it through ${heroName}'s actions: "${heroName} [action] in [detail from: ${finalSceneDescription}]"` :
           ''
     }
     
@@ -777,6 +779,12 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     .replace(/([a-zA-Z])\s+(dot|period)\s*$/gim, '$1.')
     .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n')
     .replace(/([a-zA-Z])\s+(dot|period)\s+([A-Z][a-zA-Z]+)/g, '$1. $3') // "word dot Word" -> "word. Word"
+    
+    // HELP TTS understand "dot" as a verb by using synonyms
+    // Pattern: "noun dot the" (like "fireflies dot the trees") -> "fireflies speckle the trees"
+    .replace(/\b(\w+)\s+dot\s+(the|a|an)\b/gi, '$1 speckle $2')
+    // Pattern: "dots" as plural verb -> "speckles"
+    .replace(/\b(\w+)\s+dots\s+(the|a|an)\b/gi, '$1 speckles $2')
     
     // ONLY fix clear exclamation/question errors at sentence end
     .replace(/([a-zA-Z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
