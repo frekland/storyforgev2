@@ -1389,39 +1389,87 @@ module.exports = async function handler(req, res) {
 
 // Helper function to extract image data from Gemini response
 function extractImageFromGeminiResponse(response, context = 'image generation') {
+  console.log(`🔍 [${context}] Starting image extraction...`);
+  console.log(`🔍 [${context}] Response structure:`, {
+    hasResponse: !!response,
+    hasCandidates: !!response?.candidates,
+    candidatesCount: response?.candidates?.length || 0
+  });
+  
   if (!response || !response.candidates || !response.candidates[0]) {
-    console.warn(`⚠️ No candidates found in ${context} response`);
+    console.warn(`⚠️ [${context}] No candidates found in response`);
+    console.log(`🔍 [${context}] Full response:`, JSON.stringify(response, null, 2));
     return null;
   }
   
   const candidate = response.candidates[0];
+  console.log(`🔍 [${context}] First candidate:`, {
+    hasContent: !!candidate.content,
+    contentKeys: candidate.content ? Object.keys(candidate.content) : 'none',
+    hasParts: !!candidate.content?.parts,
+    partsCount: candidate.content?.parts?.length || 0
+  });
   
   if (!candidate.content || !candidate.content.parts) {
-    console.warn(`⚠️ No content parts found in ${context} response`);
+    console.warn(`⚠️ [${context}] No content parts found in response`);
+    console.log(`🔍 [${context}] Candidate structure:`, JSON.stringify(candidate, null, 2));
     return null;
   }
   
-  for (const part of candidate.content.parts) {
-    if (part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
-      const base64Image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      console.log(`✅ Successfully extracted image from ${context}`);
-      return base64Image;
+  for (let i = 0; i < candidate.content.parts.length; i++) {
+    const part = candidate.content.parts[i];
+    console.log(`🔍 [${context}] Part ${i + 1}:`, {
+      hasText: !!part.text,
+      hasInlineData: !!part.inlineData,
+      partKeys: Object.keys(part)
+    });
+    
+    if (part.inlineData) {
+      console.log(`🔍 [${context}] InlineData structure:`, {
+        hasMimeType: !!part.inlineData.mimeType,
+        mimeType: part.inlineData.mimeType,
+        hasData: !!part.inlineData.data,
+        dataLength: part.inlineData.data ? part.inlineData.data.length : 0,
+        inlineDataKeys: Object.keys(part.inlineData)
+      });
+      
+      if (part.inlineData.mimeType && part.inlineData.data) {
+        const base64Image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        console.log(`✅ [${context}] Successfully extracted image! MimeType: ${part.inlineData.mimeType}, Data size: ${part.inlineData.data.length} chars`);
+        return base64Image;
+      }
     }
   }
   
-  console.warn(`⚠️ No image data found in ${context} response`);
+  console.warn(`⚠️ [${context}] No image data found in any parts`);
+  console.log(`🔍 [${context}] All parts:`, JSON.stringify(candidate.content.parts, null, 2));
   return null;
 }
 
 // Character image generation using Gemini 2.5 Flash
 async function generateCharacterImage(name, wantedFor, skills) {
   console.log('🎨 Generating AI character image for:', name);
+  console.log('🔧 Using Gemini 2.5 Flash model for image generation');
   
   try {
-    // Use Gemini 2.5 Flash for image generation
-    const imageModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    console.log('⚠️ NOTE: Gemini 2.5 Flash may not support image generation - trying anyway...');
     
-    const prompt = `Create a cartoon-style Wild West outlaw character portrait for a children's story. Character name: ${name}. They are wanted for: ${wantedFor}. ${skills ? `Special skills: ${skills}. ` : ''}Make it colorful, friendly, and suitable for children. Western theme with hat, bandana, etc. Style: vibrant cartoon illustration, child-friendly, non-threatening. No text or words in the image.`;
+    // Use Gemini 2.5 Flash for image generation (experimental)
+    const imageModel = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        temperature: 0.9,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      }
+    });
+    console.log('✅ Gemini 2.5 Flash model initialized successfully');
+    
+    const prompt = `Generate an image: Create a cartoon-style Wild West outlaw character portrait for a children's story. Character name: ${name}. They are wanted for: ${wantedFor}. ${skills ? `Special skills: ${skills}. ` : ''}Make it colorful, friendly, and suitable for children. Western theme with hat, bandana, etc. Style: vibrant cartoon illustration, child-friendly, non-threatening. No text or words in the image.`;
+    
+    console.log('📝 Character image prompt:', prompt.substring(0, 100) + '...');
+    console.log('🚀 Sending request to Gemini 2.5 Flash for image generation...');
     
     const result = await imageModel.generateContent({
       contents: [{
@@ -1432,12 +1480,36 @@ async function generateCharacterImage(name, wantedFor, skills) {
       }]
     });
     
+    console.log('✅ Gemini 2.5 Flash response received');
+    console.log('🔍 Raw response structure:', {
+      hasResult: !!result,
+      hasResponse: !!result?.response,
+      responseKeys: result?.response ? Object.keys(result.response) : 'none'
+    });
+    
     const response = await result.response;
+    console.log('🔍 Response candidates:', {
+      hasCandidates: !!response.candidates,
+      candidatesLength: response.candidates?.length || 0,
+      firstCandidateKeys: response.candidates?.[0] ? Object.keys(response.candidates[0]) : 'none'
+    });
+    
+    if (response.candidates && response.candidates[0]) {
+      const candidate = response.candidates[0];
+      console.log('🔍 First candidate content:', {
+        hasContent: !!candidate.content,
+        hasParts: !!candidate.content?.parts,
+        partsLength: candidate.content?.parts?.length || 0,
+        partsTypes: candidate.content?.parts?.map(p => Object.keys(p)) || 'none'
+      });
+    }
+    
     return extractImageFromGeminiResponse(response, 'character image generation');
     
   } catch (error) {
-    console.warn('⚠️ Character image generation failed:', error.message);
-    console.warn('Error details:', error);
+    console.error('❌ Character image generation failed:', error.message);
+    console.error('🔍 Full error details:', error);
+    console.error('🔍 Error stack:', error.stack);
     return null;
   }
 }

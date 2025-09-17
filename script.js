@@ -2061,7 +2061,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 age: '6' // Default age for wanted poster stories
             };
             
-            updateProgressStage(2, 'active', 'Creating wanted poster...');
+            updateProgressStage(1, 'completed');
+            updateProgressStage(2, 'active', useAI ? 'Generating outlaw portrait with AI...' : 'Creating wanted poster...');
             
             // Call the API
             const response = await fetch('/api/generate-story', {
@@ -2076,10 +2077,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
-            // Handle successful response
-            updateProgressStage(5, 'completed');
-            displayStoryResults(data, 'wanted-poster');
-            hideProgressModal();
+            // Handle successful response with detailed progress
+            updateProgressStage(2, 'completed');
+            updateProgressStage(3, 'active', 'Writing Wild West adventure story...');
+            setTimeout(() => {
+                updateProgressStage(3, 'completed');
+                updateProgressStage(4, 'active', 'Recording cowboy narration...');
+                setTimeout(() => {
+                    updateProgressStage(4, 'completed');
+                    updateProgressStage(5, 'active', 'Sending to Yoto device...');
+                    setTimeout(() => {
+                        updateProgressStage(5, 'completed');
+                        displayStoryResults(data, 'wanted-poster');
+                        hideProgressModal();
+                    }, 500);
+                }, 500);
+            }, 500);
             
         } catch (error) {
             console.error('Error generating wanted poster:', error);
@@ -2310,12 +2323,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Handle mode-specific results
-        if (mode === 'wanted-poster' && data.posterImage) {
-            // Show wanted poster download button
-            showDownloadButton(data.posterImage, 'wanted-poster.png');
-        } else if (mode === 'monster-maker' && data.monsterImage) {
-            // Show monster image download button
-            showDownloadButton(data.monsterImage, 'my-monster.png');
+        if (mode === 'wanted-poster') {
+            if (data.posterImage) {
+                // Show wanted poster download button
+                showDownloadButton(data.posterImage, 'wanted-poster.png');
+            } else {
+                // Show message that poster generation failed but story succeeded
+                const storyOutput = document.getElementById('story-output');
+                if (storyOutput) {
+                    const posterNote = document.createElement('div');
+                    posterNote.className = 'poster-note paper-scrap';
+                    posterNote.innerHTML = `
+                        <div class="note-header">
+                            <span class="note-icon">🤠</span>
+                            <span class="note-text">Poster Generation Update</span>
+                        </div>
+                        <p>Your Wild West story was created successfully! The wanted poster image is being worked on - this feature is still in development. You can still enjoy your cowboy adventure audio story!</p>
+                    `;
+                    storyOutput.appendChild(posterNote);
+                }
+            }
+        } else if (mode === 'monster-maker') {
+            if (data.monsterImage) {
+                // Show monster image download button
+                showDownloadButton(data.monsterImage, 'my-monster.png');
+            } else {
+                // Show message that monster generation failed but story succeeded
+                const storyOutput = document.getElementById('story-output');
+                if (storyOutput) {
+                    const monsterNote = document.createElement('div');
+                    monsterNote.className = 'monster-note paper-scrap';
+                    monsterNote.innerHTML = `
+                        <div class="note-header">
+                            <span class="note-icon">👹</span>
+                            <span class="note-text">Monster Image Update</span>
+                        </div>
+                        <p>Your monster story was created successfully! The monster image generation is being worked on - this feature is still in development. You can still enjoy your creature adventure audio story!</p>
+                    `;
+                    storyOutput.appendChild(monsterNote);
+                }
+            }
         }
         
         // Auto-upload to Yoto if authenticated
@@ -2327,7 +2374,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }, accessToken)
                 .then(() => {
                     console.log('✅ Auto-uploaded to Yoto successfully!');
-                    showAlert(`${getModeDisplayName(mode)} created and uploaded to Yoto! 🎧`);
+                    let successMessage;
+                    switch(mode) {
+                        case 'wanted-poster':
+                            successMessage = 'Your Wild Wild West Adventure has been sent to your Yoto device! See your poster below! 🤠';
+                            break;
+                        case 'homework-forge':
+                            successMessage = 'Your learning summary has been sent to your Yoto device! 📚';
+                            break;
+                        case 'sleep-forge':
+                            successMessage = 'Your bedtime story has been sent to your Yoto device! Sweet dreams! 🌙';
+                            break;
+                        case 'monster-maker':
+                            successMessage = 'Your monster adventure has been sent to your Yoto device! See your creature below! 👹';
+                            break;
+                        default:
+                            successMessage = `${getModeDisplayName(mode)} created and uploaded to Yoto! 🎧`;
+                    }
+                    showAlert(successMessage);
                 })
                 .catch((yotoError) => {
                     console.error('❌ Auto-upload to Yoto failed:', yotoError);
