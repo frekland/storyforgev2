@@ -320,53 +320,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show progress to user
             const progressElement = document.querySelector('.upload-progress');
             if (progressElement) {
-                progressElement.textContent = 'Generating audio... (0%)';
+                progressElement.textContent = 'Preparing audio... (0%)';
             }
             
             try {
-                // Generate the audio first
-                console.log('🎼 Generating audio for Yoto upload...');
+                // Use the existing perfect audio - no regeneration needed!
+                console.log('🎼 Using existing perfect audio for Yoto upload...');
                 
-                // Prepare the complete request body - EXACTLY matching the main story generation
-                const audioRequestBody = {
-                    heroName: storyData.heroName || 'Hero',
-                    promptSetup: storyData.promptSetup || '',
-                    promptRising: storyData.promptRising || '',
-                    promptClimax: storyData.promptClimax || '',
-                    age: storyData.age || '6',
-                    surpriseMode: storyData.surpriseMode || false,
-                    // CRITICAL: Include image descriptions for consistent audio generation
-                    characterDescription: storyData.characterDescription,
-                    sceneDescription: storyData.sceneDescription
-                };
-                
-                console.log('📝 Audio generation request body:', audioRequestBody);
-                
-                const audioResponse = await fetch('/api/generate-story', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(audioRequestBody)
-                });
-                
-                if (!audioResponse.ok) {
-                    throw new Error(`Audio generation failed: ${audioResponse.status}`);
+                if (!storyData.audio) {
+                    throw new Error('No audio data available - generate story first');
                 }
                 
-                const audioData = await audioResponse.json();
-                console.log('✅ Audio generated:', {
-                    storyLength: audioData.story?.length || 0,
-                    audioSize: audioData.fileSize || 0,
-                    duration: audioData.duration || 0
+                console.log('✅ Using existing audio:', {
+                    storyLength: storyData.story?.length || 0,
+                    audioSize: storyData.fileSize || 0,
+                    duration: storyData.duration || 0
                 });
                 
-                // Store story data for later use
-                storyData.story = audioData.story;
-                storyData.duration = audioData.duration;
-                storyData.fileSize = audioData.fileSize;
-                
-                // Convert base64 to blob for upload (MP3 format)
-                const audioBlob = b64toBlob(audioData.audio, 'audio/mpeg');
-                console.log('🔄 Converted to blob:', audioBlob.size, 'bytes');
+                // Convert existing base64 to blob for upload (MP3 format)
+                const audioBlob = b64toBlob(storyData.audio, 'audio/mpeg');
+                console.log('🔄 Converted existing audio to blob:', audioBlob.size, 'bytes');
                 
                 if (progressElement) {
                     progressElement.textContent = 'Getting upload URL... (10%)';
@@ -472,33 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             } catch (uploadError) {
                 console.error('❌ Error in permanent upload workflow:', uploadError);
-                
-                // Show error to user
-                if (progressElement) {
-                    progressElement.textContent = 'Upload failed - using streaming fallback';
-                }
-                
-                // Fallback to streaming URL with ALL story parameters
-                console.log('🔄 Falling back to streaming URL...');
-                const streamingUrl = new URL(`${window.location.origin}/api/generate-story`);
-                const params = {
-                    heroName: (storyData.heroName || 'Hero').trim(),
-                    promptSetup: (storyData.promptSetup || '').trim(),
-                    promptRising: (storyData.promptRising || '').trim(),
-                    promptClimax: (storyData.promptClimax || '').trim(),
-                    age: (storyData.age || '6').trim(),
-                    surpriseMode: storyData.surpriseMode ? 'true' : 'false',
-                    audioOnly: 'true'
-                };
-                
-                Object.entries(params).forEach(([key, value]) => {
-                    if (value && value.trim()) {
-                        streamingUrl.searchParams.set(key, value);
-                    }
-                });
-                
-                trackUrl = streamingUrl.toString();
-                console.log('🔄 Using streaming URL as fallback:', trackUrl);
+                throw uploadError; // Don't use fallback - we want to fix upload issues, not hide them
             }
             
     // Store URL globally for debugging
@@ -1497,8 +1444,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show Yoto upload button if user is authenticated
             if (uploadToYotoButton && accessToken) {
                 uploadToYotoButton.classList.remove('hidden');
-                // Update the existing Yoto upload handler to work with new form data
-                setupYotoUploadHandler(formData);
+                // CRITICAL: Store the perfect audio for Yoto upload - no regeneration needed!
+                const completeStoryData = {
+                    ...formData,
+                    story: data.story,
+                    audio: data.audio, // The perfect base64 audio
+                    duration: data.duration,
+                    fileSize: data.fileSize
+                };
+                setupYotoUploadHandler(completeStoryData);
             }
             
         } catch (error) {
