@@ -25,6 +25,89 @@ function fileToGenerativePart(base64Data, mimeType) {
   return { inlineData: { data: base64Data.split(',')[1], mimeType } };
 }
 
+// Enhanced image analysis function for character descriptions
+async function analyzeCharacterImage(heroImage) {
+  if (!heroImage) return null;
+  
+  console.log('🎨 Analyzing character artwork for rich description...');
+  
+  const analysisPrompt = `
+    Look at this children's artwork and create a fun, detailed description of the character.
+    
+    Focus on:
+    - Physical appearance (colors, shapes, features)
+    - What kind of creature or person it is
+    - Any special details that make it unique
+    - Fun characteristics that would make it memorable in a story
+    
+    Write it as a vivid, child-friendly description that could be used to create an engaging story character.
+    Keep it concise but rich in visual details that bring the character to life.
+    
+    Example format: "A friendly orange tabby cat with bright green stripes running down its back, wearing a tiny blue hat with a feather, and has the biggest smile you've ever seen on a cat!"
+  `;
+  
+  try {
+    const mimeType = heroImage.substring(heroImage.indexOf(":") + 1, heroImage.indexOf(";"));
+    const imagePart = fileToGenerativePart(heroImage, mimeType);
+    
+    const result = await model.generateContent({
+      contents: [{ 
+        role: "user", 
+        parts: [{ text: analysisPrompt }, imagePart] 
+      }]
+    });
+    
+    const description = (await result.response).text().trim();
+    console.log('✅ Character description generated:', description);
+    return description;
+  } catch (error) {
+    console.warn('⚠️ Character image analysis failed:', error.message);
+    return null;
+  }
+}
+
+// Enhanced image analysis function for scene descriptions
+async function analyzeSceneImage(sceneImage) {
+  if (!sceneImage) return null;
+  
+  console.log('🏞️ Analyzing scene artwork for rich description...');
+  
+  const analysisPrompt = `
+    Look at this children's artwork of a scene and create a fun, detailed description of the setting.
+    
+    Focus on:
+    - The location or environment (forest, castle, underwater, etc.)
+    - Colors, atmosphere, and mood
+    - Important objects, buildings, or landscape features
+    - Any magical or special elements
+    - Details that would make it an exciting story setting
+    
+    Write it as a vivid, child-friendly description that could be used as a story setting.
+    Make it engaging and full of possibilities for adventure!
+    
+    Example format: "A magical forest where the trees have silver bark and purple leaves, with glowing mushrooms dotting the ground and a crystal-clear stream that sparkles like diamonds flowing through the middle!"
+  `;
+  
+  try {
+    const mimeType = sceneImage.substring(sceneImage.indexOf(":") + 1, sceneImage.indexOf(";"));
+    const imagePart = fileToGenerativePart(sceneImage, mimeType);
+    
+    const result = await model.generateContent({
+      contents: [{ 
+        role: "user", 
+        parts: [{ text: analysisPrompt }, imagePart] 
+      }]
+    });
+    
+    const description = (await result.response).text().trim();
+    console.log('✅ Scene description generated:', description);
+    return description;
+  } catch (error) {
+    console.warn('⚠️ Scene image analysis failed:', error.message);
+    return null;
+  }
+}
+
 // Helper function to create a placeholder image for surprise stories
 async function createStoryPlaceholderImage(heroName, setting, age) {
   // This creates a simple SVG-based placeholder image
@@ -146,7 +229,7 @@ function generateRandomStoryElements(age) {
 }
 
 // Helper function to generate story and audio
-async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode = false }) {
+async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode = false }) {
   // Handle surprise mode by generating random story elements
   if (surpriseMode) {
     const randomElements = generateRandomStoryElements(age);
@@ -179,8 +262,20 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       ttsInstructions = "Write with sophisticated narrative flow, natural dialogue, and descriptive language that creates vivid mental images when heard.";
       break;
   }
-
-  // Generate Story with Gemini - TTS-optimized prompts
+  
+  // ENHANCED: Analyze uploaded images to create rich descriptions
+  let characterDescription = null;
+  let sceneDescription = null;
+  
+  if (heroImage) {
+    characterDescription = await analyzeCharacterImage(heroImage);
+  }
+  
+  if (sceneImage) {
+    sceneDescription = await analyzeSceneImage(sceneImage);
+  }
+  
+  // Generate Story with Gemini - TTS-optimized prompts with enhanced image descriptions
   const textPrompt = `
     You are a master storyteller for children who specializes in creating stories that sound AMAZING when read aloud. 
     
@@ -196,18 +291,16 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     - The Beginning: ${promptSetup || 'a surprising place'}
     - The Challenge: ${promptRising || 'an unexpected problem'}
     - The Climax: ${promptClimax || 'a clever solution'}
-    ${heroImage ? '- Character from Image: Incorporate the creature or character from the image naturally into the story.' : ''}
+    ${characterDescription ? `- Character Description: The main character looks like this: ${characterDescription}` : ''}
+    ${sceneDescription ? `- Setting Description: The story takes place in: ${sceneDescription}` : ''}
     
     Make it magical and engaging for children, with natural speech that flows beautifully when narrated!
   `;
   
   const promptParts = [{ text: textPrompt }];
-
-  if (heroImage) {
-    const mimeType = heroImage.substring(heroImage.indexOf(":") + 1, heroImage.indexOf(";"));
-    const imagePart = fileToGenerativePart(heroImage, mimeType);
-    promptParts.push(imagePart);
-  }
+  
+  // Note: We now use dedicated image analysis functions above to create rich descriptions
+  // The character and scene descriptions are embedded directly in the text prompt
   
   const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
   const storyText = (await result.response).text();
@@ -409,7 +502,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     // Mode 1: Client requests story generation
     try {
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode } = req.body;
+      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode } = req.body;
       
       // Validate input (skip validation for surprise mode)
       // For regular mode, require at least one story element
@@ -427,7 +520,7 @@ module.exports = async function handler(req, res) {
 
       console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
       const { storyText, audioContent, generatedImage } = await generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, age, surpriseMode
+        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, surpriseMode
       });
 
       // Return story text, Base64 audio, and generated image (if any) for the client to handle
@@ -501,7 +594,7 @@ module.exports = async function handler(req, res) {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Accept, User-Agent');
       res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type, Accept-Ranges');
       
-      const { heroName, promptSetup, promptRising, promptClimax, heroImage, age, audioOnly } = req.query;
+      const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age, audioOnly } = req.query;
 
       if (!audioOnly || audioOnly !== 'true') {
         console.error('❌ Missing audioOnly=true parameter');
@@ -529,7 +622,7 @@ module.exports = async function handler(req, res) {
       });
       // Re-generate the audio on-demand using the same parameters
       const { storyText, audioContent } = await generateStoryAndAudio({
-        heroName, promptSetup, promptRising, promptClimax, heroImage, age
+        heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, age
       });
       
       console.log('✅ Audio generation complete for streaming:', {
