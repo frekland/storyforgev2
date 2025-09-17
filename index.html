@@ -11,30 +11,23 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
 </head>
 <body>
-    <div class="theme-toggle">
-        <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
-            <span class="sun-icon">☀️</span>
-            <span class="moon-icon">🌙</span>
-        </button>
-    </div>
-    
-    <header class="main-header">
-        <div class="logo-container">
-            <div class="yoto-logo">
-                <span class="yoto-text">YOTO</span>
-                <div class="logo-doodles">
-                    <span class="doodle-star">★</span>
-                    <span class="doodle-heart">♡</span>
-                </div>
-            </div>
-        </div>
-        <h1 class="main-title">
+    <!-- Top Bar with compact logo and controls -->
+    <div class="top-bar">
+        <div class="compact-logo">
             <span class="title-word">The</span>
             <span class="title-word highlight">Storyforge</span>
-            <div class="title-doodle">✨</div>
-        </h1>
-        <p class="subtitle">Where imagination becomes audio magic!</p>
-    </header>
+            <span class="title-doodle">✨</span>
+        </div>
+        <div class="top-controls">
+            <div id="yoto-status" class="yoto-status hidden" title="Connected to Yoto">
+                <div class="status-dot"></div>
+            </div>
+            <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+                <span class="sun-icon">☀️</span>
+                <span class="moon-icon">🌙</span>
+            </button>
+        </div>
+    </div>
 
     <main class="main-content">
         <div class="auth-section paper-scrap">

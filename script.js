@@ -93,6 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
         appContent.classList.add('hidden');
         loginButton.classList.remove('hidden');
         logoutButton.classList.add('hidden');
+        
+        // Hide Yoto connection status
+        const yotoStatus = document.getElementById('yoto-status');
+        if (yotoStatus) {
+            yotoStatus.classList.add('hidden');
+        }
     };
 
     const checkAuthentication = async () => {
@@ -170,6 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
         loginButton.classList.add('hidden');
         logoutButton.classList.remove('hidden');
         appContent.classList.remove('hidden');
+        
+        // Show Yoto connection status
+        const yotoStatus = document.getElementById('yoto-status');
+        if (yotoStatus) {
+            yotoStatus.classList.remove('hidden');
+        }
     };
 
     loginButton.addEventListener('click', handleLogin);
@@ -788,140 +800,108 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (mode) {
             case 'classic':
                 return `
-                    <div class="mode-header paper-scrap">
+                    <div class="mode-header-compact">
                         <button class="back-to-modes-btn" onclick="backToModeSelection()">
                             ← Back to Modes
                         </button>
-                        <h2 class="mode-title-header">
-                            <span class="mode-icon">📚</span>
-                            <span>Classic Story</span>
-                        </h2>
+                        <div class="mode-info">
+                            <h2 class="mode-title-compact">
+                                <span class="mode-icon">📚</span>
+                                <span>Classic Story</span>
+                            </h2>
+                            <div class="mode-actions">
+                                <button class="help-btn" onclick="showModeHelp('classic')" title="How does Classic Story work?">
+                                    <span>?</span>
+                                </button>
+                                <button class="print-btn" onclick="printStoryWorksheet()" title="Print story arc worksheet">
+                                    <span>🖨️</span>
+                                    <span>Print story arc worksheet</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Age Selection moved up -->
+                        <div class="age-selection-compact">
+                            <label for="classic-story-age" class="compact-label">
+                                <span>Story Length:</span>
+                            </label>
+                            <select id="classic-story-age" class="paper-select" required>
+                                <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
+                                <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
+                                <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
+                                <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="story-form-container">
-                        <div class="form-header paper-scrap">
-                            <h2 class="form-title">Story Ingredients 🌲</h2>
-                            <div class="form-doodles">
-                                <span class="doodle">★</span>
-                                <span class="doodle">♡</span>
-                                <span class="doodle">✨</span>
-                            </div>
-                        </div>
-                        
-                        <div class="form-instructions paper-scrap">
-                            <p class="instructions-text">
-                                <span class="instructions-icon">💡</span>
-                                <strong>How it works:</strong> Fill in at least one story element below, and I'll create a magical tale for you! The more details you give me, the better your story will be.
-                                <span class="instructions-sparkles">✨</span>
-                            </p>
-                        </div>
                         
                         <form id="classic-story-form" class="story-form">
-                            <!-- Story Elements Section - combines all story inputs -->
-                            <div class="story-elements-group paper-scrap">
+                            <!-- Unified Story Creation Section -->
+                            <div class="unified-story-group paper-scrap">
                                 <h3 class="section-title">
-                                    <span class="section-icon">📚</span>
-                                    <span>Story Elements</span>
+                                    <span class="section-icon">✨</span>
+                                    <span>Create Your Story</span>
                                 </h3>
                                 
-                                <div class="input-row">
-                                    <div class="input-group">
-                                        <label for="classic-heroName" class="playful-label">
-                                            <span class="label-text">Hero's Name</span>
-                                            <span class="label-doodle">🦸</span>
-                                        </label>
-                                        <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
-                                    </div>
-
-                                    <div class="input-group">
-                                        <label for="classic-promptSetup" class="playful-label">
-                                            <span class="label-text">The Beginning</span>
-                                            <span class="label-doodle">🌅</span>
-                                        </label>
-                                        <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                                <!-- Story Elements -->
+                                <div class="story-elements">
+                                    <div class="input-grid">
+                                        <div class="input-group">
+                                            <label for="classic-heroName" class="compact-label">
+                                                <span>🦸 Hero's Name</span>
+                                            </label>
+                                            <input type="text" id="classic-heroName" class="paper-input" placeholder="e.g., Captain Comet, Princess Luna...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="classic-promptSetup" class="compact-label">
+                                                <span>🌅 The Beginning</span>
+                                            </label>
+                                            <input type="text" id="classic-promptSetup" class="paper-input" placeholder="e.g., a magical forest made of ice cream...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="classic-promptRising" class="compact-label">
+                                                <span>⚡ The Challenge</span>
+                                            </label>
+                                            <input type="text" id="classic-promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="classic-promptClimax" class="compact-label">
+                                                <span>🎆 The Resolution</span>
+                                            </label>
+                                            <input type="text" id="classic-promptClimax" class="paper-input" placeholder="e.g., the dragon became best friends with everyone...">
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="input-row">
-                                    <div class="input-group">
-                                        <label for="classic-promptRising" class="playful-label">
-                                            <span class="label-text">The Challenge</span>
-                                            <span class="label-doodle">⚡</span>
-                                        </label>
-                                        <input type="text" id="classic-promptRising" class="paper-input" placeholder="e.g., a grumpy dragon stole the sprinkles...">
-                                    </div>
-
-                                    <div class="input-group">
-                                        <label for="classic-promptClimax" class="playful-label">
-                                            <span class="label-text">The Resolution</span>
-                                            <span class="label-doodle">🎆</span>
-                                        </label>
-                                        <input type="text" id="classic-promptClimax" class="paper-input" placeholder="e.g., the dragon became best friends with everyone...">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Character & Settings Section - combines image upload and age settings -->
-                            <div class="character-settings-group paper-scrap">
-                                <h3 class="section-title">
-                                    <span class="section-icon">🎨</span>
-                                    <span>Character & Settings</span>
-                                </h3>
-                                
-                                <div class="settings-row">
-                                    <div class="image-upload-section">
-                                        <label for="classic-heroImage" class="playful-label">
-                                            <span class="label-text">Draw Your Character</span>
-                                            <span class="label-doodle">🎨</span>
-                                        </label>
-                                        <div id="classic-image-upload-area" class="paper-upload">
-                                            <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
-                                            <div class="upload-content">
-                                                <button type="button" class="upload-btn" onclick="document.getElementById('classic-heroImage').click()">
-                                                    <span>📎 Upload Character Drawing</span>
+                                <!-- Character & Scene Images -->
+                                <div class="images-section">
+                                    <div class="image-uploads">
+                                        <div class="image-upload-compact">
+                                            <label for="classic-heroImage" class="compact-label">
+                                                <span>🎨 Character Drawing (Optional)</span>
+                                            </label>
+                                            <div id="classic-image-upload-area" class="upload-area-compact">
+                                                <input type="file" id="classic-heroImage" accept="image/*" class="hidden-input">
+                                                <button type="button" class="upload-btn-compact" onclick="document.getElementById('classic-heroImage').click()">
+                                                    <span>📎 Upload</span>
                                                 </button>
-                                                <p class="upload-hint">Draw or upload your hero character!</p>
                                                 <div id="classic-image-preview" class="preview-container hidden"></div>
                                             </div>
-                                            <div class="upload-doodles">
-                                                <span class="doodle-arrow">→</span>
-                                                <span class="doodle-star">★</span>
-                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="image-upload-section">
-                                        <label for="classic-sceneImage" class="playful-label">
-                                            <span class="label-text">Draw a Scene (Optional)</span>
-                                            <span class="label-doodle">🖼️</span>
-                                        </label>
-                                        <div id="classic-scene-upload-area" class="paper-upload">
-                                            <input type="file" id="classic-sceneImage" accept="image/*" class="hidden-input">
-                                            <div class="upload-content">
-                                                <button type="button" class="upload-btn" onclick="document.getElementById('classic-sceneImage').click()">
-                                                    <span>🏞️ Upload Scene Drawing</span>
+                                        
+                                        <div class="image-upload-compact">
+                                            <label for="classic-sceneImage" class="compact-label">
+                                                <span>🏖️ Scene Drawing (Optional)</span>
+                                            </label>
+                                            <div id="classic-scene-upload-area" class="upload-area-compact">
+                                                <input type="file" id="classic-sceneImage" accept="image/*" class="hidden-input">
+                                                <button type="button" class="upload-btn-compact" onclick="document.getElementById('classic-sceneImage').click()">
+                                                    <span>🏖️ Upload</span>
                                                 </button>
-                                                <p class="upload-hint">Draw or upload a magical place!</p>
                                                 <div id="classic-scene-preview" class="preview-container hidden"></div>
                                             </div>
-                                            <div class="upload-doodles">
-                                                <span class="doodle-tree">🌳</span>
-                                                <span class="doodle-castle">🏰</span>
-                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div class="age-selection">
-                                        <label for="classic-story-age" class="playful-label">
-                                            <span class="label-text">Story Length</span>
-                                            <span class="label-doodle">📆</span>
-                                        </label>
-                                        <select id="classic-story-age" class="paper-select" required>
-                                            <option value="3">🧒 Little Listeners (3-6 years, ~150 words)</option>
-                                            <option value="6" selected>🧒 Young Explorers (6-8 years, ~500 words)</option>
-                                            <option value="9">🧒 Adventure Seekers (8-12 years, ~1000 words)</option>
-                                            <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
-                                        </select>
                                     </div>
                                 </div>
                             </div>
