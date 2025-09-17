@@ -445,12 +445,15 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   };
   
   // Track AI output for debugging
-  debugSteps.push({ 
-    step: 'ai_generation_complete', 
-    rawTextLength: rawStoryText.length,
-    punctuationCheck: immediateCheck,
-    rawTextSample: rawStoryText.substring(0, 200)
-  });
+  try {
+    debugSteps.push({ 
+      step: 'ai_generation_complete', 
+      rawTextLength: rawStoryText.length,
+      punctuationCheck: immediateCheck
+    });
+  } catch (e) {
+    console.log('Debug tracking error (non-critical):', e.message);
+  }
   
   if (immediateCheck.dots > 0 || immediateCheck.periods > 0 || immediateCheck.exclamationMarks > 0 || immediateCheck.questionMarks > 0) {
     console.log('🚨 AI IGNORED INSTRUCTIONS - Generated punctuation words:', immediateCheck);
@@ -904,19 +907,16 @@ module.exports = async function handler(req, res) {
         // Calculate estimated duration (rough approximation: ~150 words per minute)
         duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
         fileSize: audioContent.length,
-        // Add debugging information for client-side troubleshooting
+        // Add basic debugging information for client-side troubleshooting
         debug: {
           storyLength: storyText.length,
           audioSize: audioContent.length,
-          heroName: heroName,
+          heroName: heroName || '',
           punctuationAnalysis: {
             storyContainsDot: (storyText.match(/\bdot\b/gi) || []).length,
             storyContainsPeriod: (storyText.match(/\bperiod\b/gi) || []).length,
-            storyContainsExclamation: (storyText.match(/\bexclamation\s*mark\b/gi) || []).length,
-            actualPeriods: (storyText.match(/\./g) || []).length,
-            actualExclamations: (storyText.match(/!/g) || []).length
-          },
-          processingSteps: debugSteps || []
+            actualPeriods: (storyText.match(/\./g) || []).length
+          }
         }
       };
       
