@@ -488,18 +488,10 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   // Process story to separate display text from TTS text with pauses
   const { displayText, ttsText } = processStoryWithPauses(rawStoryText, heroName);
   
-  // DEBUG: Check if there's a discrepancy between display and TTS text
-  const displayDots = (displayText.match(/\bdot\b/gi) || []).length;
+  // Quick check for any remaining issues
   const ttsDots = (ttsText.match(/\bdot\b/gi) || []).length;
-  console.log('🚨 TEXT PROCESSING DEBUG:', {
-    displayTextDots: displayDots,
-    ttsTextDots: ttsDots,
-    discrepancy: ttsDots > displayDots
-  });
-  
-  if (ttsDots > displayDots) {
-    console.log('🚨 FOUND DISCREPANCY! TTS text has more dot words than display text');
-    console.log('🚨 TTS text sample:', JSON.stringify(ttsText.substring(0, 300)));
+  if (ttsDots > 0) {
+    console.log('⚠️ Found', ttsDots, 'dot words in TTS text');
   }
   
   const processingResults = {
@@ -742,25 +734,11 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     totalMarkers: (storyTextWithPauses.match(/\[pause[^\]]*\]/g) || []).length
   });
   
-  // Debug: Log first 200 characters of text to check for period issues
-  console.log('🔍 TTS Text Sample (first 200 chars):', JSON.stringify(storyTextWithPauses.substring(0, 200)));
-  
-  // Check for all punctuation-related issues
-  const periodCount = (storyTextWithPauses.match(/\./g) || []).length;
-  const exclamationCount = (storyTextWithPauses.match(/!/g) || []).length;
-  const questionCount = (storyTextWithPauses.match(/\?/g) || []).length;
-  const punctuationWordCounts = {
-    dots: (storyTextWithPauses.match(/\b(dot|period)\b/gi) || []).length,
-    exclamations: (storyTextWithPauses.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
-    questions: (storyTextWithPauses.match(/\b(question mark)\b/gi) || []).length,
-    commas: (storyTextWithPauses.match(/\b(comma)\b/gi) || []).length
-  };
-  
-  console.log('🕵️ Punctuation Analysis:', {
-    actualPunctuation: { periods: periodCount, exclamations: exclamationCount, questions: questionCount },
-    punctuationWords: punctuationWordCounts,
-    textLength: storyTextWithPauses.length
-  });
+  // Quick punctuation check for TTS
+  const punctuationWords = (storyTextWithPauses.match(/\b(dot|period|exclamation mark|question mark)\b/gi) || []).length;
+  if (punctuationWords > 0) {
+    console.log('⚠️ TTS input contains', punctuationWords, 'punctuation words - applying cleaning');
+  }
   
   // Ultra-aggressive dot cleaning with character inspection
   let cleanedMarkupText = storyTextWithPauses;
