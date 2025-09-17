@@ -184,23 +184,18 @@ function processStoryWithPauses(rawStoryText, heroName = '') {
                          heroNameLower.includes('comma') || heroNameLower.includes('question') ||
                          heroNameLower.includes('exclamation');
   
-  if (isProtectedName) {
-    console.log('🛡️ Hero name contains punctuation word - using conservative cleaning:', heroName);
-    // Very conservative cleaning when character name conflicts
-    cleanedRawText = rawStoryText
-      .replace(/([a-z])\s+(dot|period)\s*$/gim, '$1.')
-      .replace(/([a-z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
-      .replace(/([a-z])\s+(question mark)\s*$/gim, '$1?');
-  } else {
-    // Normal cleaning when no name conflicts
-    cleanedRawText = rawStoryText
-      .replace(/\s+(dot|period)\s+/gi, '. ')
-      .replace(/\s+(dot|period)$/gi, '.')
-      .replace(/^(dot|period)\s+/gi, '. ')
-      .replace(/\s+(exclamation mark|exclamation point)\s+/gi, ' ! ')
-      .replace(/\s+(question mark)\s+/gi, ' ? ')
-      .replace(/\s+(comma)\s+/gi, ', ');
-  }
+  // ALWAYS use ultra-conservative cleaning to preserve legitimate word usage
+  console.log('🧠 Using ultra-conservative early processing for hero:', heroName);
+  
+  // Only fix VERY obvious TTS errors at sentence boundaries
+  cleanedRawText = rawStoryText
+    // Only fix sentence-ending errors where punctuation word is clearly meant as punctuation
+    .replace(/([a-zA-Z])\s+(dot|period)\s*$/gim, '$1.')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n') 
+    .replace(/([a-zA-Z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
+    .replace(/([a-zA-Z])\s+(question mark)\s*$/gim, '$1?');
+    
+  console.log('🧠 Early processing preserved all legitimate word usage');
   
   // Common spacing cleanup
   cleanedRawText = cleanedRawText
@@ -293,6 +288,11 @@ function generateRandomStoryElements(age) {
 // Helper function to generate story and audio
 async function generateStoryAndAudio({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode = false }) {
   const startTime = Date.now();
+  
+  // Initialize debug tracking
+  global.debugSteps = [];
+  global.debugSteps.push({ step: 'generation_start', heroName, age, timestamp: Date.now() });
+  
   console.log('⏱️ Story generation started:', { surpriseMode, hasCharacterDesc: !!characterDescription, hasSceneDesc: !!sceneDescription });
   // Handle surprise mode by generating random story elements
   if (surpriseMode) {
@@ -444,6 +444,14 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     questionMarks: (rawStoryText.match(/\bquestion\s*mark\b/gi) || []).length
   };
   
+  // Track AI output for debugging
+  global.debugSteps.push({ 
+    step: 'ai_generation_complete', 
+    rawTextLength: rawStoryText.length,
+    punctuationCheck: immediateCheck,
+    rawTextSample: rawStoryText.substring(0, 200)
+  });
+  
   if (immediateCheck.dots > 0 || immediateCheck.periods > 0 || immediateCheck.exclamationMarks > 0 || immediateCheck.questionMarks > 0) {
     console.log('🚨 AI IGNORED INSTRUCTIONS - Generated punctuation words:', immediateCheck);
     console.log('🚨 Raw AI output sample:', JSON.stringify(rawStoryText.substring(0, 300)));
@@ -451,14 +459,20 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     // Show all punctuation word instances with context
     const allPunctuationMatches = rawStoryText.match(/.{0,20}\b(dot|period|exclamation\s*mark|question\s*mark)\b.{0,20}/gi) || [];
     console.log('🚨 All AI punctuation violations:', allPunctuationMatches);
+    
+    global.debugSteps.push({ 
+      step: 'ai_violations_found', 
+      violations: allPunctuationMatches
+    });
   } else {
     console.log('✅ AI FOLLOWED INSTRUCTIONS - No punctuation words in raw output');
+    global.debugSteps.push({ step: 'ai_followed_instructions' });
   }
   
   // Process story to separate display text from TTS text with pauses
   const { displayText, ttsText } = processStoryWithPauses(rawStoryText, heroName);
   
-  console.log('📝 Story processing complete:', {
+  const processingResults = {
     rawLength: rawStoryText.length,
     displayLength: displayText.length,
     ttsLength: ttsText.length,
@@ -474,7 +488,16 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
       exclamations: (ttsText.match(/\b(exclamation mark|exclamation point)\b/gi) || []).length,
       questions: (ttsText.match(/\b(question mark)\b/gi) || []).length,
       commas: (ttsText.match(/\b(comma)\b/gi) || []).length
-    }
+    },
+    displayTextSample: displayText.substring(0, 200),
+    ttsTextSample: ttsText.substring(0, 200)
+  };
+  
+  console.log('📝 Story processing complete:', processingResults);
+  
+  global.debugSteps.push({ 
+    step: 'story_processing_complete', 
+    results: processingResults
   });
   
   // Debug: Log sample of raw text to check for punctuation words
@@ -722,39 +745,33 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     });
   }
   
-  // Context-aware cleaning that preserves character names like 'Dot'
+  // ULTRA-CONSERVATIVE cleaning - only fix obvious TTS pronunciation errors
+  // Preserve ALL legitimate uses of words like "dot", "period", etc.
   cleanedMarkupText = storyTextWithPauses;
   
-  // Get the hero name to avoid cleaning it
-  const heroNameFromContext = arguments[1] || ''; // Pass heroName as second parameter
-  const protectedNames = [heroNameFromContext.toLowerCase()].filter(name => name.length > 0);
+  console.log('🧠 Using ultra-conservative cleaning to preserve legitimate word usage');
   
-  // Only clean punctuation words in specific contexts that are clearly errors
-  // Pattern: punctuation word at sentence boundaries or isolated by spaces
+  // Only replace in VERY specific contexts where it's clearly a TTS pronunciation error:
+  // 1. At the very end of sentences where it's clearly meant to be punctuation
+  // 2. In patterns like "word dot word" where "dot" is clearly punctuation
+  
   cleanedMarkupText = cleanedMarkupText
-    // Replace isolated punctuation words (surrounded by spaces) but protect character names
-    .replace(/\s+(dot|period)(?=\s+(and|but|so|then|however|meanwhile|suddenly|finally|later|next|after|before|when|while|as|since|because|although|though|if|unless|until|once|whenever))/gi, '. ')
-    .replace(/([.!?])\s+(dot|period)\s+/gi, '$1 . ')
-    .replace(/\s+(dot|period)\s+([a-z])/gi, (match, punctWord, nextChar) => {
-      // Don't replace if the next word starts with a capital (likely a name)
-      return nextChar === nextChar.toUpperCase() ? match : '. ' + nextChar;
-    })
-    // Handle sentence ending punctuation words
-    .replace(/([a-z])\s+(dot|period)$/gim, '$1.')
-    .replace(/([a-z])\s+(dot|period)\s*$/gim, '$1.')
-    // Handle exclamation and question marks more carefully
-    .replace(/([a-z])\s+(exclamation mark|exclamation point)$/gim, '$1!')
-    .replace(/([a-z])\s+(question mark)$/gim, '$1?')
-    // Clean up spacing issues
+    // ONLY fix clear sentence-ending errors: "word dot" at end of sentence/paragraph
+    .replace(/([a-zA-Z])\s+(dot|period)\s*$/gim, '$1.')
+    .replace(/([a-zA-Z])\s+(dot|period)\s*\n/gim, '$1.\n')
+    .replace(/([a-zA-Z])\s+(dot|period)\s+([A-Z][a-zA-Z]+)/g, '$1. $3') // "word dot Word" -> "word. Word"
+    
+    // ONLY fix clear exclamation/question errors at sentence end
+    .replace(/([a-zA-Z])\s+(exclamation mark|exclamation point)\s*$/gim, '$1!')
+    .replace(/([a-zA-Z])\s+(question mark)\s*$/gim, '$1?')
+    
+    // Clean up spacing issues ONLY (don't change words)
     .replace(/\s+([.!?])/g, '$1')
     .replace(/([.!?])([A-Z])/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .trim();
     
-  // Log if we detected protected names
-  if (protectedNames.length > 0) {
-    console.log('🛡️ Protected character names from cleaning:', protectedNames);
-  }
+  console.log('🧠 Conservative cleaning complete - preserved legitimate word usage');
   
   // Verify cleaning worked for all punctuation names
   const remainingDots = (cleanedMarkupText.match(/\b(dot|period)\b/gi) || []).length;
@@ -789,6 +806,19 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
   const finalDotCheck = (cleanedMarkupText.match(/\bdot\b/gi) || []);
   const finalPeriodCheck = (cleanedMarkupText.match(/\bperiod\b/gi) || []);
   const finalExclamationCheck = (cleanedMarkupText.match(/\bexclamation\s*mark\b/gi) || []);
+  
+  const finalTTSDebug = {
+    finalDots: finalDotCheck,
+    finalPeriods: finalPeriodCheck, 
+    finalExclamations: finalExclamationCheck,
+    finalTextSample: cleanedMarkupText.substring(0, 300),
+    textLength: cleanedMarkupText.length
+  };
+  
+  global.debugSteps.push({ 
+    step: 'final_tts_input', 
+    debug: finalTTSDebug
+  });
   
   if (finalDotCheck.length > 0 || finalPeriodCheck.length > 0 || finalExclamationCheck.length > 0) {
     console.log('🚨 CRITICAL: PUNCTUATION WORDS STILL IN FINAL TTS TEXT!');
@@ -876,7 +906,21 @@ module.exports = async function handler(req, res) {
         audio: audioContent.toString('base64'),
         // Calculate estimated duration (rough approximation: ~150 words per minute)
         duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
-        fileSize: audioContent.length
+        fileSize: audioContent.length,
+        // Add debugging information for client-side troubleshooting
+        debug: {
+          storyLength: storyText.length,
+          audioSize: audioContent.length,
+          heroName: heroName,
+          punctuationAnalysis: {
+            storyContainsDot: (storyText.match(/\bdot\b/gi) || []).length,
+            storyContainsPeriod: (storyText.match(/\bperiod\b/gi) || []).length,
+            storyContainsExclamation: (storyText.match(/\bexclamation\s*mark\b/gi) || []).length,
+            actualPeriods: (storyText.match(/\./g) || []).length,
+            actualExclamations: (storyText.match(/!/g) || []).length
+          },
+          processingSteps: global.debugSteps || []
+        }
       };
       
       // Include generated image for surprise mode

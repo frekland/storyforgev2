@@ -1445,6 +1445,34 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
+            // 🚨 DEBUG: Log comprehensive troubleshooting information
+            if (data.debug) {
+                console.log('🚨 === TTS TROUBLESHOOTING DEBUG INFO ===');
+                console.log('🚨 Hero Name:', data.debug.heroName);
+                console.log('🚨 Story Analysis:', data.debug.punctuationAnalysis);
+                console.log('🚨 Processing Steps:', data.debug.processingSteps);
+                
+                // Check if story text contains problematic words
+                if (data.story) {
+                    const storyDotCount = (data.story.match(/\bdot\b/gi) || []).length;
+                    const storyPeriodCount = (data.story.match(/\bperiod\b/gi) || []).length;
+                    console.log('🚨 Final Story Text Analysis:');
+                    console.log('  - Contains "dot" words:', storyDotCount);
+                    console.log('  - Contains "period" words:', storyPeriodCount);
+                    console.log('  - Actual periods:', (data.story.match(/\./g) || []).length);
+                    console.log('  - Sample text:', JSON.stringify(data.story.substring(0, 300)));
+                    
+                    if (storyDotCount > 0) {
+                        console.log('🚨 FOUND DOT WORDS IN FINAL STORY - contexts:');
+                        const dotMatches = data.story.match(/.{0,30}\bdot\b.{0,30}/gi) || [];
+                        dotMatches.forEach((match, i) => {
+                            console.log(`  ${i + 1}:`, JSON.stringify(match));
+                        });
+                    }
+                }
+                console.log('🚨 === END DEBUG INFO ===');
+            }
+            
             // Handle the response
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
             
