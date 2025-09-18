@@ -3667,16 +3667,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then((savedStory) => {
                     if (savedStory) {
                         console.log('✅ Story saved to library successfully!', savedStory.id);
-                        // Refresh library if it's currently visible
-                        if (typeof window.StoryForgeLibrary !== 'undefined' && currentMode === 'library') {
-                            console.log('🔄 Refreshing library to show new story...');
-                            // Trigger a re-render of the library component
-                            const libraryRoot = document.getElementById('library-root');
-                            if (libraryRoot && typeof ReactDOM !== 'undefined') {
-                                const root = ReactDOM.createRoot(libraryRoot);
-                                root.render(React.createElement(window.StoryForgeLibrary));
+                        
+                        // Dispatch custom event to notify library of new story
+                        const storyAddedEvent = new CustomEvent('storyAdded', {
+                            detail: {
+                                title: savedStory.title || 'New Story',
+                                id: savedStory.id,
+                                story: savedStory
                             }
-                        }
+                        });
+                        window.dispatchEvent(storyAddedEvent);
+                        console.log('📢 Dispatched storyAdded event for library refresh');
                     } else {
                         console.log('ℹ️ Story save skipped (no user or offline mode)');
                     }

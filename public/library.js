@@ -343,7 +343,7 @@ const StoryForgeLibrary = () => {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '300px',
-        gap: '1rem'
+        gap: '1.5rem'
       }
     }, [
       React.createElement('div', {
@@ -415,39 +415,34 @@ const StoryForgeLibrary = () => {
         boxShadow: '0 4px 8px var(--shadow-medium)'
       }
     }, [
+      React.createElement('h1', {
+        key: 'title',
+        style: {
+          fontFamily: 'var(--font-title)',
+          fontSize: '2.5rem',
+          color: 'var(--accent-color)',
+          margin: '0 0 0.5rem 0',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }
+      }, ['📚', ' My StoryForge Library']),
       React.createElement('div', {
-        key: 'title-section',
-        style: { marginBottom: '1.5rem' }
+        key: 'stats',
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          color: 'var(--text-secondary)',
+          marginBottom: '1.5rem'
+        }
       }, [
-        React.createElement('h1', {
-          key: 'title',
-          style: {
-            fontFamily: 'var(--font-title)',
-            fontSize: '2.5rem',
-            color: 'var(--accent-color)',
-            margin: '0 0 0.5rem 0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }
-        }, ['📚', ' My StoryForge Library']),
-        React.createElement('div', {
-          key: 'stats',
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            color: 'var(--text-secondary)'
-          }
-        }, [
-          React.createElement('span', { key: 'count' }, `${stories.length} stories`),
-          user && React.createElement('span', { 
-            key: 'user',
-            style: { fontSize: '0.9rem' }
-          }, `• ${user.email}`)
-        ])
+        React.createElement('span', { key: 'count' }, `${stories.length} stories`),
+        user && React.createElement('span', { 
+          key: 'user',
+          style: { fontSize: '0.9rem' }
+        }, `• ${user.email}`)
       ]),
-      // Search
       React.createElement('input', {
         key: 'search',
         type: 'text',
@@ -500,20 +495,6 @@ const StoryForgeLibrary = () => {
           gap: '0.5rem',
           fontSize: '0.95rem',
           transition: 'all 0.3s ease'
-        },
-        onMouseEnter: (e) => {
-          if (activeTab !== tab.id) {
-            e.target.style.background = 'var(--bg-paper)';
-            e.target.style.borderColor = 'var(--accent-color)';
-            e.target.style.transform = 'translateY(-2px)';
-          }
-        },
-        onMouseLeave: (e) => {
-          if (activeTab !== tab.id) {
-            e.target.style.background = 'var(--bg-primary)';
-            e.target.style.borderColor = 'var(--border-color)';
-            e.target.style.transform = 'translateY(0)';
-          }
         }
       }, [
         React.createElement('span', { key: 'icon', style: { fontSize: '1.1rem' } }, tab.icon),
@@ -596,86 +577,29 @@ const StoryForgeLibrary = () => {
             gap: '1.5rem'
           }
         }, getCurrentContent.map((item, index) => 
-          renderContentCard(item, index)
-        })
-      )
-    ])
-  ]);
-  
-  // Render different content types
-  const renderContentCard = (item, index) => {
-    const cardKey = item.id || `${activeTab}-${index}`;
-    
-    if (activeTab === 'stories') {
-      return renderStoryCard(item, cardKey);
-    } else if (activeTab === 'artwork') {
-      return renderArtworkCard(item, cardKey);
-    } else if (activeTab === 'characters') {
-      return renderCharacterCard(item, cardKey);
-    } else if (activeTab === 'scenes') {
-      return renderSceneCard(item, cardKey);
-    }
-    
-    // Fallback
-    return React.createElement('div', { key: cardKey }, 'Unknown content type');
-  };
-  
-  const renderStoryCard = (story, cardKey) => {
-    return React.createElement('div', {
-      key: cardKey,
-      className: 'story-card',
-      style: {
-        background: 'var(--bg-paper)',
-        border: '2px solid var(--border-color)',
-        borderRadius: '15px',
-        padding: '1.5rem',
-        boxShadow: '0 4px 8px var(--shadow-medium)',
-        transition: 'all 0.3s ease',
-        cursor: 'pointer'
-      },
-            onMouseEnter: (e) => {
-              e.currentTarget.style.transform = 'translateY(-5px)';
-              e.currentTarget.style.boxShadow = '0 8px 25px var(--shadow-dark)';
-              e.currentTarget.style.borderColor = 'var(--accent-color)';
-            },
-            onMouseLeave: (e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 8px var(--shadow-medium)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
+          React.createElement('div', {
+            key: item.id || index,
+            className: 'story-card',
+            style: {
+              background: 'var(--bg-paper)',
+              border: '2px solid var(--border-color)',
+              borderRadius: '15px',
+              padding: '1.5rem',
+              boxShadow: '0 4px 8px var(--shadow-medium)',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
             }
           }, [
-            React.createElement('div', {
-              key: 'header',
+            React.createElement('h3', {
+              key: 'title',
               style: {
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '1rem'
+                fontFamily: 'var(--font-title)',
+                color: 'var(--text-primary)',
+                fontSize: '1.3rem',
+                margin: '0 0 1rem 0'
               }
-            }, [
-              React.createElement('h3', {
-                key: 'title',
-                style: {
-                  fontFamily: 'var(--font-title)',
-                  color: 'var(--text-primary)',
-                  fontSize: '1.3rem',
-                  margin: 0
-                }
-              }, story.title),
-              story.genre && React.createElement('span', {
-                key: 'genre',
-                style: {
-                  background: 'var(--accent-color)',
-                  color: 'white',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
-                }
-              }, story.genre)
-            ]),
-            
-            story.description && React.createElement('p', {
+            }, item.title || item.name),
+            item.description && React.createElement('p', {
               key: 'description',
               style: {
                 color: 'var(--text-secondary)',
@@ -683,71 +607,18 @@ const StoryForgeLibrary = () => {
                 marginBottom: '1rem',
                 fontSize: '0.95rem'
               }
-            }, story.description),
-
-            story.audio_files && story.audio_files.length > 0 && React.createElement('div', {
-              key: 'audio-info',
+            }, item.description),
+            item.genre && React.createElement('span', {
+              key: 'genre',
               style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem',
-                background: 'var(--bg-secondary)',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-                fontSize: '0.85rem',
-                color: 'var(--text-secondary)'
+                background: 'var(--accent-color)',
+                color: 'white',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: 'bold'
               }
-            }, [
-              React.createElement('span', { key: 'icon' }, '🎧'),
-              React.createElement('span', { key: 'duration' }, 
-                `Duration: ${Math.floor(story.audio_files[0].duration / 60)}:${(story.audio_files[0].duration % 60).toString().padStart(2, '0')}`
-              )
-            ]),
-
-            React.createElement('div', {
-              key: 'actions',
-              style: {
-                display: 'flex',
-                gap: '0.75rem',
-                justifyContent: 'flex-end'
-              }
-            }, [
-              story.audio_files && story.audio_files.length > 0 && React.createElement('button', {
-                key: 'play',
-                onClick: (e) => {
-                  e.stopPropagation();
-                  handlePlayStory(story);
-                },
-                style: {
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }
-              }, '▶️ Play'),
-              React.createElement('button', {
-                key: 'details',
-                onClick: (e) => {
-                  e.stopPropagation();
-                  console.log('Story details:', story);
-                },
-                style: {
-                  background: 'var(--accent-color)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }
-              }, '📖 Details')
-            ])
+            }, item.genre)
           ])
         ))
       )
