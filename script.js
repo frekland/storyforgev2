@@ -4180,20 +4180,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 controller.abort();
             }, timeoutMs);
             
-            const response = await fetch('/api/generate-story', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-                if (response.status === 504) {
-                    throw new Error(`Story generation is taking longer than expected. Multi-chapter stories with images can take up to 5 minutes. Please try with fewer chapters or without images for faster results.`);
+            let response;
+            try {
+                response = await fetch('/api/generate-story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    if (response.status === 504) {
+                        throw new Error(`Story generation is taking longer than expected. Multi-chapter stories with images can take up to 5 minutes. Please try with fewer chapters or without images for faster results.`);
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
+            } catch (fetchError) {
+                clearTimeout(timeoutId);
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('Story generation timed out. Try creating a shorter story or one without images for faster results.');
+                }
+                throw fetchError;
             }
             
             const data = await response.json();
