@@ -813,6 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'sleep-forge': '🌙 Sleep Forge',
             'dream-job': '🔮 Dream Job Detective',
             'monster-maker': '👹 Monster Maker',
+            'library': '📚 My Library',
             'help': '💡 Help & Templates'
         };
         
@@ -1804,6 +1805,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
 
+            case 'library':
+                return `
+                    <div class="mode-header paper-scrap">
+                        <button class="back-to-modes-btn" onclick="backToModeSelection()">
+                            ← Back to Modes
+                        </button>
+                        <h2 class="mode-title-header">
+                            <span class="mode-icon">📚</span>
+                            <span>My Library</span>
+                        </h2>
+                    </div>
+                    
+                    <div class="library-content paper-scrap" id="library-root">
+                        <!-- React Library component will be mounted here -->
+                        <div class="library-loading">
+                            <div class="loading-icon">📚</div>
+                            <p>Loading your library...</p>
+                        </div>
+                    </div>
+                `;
+
             default:
                 return `
                     <div class="mode-header paper-scrap">
@@ -1857,6 +1879,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'dream-job':
                 setupDreamJobModeListeners();
+                break;
+            case 'library':
+                setupLibraryModeListeners();
                 break;
             // Additional modes will be added here
         }
@@ -2110,6 +2135,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupDreamJobModeListeners = () => {
         console.log('🔮 Setting up Dream Job Detective quiz...');
         initializeDreamJobQuiz();
+    };
+    
+    const setupLibraryModeListeners = () => {
+        console.log('📚 Setting up Library mode...');
+        
+        // Initialize and mount the React Library component
+        const libraryRoot = document.getElementById('library-root');
+        if (libraryRoot && window.LibraryMain) {
+            // Clear loading content
+            libraryRoot.innerHTML = '';
+            
+            // Mount React component
+            try {
+                const root = ReactDOM.createRoot(libraryRoot);
+                root.render(React.createElement(LibraryMain));
+                console.log('✅ Library React component mounted successfully');
+            } catch (error) {
+                console.error('❌ Error mounting Library component:', error);
+                libraryRoot.innerHTML = `
+                    <div class="library-error">
+                        <div class="error-icon">⚠️</div>
+                        <h3>Library Loading Error</h3>
+                        <p>Unable to load the library interface. Please refresh the page and try again.</p>
+                    </div>
+                `;
+            }
+        } else {
+            console.warn('⚠️ Library root element or LibraryMain component not found');
+        }
     };
     
     // Dream Job Quiz Data and Logic
