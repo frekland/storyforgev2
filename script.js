@@ -3648,9 +3648,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Save story to library
         if (data.story) {
+            console.log('💾 Attempting to save story to library...');
             saveStoryToLibrary(data, mode)
-                .then(() => {
-                    console.log('✅ Story saved to library successfully!');
+                .then((savedStory) => {
+                    if (savedStory) {
+                        console.log('✅ Story saved to library successfully!', savedStory.id);
+                        // Refresh library if it's currently visible
+                        if (typeof window.StoryForgeLibrary !== 'undefined' && currentMode === 'library') {
+                            console.log('🔄 Refreshing library to show new story...');
+                            // Trigger a re-render of the library component
+                            const libraryRoot = document.getElementById('library-root');
+                            if (libraryRoot && typeof ReactDOM !== 'undefined') {
+                                const root = ReactDOM.createRoot(libraryRoot);
+                                root.render(React.createElement(window.StoryForgeLibrary));
+                            }
+                        }
+                    } else {
+                        console.log('ℹ️ Story save skipped (no user or offline mode)');
+                    }
                 })
                 .catch((saveError) => {
                     console.error('❌ Failed to save story to library:', saveError);
