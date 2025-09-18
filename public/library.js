@@ -35,9 +35,10 @@ class LibraryService {
   }
 
   async getCurrentUser() {
-    if (!this.supabase) return { id: 'demo', email: 'demo@storyforge.com' };
+    if (!this.supabase) return null;
     
     try {
+      // Check if user is already authenticated
       const { data: { user } } = await this.supabase.auth.getUser();
       if (user) {
         console.log('✅ Authenticated user:', user.id);
@@ -49,20 +50,21 @@ class LibraryService {
       const { data, error } = await this.supabase.auth.signInAnonymously();
       if (error) {
         console.error('Anonymous auth failed:', error);
-        return { id: 'demo', email: 'demo@storyforge.com' };
+        console.error('Please enable anonymous authentication in Supabase dashboard');
+        return null;
       }
       
       console.log('✅ Anonymous user created:', data.user.id);
       return data.user;
     } catch (error) {
       console.error('Auth error:', error);
-      return { id: 'demo', email: 'demo@storyforge.com' };
+      return null;
     }
   }
 
   async getStories(userId) {
-    if (!this.supabase) {
-      console.log('⚠️ Supabase not available, using mock stories');
+    if (!this.supabase || !userId) {
+      console.log('⚠️ Supabase not available or no user, using mock stories');
       return this.getMockStories();
     }
     
@@ -72,10 +74,15 @@ class LibraryService {
       const { data, error } = await this.supabase
         .from('stories')
         .select(`
-          *,
-          audio_files(*),
-          characters(*),
-          scenes(*)
+          id,
+          title,
+          description,
+          full_text,
+          story_mode,
+          hero_name,
+          age_target,
+          created_at,
+          audio_files(id, title, file_path, duration)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -116,15 +123,15 @@ class LibraryService {
         content_length: storyData.content?.length || 0
       });
       
-      const { data, error } = await this.supabase
-        .from('stories')
-        .insert({
-          title: storyData.title,
-          description: storyData.description || '',
-          content: storyData.content || storyData.text,
-          genre: storyData.genre || 'adventure',
-          user_id: userId
-        })
+        const { data, error } = await this.supabase
+          .from('stories')
+          .insert({
+            title: storyData.title,
+            description: storyData.description || '',
+            full_text: storyData.content || storyData.text, // Match database schema: full_text
+            story_mode: storyData.genre || 'classic', // Use story_mode instead of genre
+            user_id: userId
+          })
         .select()
         .single();
 
