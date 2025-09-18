@@ -3451,12 +3451,26 @@ document.addEventListener('DOMContentLoaded', () => {
             
             updateProgressStage(3, 'active', 'Crafting your personalized adventure story...');
             
+            // Faster progress updates for better UX
+            const progressInterval = setInterval(() => {
+                const randomProgress = [
+                    'Weaving magical elements...',
+                    'Adding character depth...',
+                    'Creating epic moments...',
+                    'Polishing the adventure...',
+                    'Almost ready...'
+                ];
+                updateProgressStage(3, 'active', randomProgress[Math.floor(Math.random() * randomProgress.length)]);
+            }, 2000);
+            
             // Call the API
             const response = await fetch('/api/generate-story', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
+            
+            clearInterval(progressInterval);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

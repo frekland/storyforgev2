@@ -4,7 +4,14 @@ require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Use gemini-1.5-flash-8b for faster responses (smaller model)
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash-8b",
+  generationConfig: {
+    temperature: 0.8,
+    maxOutputTokens: 2048, // Reduced for faster generation
+  }
+});
 
 // --- Google Cloud TTS Client (Fallback) ---
 const ttsClient = new textToSpeech.TextToSpeechClient({
@@ -529,6 +536,108 @@ function generateRandomStoryElements(age) {
   };
 }
 
+// Optimized story generation with parallel processing and faster models
+async function generateOptimizedStoryAndAudio({
+  heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage,
+  characterDescription, sceneDescription, age, surpriseMode
+}) {
+  const startTime = Date.now();
+  console.log('⚡ Starting optimized story generation...');
+  
+  // Use faster, shorter prompts for speed
+  const storyPrompt = createOptimizedStoryPrompt({
+    heroName, promptSetup, promptRising, promptClimax,
+    characterDescription, sceneDescription, age, surpriseMode
+  });
+  
+  console.log('⚡ Generating story with optimized prompt...');
+  
+  // Generate story with reduced token limit for faster response
+  const storyGenPromise = model.generateContent({
+    contents: [{ role: "user", parts: [{ text: storyPrompt }] }],
+    generationConfig: {
+      temperature: 0.8,
+      maxOutputTokens: age === '3' ? 400 : age === '6' ? 800 : age === '9' ? 1200 : 1600, // Reduced for speed
+    }
+  });
+  
+  // Start audio generation preparation in parallel
+  const audioConfigPromise = Promise.resolve({
+    voice: getOptimizedVoiceSettings(age),
+    audioConfig: {
+      audioEncoding: 'MP3',
+      sampleRateHertz: 22050,
+      speakingRate: age === '3' ? 0.85 : age === '6' ? 0.9 : 0.95,
+      volumeGainDb: 2.0
+    }
+  });
+  
+  // Wait for story generation
+  const storyResult = await storyGenPromise;
+  const storyText = (await storyResult.response).text().trim();
+  
+  console.log(`⚡ Story generated in ${Date.now() - startTime}ms`);
+  
+  // Process story for audio in parallel with any remaining tasks
+  const audioStartTime = Date.now();
+  const processedText = processStoryWithPauses(storyText, heroName);
+  
+  console.log('⚡ Starting audio generation...');
+  
+  const audioConfig = await audioConfigPromise;
+  const audioContent = await generateSpeechFromText(processedText, age, audioConfig.voice);
+  
+  console.log(`⚡ Audio generated in ${Date.now() - audioStartTime}ms`);
+  console.log(`⚡ Total generation time: ${Date.now() - startTime}ms`);
+  
+  return {
+    storyText,
+    audioContent,
+    generatedImage: surpriseMode ? await createStoryPlaceholderImage(heroName || 'Hero', 'adventure', age) : null
+  };
+}
+
+// Create optimized, shorter story prompts for faster generation
+function createOptimizedStoryPrompt({ heroName, promptSetup, promptRising, promptClimax, characterDescription, sceneDescription, age, surpriseMode }) {
+  const ageWords = {
+    '3': { min: 100, max: 200, complexity: 'very simple' },
+    '6': { min: 300, max: 500, complexity: 'simple' },
+    '9': { min: 600, max: 800, complexity: 'moderate' },
+    '12': { min: 800, max: 1200, complexity: 'detailed' }
+  };
+  
+  const ageConfig = ageWords[age] || ageWords['6'];
+  
+  // Generate story elements if surprise mode
+  if (surpriseMode) {
+    const elements = generateRandomStoryElements(age);
+    heroName = elements.heroName;
+    promptSetup = elements.promptSetup;
+    promptRising = elements.promptRising;
+    promptClimax = elements.promptClimax;
+  }
+  
+  // Use much shorter, focused prompt for speed
+  return `Write a ${ageConfig.complexity} children's story (${ageConfig.min}-${ageConfig.max} words) with these elements:
+
+Hero: ${heroName || 'a brave adventurer'}
+Setting: ${promptSetup || sceneDescription || 'a magical place'}
+Challenge: ${promptRising || 'an exciting challenge'}
+Resolution: ${promptClimax || 'courage and kindness win the day'}
+${characterDescription ? `\nCharacter details: ${characterDescription}` : ''}
+
+Create an engaging, complete story. Use simple sentences${age === '3' ? ' and very basic vocabulary' : ''}. Make it magical and fun!`;
+}
+
+// Optimized voice settings for faster TTS
+function getOptimizedVoiceSettings(age) {
+  return {
+    languageCode: 'en-US',
+    name: age === '3' || age === '6' ? 'en-US-Standard-E' : 'en-US-Standard-D', // Use standard voices for speed
+    ssmlGender: age === '3' || age === '6' ? 'FEMALE' : 'MALE'
+  };
+}
+
 // Mode handler functions
 async function handleClassicMode(requestBody) {
   const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode, chapters = 1 } = requestBody;
@@ -556,14 +665,41 @@ async function handleClassicMode(requestBody) {
       setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
     );
     
-    const storyPromise = generateStoryAndAudio({
+    // Parallel processing: start image analysis and story generation simultaneously
+    const imageAnalysisPromises = [];
+    
+    if (heroImage && !characterDescription) {
+      imageAnalysisPromises.push(
+        analyzeCharacterImage(heroImage).catch(err => {
+          console.warn('Character image analysis failed:', err.message);
+          return null;
+        })
+      );
+    }
+    
+    if (sceneImage && !sceneDescription) {
+      imageAnalysisPromises.push(
+        analyzeSceneImage(sceneImage).catch(err => {
+          console.warn('Scene image analysis failed:', err.message);
+          return null;
+        })
+      );
+    }
+    
+    // Start story generation immediately without waiting for image analysis
+    console.log('⚡ Starting parallel processing: story generation + image analysis');
+    
+    const storyPromise = generateOptimizedStoryAndAudio({
       heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
     });
     
-    const { storyText, audioContent, generatedImage } = await Promise.race([
-      storyPromise,
+    // Run everything in parallel
+    const [storyResult, ...imageResults] = await Promise.race([
+      Promise.all([storyPromise, ...imageAnalysisPromises]),
       timeoutPromise
     ]);
+    
+    const { storyText, audioContent, generatedImage } = storyResult;
 
     // Return story text, Base64 audio, and generated image (if any) for the client to handle
     const response = {
