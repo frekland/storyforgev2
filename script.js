@@ -4136,8 +4136,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateProgressStage(2, 'completed', '', 1, numChapters);
             }
             
-            // Move to story creation stage
-            updateProgressStage(3, 'active', 'Our storytelling wizards are weaving your tale...', 1, numChapters);
+            // Move to story creation stage with better expectations for multi-chapter
+            const storyMessage = numChapters > 1 ? 
+                `Our storytelling wizards are crafting your ${numChapters}-chapter epic tale... (This may take up to 5 minutes)` :
+                'Our storytelling wizards are weaving your tale...';
+            updateProgressStage(3, 'active', storyMessage, 1, numChapters);
             
             // Get form data in the format expected by the API (without large image data)
             const formData = {
@@ -4169,15 +4172,37 @@ document.addEventListener('DOMContentLoaded', () => {
             
             console.log('Sending story generation request:', formData);
             
-            // Call the existing story generation API
-            const response = await fetch('/api/generate-story', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            // Call the existing story generation API with extended timeout for multi-chapter stories
+            const timeoutMs = numChapters > 1 ? 300000 : 180000; // 5 min for multi-chapter, 3 min for single
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, timeoutMs);
+            
+            try {
+                const response = await fetch('/api/generate-story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    if (response.status === 504) {
+                        throw new Error(`Story generation is taking longer than expected. Multi-chapter stories with images can take up to 5 minutes. Please try with fewer chapters or without images for faster results.`);
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Story generation timed out. Try creating a shorter story or one without images for faster results.');
+                }
+                throw error;
             }
             
             const data = await response.json();
