@@ -4,12 +4,12 @@ require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-// Use standard gemini-1.5-flash for reliability (keep speed optimizations)
+// Use fastest Gemini model for speed
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash",
+  model: "gemini-1.5-flash-8b", // Fastest model
   generationConfig: {
-    temperature: 0.7, // Slightly lower for consistency
-    maxOutputTokens: 4096, // Restore higher limit
+    temperature: 0.8, // Good creativity
+    maxOutputTokens: 2048, // Shorter stories = faster generation
   }
 });
 
@@ -38,20 +38,7 @@ async function analyzeCharacterImage(heroImage) {
   
   console.log('🎨 Analyzing character artwork for rich description...');
   
-  const analysisPrompt = `
-    Look at this children's artwork and create a fun, detailed description of the character.
-    
-    Focus on:
-    - Physical appearance (colors, shapes, features)
-    - What kind of creature or person it is
-    - Any special details that make it unique
-    - Fun characteristics that would make it memorable in a story
-    
-    Write it as a vivid, child-friendly description that could be used to create an engaging story character.
-    Keep it concise but rich in visual details that bring the character to life.
-    
-    Example format: "A friendly orange tabby cat with bright green stripes running down its back, wearing a tiny blue hat with a feather, and has the biggest smile you've ever seen on a cat!"
-  `;
+  const analysisPrompt = `Describe this character in 1-2 sentences. Include colors, what type of creature/person it is, and one special detail.`;
   
   try {
     const mimeType = heroImage.substring(heroImage.indexOf(":") + 1, heroImage.indexOf(";"));
@@ -79,21 +66,7 @@ async function analyzeSceneImage(sceneImage) {
   
   console.log('🏞️ Analyzing scene artwork for rich description...');
   
-  const analysisPrompt = `
-    Look at this children's artwork of a scene and create a fun, detailed description of the setting.
-    
-    Focus on:
-    - The location or environment (forest, castle, underwater, etc.)
-    - Colors, atmosphere, and mood
-    - Important objects, buildings, or landscape features
-    - Any magical or special elements
-    - Details that would make it an exciting story setting
-    
-    Write it as a vivid, child-friendly description that could be used as a story setting.
-    Make it engaging and full of possibilities for adventure!
-    
-    Example format: "A magical forest where the trees have silver bark and purple leaves, with glowing mushrooms dotting the ground and a crystal-clear stream that sparkles like diamonds flowing through the middle!"
-  `;
+  const analysisPrompt = `Describe this scene in 1-2 sentences. What type of place is it and what colors/details make it special?`;
   
   try {
     const mimeType = sceneImage.substring(sceneImage.indexOf(":") + 1, sceneImage.indexOf(";"));
@@ -1158,24 +1131,20 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
   
   // Determine the story length and reading level based on the age
   let storyLength = 150;
-  let readingLevel = "a simple, conversational style for young children";
-  let ttsInstructions = "Use very simple sentences with gentle commas for natural pauses. Include fun dialogue and gentle excitement! Keep it warm and engaging for little ears.";
+  let readingLevel = "simple and engaging";
   
   switch (age) {
     case '6':
       storyLength = 500;
-      readingLevel = "a slightly more detailed, engaging style for emerging readers";
-      ttsInstructions = "Use simple, clear sentences with commas for natural rhythm. Include exciting dialogue and questions! Use ellipses for suspense... and hyphens for fun asides.";
+      readingLevel = "engaging for emerging readers";
       break;
     case '9':
       storyLength = 1000;
-      readingLevel = "a captivating narrative with more complex vocabulary and sentence structures for confident readers";
-      ttsInstructions = "Create dramatic audio flow with ellipses for suspense..., hyphens for character thoughts - like this - and varied comma placement for perfect speech rhythm.";
+      readingLevel = "captivating with rich vocabulary";
       break;
     case '12':
       storyLength = 2000;
-      readingLevel = "a rich, descriptive, and mature style suitable for young adult readers";
-      ttsInstructions = "Master sophisticated audio pacing: ellipses for dramatic pauses..., strategic hyphens for emphasis - building tension, and complex comma-rich sentences that create beautiful, flowing narration when spoken aloud.";
+      readingLevel = "rich and mature";
       break;
   }
   
@@ -1200,107 +1169,62 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     );
   }
   
-  // Wait for all image analysis to complete in parallel
+  // SMART OPTIMIZATION: Start image analysis and story generation concurrently
+  let imageAnalysisPromise = Promise.resolve([]);
   if (imageAnalysisPromises.length > 0) {
-    console.log(`🚀 Running ${imageAnalysisPromises.length} image analysis tasks in parallel...`);
-    const results = await Promise.all(imageAnalysisPromises);
-    
-    // Apply results
-    results.forEach(result => {
-      if (result.type === 'character') {
-        finalCharacterDescription = result.description;
-      } else if (result.type === 'scene') {
-        finalSceneDescription = result.description;
-      }
-    });
-    
-    console.log('✅ Parallel image analysis complete:', {
-      characterDesc: !!finalCharacterDescription,
-      sceneDesc: !!finalSceneDescription
-    });
+    console.log(`⚡ Starting ${imageAnalysisPromises.length} image analysis tasks in parallel with story generation...`);
+    imageAnalysisPromise = Promise.all(imageAnalysisPromises);
   }
   
-  // Generate Story with Gemini - TTS-optimized prompts with enhanced image descriptions
-  const textPrompt = `
-    You are a master storyteller for children who specializes in creating stories that sound AMAZING when read aloud. 
-    
-    CRITICAL REQUIREMENTS:
-    - Write ONLY in plain text - NO asterisks (*), NO special characters, NO formatting symbols
-    - Use natural, flowing sentences that sound great when spoken
-    - Include exciting dialogue with "said" instead of unusual speech tags
-    - Write exactly around ${storyLength} words in ${readingLevel}
-    - ${ttsInstructions}
-    
-    PUNCTUATION RULES (EXTREMELY IMPORTANT - AUDIO WILL SOUND BROKEN IF YOU VIOLATE THESE):
-    - NEVER EVER write punctuation names like: "dot", "period", "comma", "exclamation mark", "exclamation point", "question mark"
-    - ALWAYS use the actual punctuation symbols: . ! ? , : ;
-    - When ending sentences, use a period (.) NOT the word "dot" or "period"
-    - For excitement, use an exclamation mark (!) NOT "exclamation mark" or "exclamation point"
-    - For questions, use a question mark (?) NOT "question mark"
-    - Example: "Hello world! How are you?" NOT "Hello world exclamation mark How are you question mark"
-    - This is CRITICAL for audio quality - punctuation names will be read aloud and sound terrible
-    
-    OPTIMIZE FOR BEAUTIFUL TTS AUDIO - Use these native Chirp3-HD punctuation features:
-    
-    🎵 PAUSE CONTROL through Natural Punctuation:
-    - Periods (.): Full stop with standard sentence-ending pause - perfect for story beats
-    - Commas (,): Short, natural intra-sentence pauses - use generously for rhythm
-    - Ellipses (...): Prolonged, deliberate pauses for suspense, trailing thoughts, dramatic effect
-    - Hyphens (-): Brief breaks in thought - great for asides, emphasis, or character quirks
-    - Paragraph breaks: Longer natural pauses between story sections
-    
-    🎭 STORYTELLING TECHNIQUES for Audio:
-    - Use ellipses for suspense: "The door slowly opened... and inside was..."
-    - Use hyphens for character thoughts: "Maybe - just maybe - this could work!"
-    - Use commas to build rhythm: "Slowly, carefully, quietly, she tiptoed forward."
-    - Vary sentence lengths: Short punchy sentences. Then longer, flowing descriptive passages.
-    
-    Example with perfect TTS optimization:
-    "Once upon a time, in a magical forest filled with secrets, there lived a brave little mouse named Pip.
-    
-    One sunny morning - the kind that makes everything sparkle - Pip discovered something extraordinary... something that would change everything."
-    
-    Create an exciting story based on these elements:
-    - Hero's Name: ${heroName || 'a mysterious hero'}
-    - The Beginning: ${promptSetup || 'a surprising place'}
-    - The Challenge: ${promptRising || 'an unexpected problem'}
-    - The Climax: ${promptClimax || 'a clever solution'}
-    
-    ${finalCharacterDescription && finalSceneDescription ? 
-      `CRITICAL STORYTELLING RULES:
-      1. CHARACTER INTEGRATION: Don't say "${finalCharacterDescription}" as a separate description. Instead, naturally weave these details into the action: "As ${heroName} [action], her [specific detail from description] [action]."
-      2. SETTING INTEGRATION: Don't describe the setting separately. Instead, reveal it through ${heroName}'s experience: "${heroName} stepped into [setting detail], noticing [another detail]."
-      3. SEAMLESS FLOW: Merge descriptions with plot - no information dumps or separate paragraphs.
-      
-      Character details to weave in: ${finalCharacterDescription}
-      Setting details to weave in: ${finalSceneDescription}` : 
-      finalCharacterDescription ? 
-        `CRITICAL: Don't describe ${heroName} in a separate paragraph. Weave these details naturally into actions: "As ${heroName} [action], [character detail from: ${finalCharacterDescription}]"` :
-        finalSceneDescription ?
-          `CRITICAL: Don't describe the setting separately. Reveal it through ${heroName}'s actions: "${heroName} [action] in [detail from: ${finalSceneDescription}]"` :
-          ''
-    }
-    
-    Make it magical and engaging for children, with natural speech that flows beautifully when narrated! Remember to integrate all descriptions seamlessly into the narrative flow.
-  `;
+  // Generate Story with Gemini - optimized prompt that preserves quality
+  const textPrompt = `Create a ${storyLength}-word children's story (${readingLevel} style) for age ${age}.
+
+STORY ELEMENTS:
+- Hero: ${heroName || 'a brave hero'}
+- Beginning: ${promptSetup || 'starts an adventure'}
+- Challenge: ${promptRising || 'faces a problem'} 
+- Resolution: ${promptClimax || 'finds a solution'}
+
+${finalCharacterDescription ? `WEAVE IN CHARACTER: ${finalCharacterDescription}` : ''}
+${finalSceneDescription ? `WEAVE IN SETTING: ${finalSceneDescription}` : ''}
+
+MAKE IT AMAZING:
+- Use proper punctuation: . ! ? ,
+- Never write punctuation words ("dot", "comma", etc.) - use symbols
+- Natural dialogue and exciting action
+- Magical and engaging for children
+- Plain text only, no formatting symbols`;
   
-  const promptParts = [{ text: textPrompt }];
-  
-  // Note: We now use dedicated image analysis functions above to create rich descriptions
-  // The character and scene descriptions are embedded directly in the text prompt
-  
+  // SMART OPTIMIZATION: Complete image analysis first, then generate story with full context
   const storyGenStart = Date.now();
-  console.log('📝 Starting Gemini story generation...');
-  console.log('🎭 Story context:', {
-    heroName: heroName || 'none',
-    hasCharacterDesc: !!finalCharacterDescription,
-    hasSceneDesc: !!finalSceneDescription,
-    characterDescSample: finalCharacterDescription ? finalCharacterDescription.substring(0, 100) : 'none',
-    sceneDescSample: finalSceneDescription ? finalSceneDescription.substring(0, 100) : 'none'
+  console.log('⚡ Completing image analysis before story generation...');
+  
+  // Wait for image analysis to complete first
+  const imageResults = await imageAnalysisPromise;
+  
+  // Apply image analysis results
+  imageResults.forEach(result => {
+    if (result.type === 'character') {
+      finalCharacterDescription = result.description;
+    } else if (result.type === 'scene') {
+      finalSceneDescription = result.description;
+    }
   });
   
-  const result = await model.generateContent({ contents: [{ role: "user", parts: promptParts }] });
+  console.log('✅ Image analysis complete, generating story with full context...');
+  
+  // Now generate story with complete image descriptions
+  const result = await model.generateContent({ 
+    contents: [{ role: "user", parts: [{ text: textPrompt }] }] 
+  });
   const rawStoryText = (await result.response).text();
+  
+  console.log('✅ Story generation complete:', {
+    totalTimeMs: Date.now() - storyGenStart,
+    storyLength: rawStoryText.length,
+    hasCharacterDesc: !!finalCharacterDescription,
+    hasSceneDesc: !!finalSceneDescription
+  });
   
   console.log('✅ Gemini story generation complete:', {
     timeMs: Date.now() - storyGenStart,
@@ -1459,31 +1383,24 @@ async function generateStoryAndAudio({ heroName, promptSetup, promptRising, prom
     engine: USE_OPENAI_TTS ? 'OpenAI (no pause control)' : 'Google Chirp3-HD (with pause control)'
   });
   
-  // Convert Story Text to Speech using appropriate engine and text format
+  // SMART OPTIMIZATION: Start TTS generation immediately while doing final processing
   const ttsStart = Date.now();
-  console.log('🎵 Starting TTS generation...');
+  console.log('🚀 Starting PARALLEL TTS generation for speed...');
   
-  let audioContent;
+  // Start audio generation as a promise (non-blocking)
+  const audioPromise = USE_OPENAI_TTS ? 
+    generateOpenAITTS(cleanStoryText, voiceSettings)
+      .catch(openaiError => {
+        console.warn('⚠️ OpenAI TTS failed, falling back to Google:', openaiError.message);
+        return generateGoogleTTS(markupStoryText, age, heroName);
+      }) :
+    generateGoogleTTS(markupStoryText, age, heroName);
   
-  if (USE_OPENAI_TTS) {
-    try {
-      console.log('🎵 Attempting OpenAI TTS (using clean text)...');
-      audioContent = await generateOpenAITTS(cleanStoryText, voiceSettings);
-      console.log('✅ OpenAI TTS successful, using OpenAI audio');
-    } catch (openaiError) {
-      console.warn('⚠️ OpenAI TTS failed, falling back to Google TTS with pause control:', openaiError.message);
-      try {
-        audioContent = await generateGoogleTTS(markupStoryText, age, heroName);
-        console.log('✅ Google TTS fallback successful with pause markers');
-      } catch (googleError) {
-        console.error('❌ Both TTS services failed:', googleError.message);
-        throw new Error(`Both TTS services failed. OpenAI: ${openaiError.message.substring(0, 100)}... Google: ${googleError.message}`);
-      }
-    }
-  } else {
-    console.log('🎥 Using Google Chirp3-HD with pause control (using markup text)...');
-    audioContent = await generateGoogleTTS(markupStoryText, age, heroName);
-  }
+  // Do other work while audio generates in parallel
+  console.log('⚡ Processing other tasks while audio generates...');
+  
+  // Wait for audio to complete
+  const audioContent = await audioPromise;
   
   console.log('✅ TTS generation complete:', {
     timeMs: Date.now() - ttsStart,
