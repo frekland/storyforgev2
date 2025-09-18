@@ -8,6 +8,30 @@ class LibraryService {
   constructor() {
     this.supabase = window.supabase;
     this.isOnline = !!this.supabase;
+    
+    if (this.supabase) {
+      console.log('✅ Supabase client initialized');
+      this.testConnection();
+    } else {
+      console.error('❌ Supabase client not found on window object');
+    }
+  }
+  
+  async testConnection() {
+    try {
+      console.log('🔍 Testing Supabase connection...');
+      const { data, error } = await this.supabase
+        .from('stories')
+        .select('count', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('❌ Supabase connection test failed:', error);
+      } else {
+        console.log('✅ Supabase connection test successful');
+      }
+    } catch (error) {
+      console.error('❌ Supabase connection error:', error);
+    }
   }
 
   async getCurrentUser() {
@@ -15,7 +39,21 @@ class LibraryService {
     
     try {
       const { data: { user } } = await this.supabase.auth.getUser();
-      return user || { id: 'demo', email: 'demo@storyforge.com' };
+      if (user) {
+        console.log('✅ Authenticated user:', user.id);
+        return user;
+      }
+      
+      // Sign in anonymously for demo purposes
+      console.log('🔑 No authenticated user, signing in anonymously...');
+      const { data, error } = await this.supabase.auth.signInAnonymously();
+      if (error) {
+        console.error('Anonymous auth failed:', error);
+        return { id: 'demo', email: 'demo@storyforge.com' };
+      }
+      
+      console.log('✅ Anonymous user created:', data.user.id);
+      return data.user;
     } catch (error) {
       console.error('Auth error:', error);
       return { id: 'demo', email: 'demo@storyforge.com' };
@@ -23,7 +61,12 @@ class LibraryService {
   }
 
   async getStories(userId) {
-    if (!this.supabase) return this.getMockStories();
+    if (!this.supabase) {
+      console.log('⚠️ Supabase not available, using mock stories');
+      return this.getMockStories();
+    }
+    
+    console.log('📋 Fetching stories for user:', userId);
     
     try {
       const { data, error } = await this.supabase
@@ -37,45 +80,42 @@ class LibraryService {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || this.getMockStories();
+      if (error) {
+        console.error('❌ Supabase fetch error:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('✅ Stories fetched successfully:', data?.length || 0, 'stories');
+      return data || [];
     } catch (error) {
-      console.error('Error fetching stories:', error);
+      console.error('❌ Error fetching stories, using mock data:', error.message);
       return this.getMockStories();
     }
   }
 
   async saveStory(storyData, userId) {
     if (!this.supabase) {
-      console.log('Saving story to local storage:', storyData.title);
-      // Save to localStorage as a fallback
-      const savedStories = JSON.parse(localStorage.getItem('storyforge-stories') || '[]');
-      const newStory = {
-        id: 'story-' + Date.now(),
-        title: storyData.title,
-        description: storyData.description,
-        content: storyData.content,
-        genre: storyData.genre,
-        created_at: new Date().toISOString(),
-        user_id: userId,
-        audio_files: storyData.audioUrl ? [{
-          id: 'audio-' + Date.now(),
-          file_path: storyData.audioUrl,
-          duration: storyData.duration || 0
-        }] : [],
-        characters: [],
-        scenes: []
-      };
-      savedStories.unshift(newStory); // Add to beginning
-      localStorage.setItem('storyforge-stories', JSON.stringify(savedStories));
-      
-      // Trigger library refresh
-      window.dispatchEvent(new CustomEvent('storyAdded', { detail: newStory }));
-      
-      return newStory;
+      throw new Error('Supabase client not initialized');
     }
+    
+    console.log('💾 Saving story to Supabase:', storyData.title);
+    console.log('🔍 User ID:', userId);
 
     try {
+      console.log('📄 Inserting story data:', {
+        title: storyData.title,
+        description: storyData.description || '',
+        genre: storyData.genre || 'adventure',
+        user_id: userId,
+        content_length: storyData.content?.length || 0
+      });
+      
       const { data, error } = await this.supabase
         .from('stories')
         .insert({
@@ -88,7 +128,18 @@ class LibraryService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase insert error:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('✅ Story inserted successfully:', data);
 
       // Save audio file if provided
       if (storyData.audioUrl && data) {
@@ -109,31 +160,18 @@ class LibraryService {
   }
 
   getMockStories() {
-    // Get stories from localStorage
-    const savedStories = JSON.parse(localStorage.getItem('storyforge-stories') || '[]');
-    
-    // Add default story if no saved stories
-    if (savedStories.length === 0) {
-      return [
-        {
-          id: 'story-1',
-          title: 'The Magical Garden Adventure',
-          description: 'A young explorer discovers a secret garden filled with talking flowers and friendly creatures.',
-          genre: 'fantasy',
-          created_at: new Date().toISOString(),
-          audio_files: [{
-            id: 'audio-1',
-            duration: 780
-          }],
-          characters: [
-            { id: 'char-1', name: 'Luna the Explorer' }
-          ],
-          scenes: []
-        }
-      ];
-    }
-    
-    return savedStories;
+    return [
+      {
+        id: 'story-demo',
+        title: 'Welcome to StoryForge!',
+        description: 'This is a sample story to show you how your library works. Create your own stories to see them appear here!',
+        genre: 'demo',
+        created_at: new Date().toISOString(),
+        audio_files: [],
+        characters: [],
+        scenes: []
+      }
+    ];
   }
 }
 
