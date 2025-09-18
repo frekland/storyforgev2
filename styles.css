@@ -816,6 +816,430 @@ body {
   }
 }
 
+/* Dream Job Quiz Styles */
+.quiz-screen {
+    display: none;
+}
+
+.quiz-screen.active {
+    display: block;
+}
+
+.quiz-screen.hidden {
+    display: none;
+}
+
+.quiz-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Quiz Start Screen */
+.quiz-intro {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.quiz-icon-large {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.quiz-title {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-family: var(--title-font);
+}
+
+.quiz-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+}
+
+.quiz-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: var(--title-font);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.start-quiz-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 280px;
+    font-family: var(--title-font);
+}
+
+.start-quiz-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(109, 40, 217, 0.3);
+}
+
+/* Quiz Progress */
+.quiz-progress {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(109, 40, 217, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Question Content */
+.question-content {
+    text-align: center;
+}
+
+.question-header {
+    margin-bottom: 2rem;
+}
+
+.question-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.question-title {
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    font-family: var(--title-font);
+    line-height: 1.4;
+}
+
+.question-options {
+    display: grid;
+    gap: 1rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.quiz-option {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.quiz-option:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(109, 40, 217, 0.15);
+}
+
+.option-emoji {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.option-text {
+    color: var(--text-color);
+    flex: 1;
+}
+
+.select-option {
+    justify-content: center;
+    text-align: center;
+}
+
+/* Text Input Question */
+.text-input-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.quiz-text-input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-family: var(--body-font);
+}
+
+.quiz-text-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
+}
+
+.quiz-text-submit {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.quiz-text-submit:hover {
+    background: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+/* Quiz Results */
+.results-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.results-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.results-title {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-family: var(--title-font);
+}
+
+.career-match {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.career-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.career-title {
+    color: var(--primary-color);
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+    font-family: var(--title-font);
+}
+
+.career-description {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.career-traits {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.career-traits h5 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--title-font);
+}
+
+.traits-list {
+    list-style: none;
+    padding: 0;
+}
+
+.traits-list li {
+    padding: 0.5rem 0;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.career-examples {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.career-examples h5 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--title-font);
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.example-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.example-card:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.example-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.example-text {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Results Actions */
+.results-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.career-story-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 280px;
+    font-family: var(--title-font);
+}
+
+.career-story-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(109, 40, 217, 0.3);
+}
+
+.retake-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.retake-btn:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .quiz-container {
+        padding: 1rem;
+    }
+    
+    .quiz-stats {
+        gap: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .question-icon {
+        font-size: 2.5rem;
+    }
+    
+    .question-title {
+        font-size: 1.2rem;
+    }
+    
+    .quiz-option {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .option-emoji {
+        font-size: 1.3rem;
+    }
+    
+    .examples-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .career-story-btn,
+    .start-quiz-btn {
+        min-width: 250px;
+        font-size: 1rem;
+    }
+}
+
 /* Fun background pattern */
 body::before {
   content: '';

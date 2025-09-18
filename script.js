@@ -1693,122 +1693,98 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="instructions-content">
                                 <div class="instruction-point">
                                     <span class="instruction-icon">🔮</span>
-                                    <span><strong>Discover your future!</strong> Take our fun personality quiz to find your perfect career match.</span>
+                                    <span><strong>Interactive Quiz!</strong> Answer fun questions to discover your perfect future career.</span>
                                 </div>
                                 <div class="instruction-point">
-                                    <span class="instruction-icon">🎯</span>
-                                    <span><strong>AI-powered matching:</strong> Our smart system analyzes your interests and suggests exciting jobs.</span>
+                                    <span class="instruction-icon">✨</span>
+                                    <span><strong>Quick & Fun:</strong> Just click through our personality questions - no typing required!</span>
                                 </div>
                                 <div class="instruction-point">
                                     <span class="instruction-icon">📖</span>
-                                    <span><strong>Story time:</strong> Hear an inspiring story about your future career adventures!</span>
+                                    <span><strong>Get Your Story:</strong> Hear an inspiring story about your future career adventure!</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="story-form-container">
-                        <form id="dream-job-form" class="story-form">
-                            <div class="unified-story-group paper-scrap">
-                                <h3 class="section-title">
-                                    <span class="section-icon">🔮</span>
-                                    <span>Career Discovery Quiz</span>
-                                </h3>
-                                
-                                <div class="story-elements">
-                                    <div class="input-grid">
-                                        <div class="input-group">
-                                            <label for="dream-child-name" class="compact-label">
-                                                <span>🌟 Your Name *</span>
-                                            </label>
-                                            <input type="text" id="dream-child-name" class="paper-input" placeholder="Enter your name..." required>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="dream-favorite-subject" class="compact-label">
-                                                <span>📚 Favorite Subject *</span>
-                                            </label>
-                                            <select id="dream-favorite-subject" class="paper-select" required>
-                                                <option value="">Choose your favorite...</option>
-                                                <option value="science">🔬 Science</option>
-                                                <option value="art">🎨 Art</option>
-                                                <option value="technology">💻 Technology</option>
-                                                <option value="nature">🌿 Nature</option>
-                                                <option value="music">🎵 Music</option>
-                                                <option value="storytelling">📖 Reading & Writing</option>
-                                                <option value="math">🧮 Math</option>
-                                                <option value="cooking">👨‍🍳 Cooking</option>
-                                                <option value="geography">🗺️ Geography</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="dream-activity" class="compact-label">
-                                                <span>⚡ Dream Activity *</span>
-                                            </label>
-                                            <select id="dream-activity" class="paper-select" required>
-                                                <option value="">What do you love to do?</option>
-                                                <option value="creating">🎨 Creating & Making Things</option>
-                                                <option value="exploring">🔍 Exploring & Discovering</option>
-                                                <option value="building">🏗️ Building & Engineering</option>
-                                                <option value="performing">🎭 Performing & Entertaining</option>
-                                                <option value="solving">🧩 Solving Problems</option>
-                                                <option value="teaching">👩‍🏫 Teaching & Helping Others</option>
-                                                <option value="cooking">👨‍🍳 Cooking & Food</option>
-                                                <option value="traveling">✈️ Traveling & Adventure</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="dream-work-environment" class="compact-label">
-                                                <span>🏢 Work Environment</span>
-                                            </label>
-                                            <select id="dream-work-environment" class="paper-select">
-                                                <option value="">Where do you like to be?</option>
-                                                <option value="outdoors">🌲 Outdoors in Nature</option>
-                                                <option value="indoors">🏢 Indoors & Cozy</option>
-                                                <option value="teams">👥 Working with Teams</option>
-                                                <option value="quiet">🤫 Quiet & Peaceful</option>
-                                                <option value="labs">🧪 Labs & Workshops</option>
-                                                <option value="creative">🎨 Creative Studios</option>
-                                            </select>
-                                        </div>
-                                        <div class="input-group">
-                                            <label for="dream-helping-style" class="compact-label">
-                                                <span>💝 How You Like to Help</span>
-                                            </label>
-                                            <select id="dream-helping-style" class="paper-select">
-                                                <option value="">How do you help others?</option>
-                                                <option value="inspiring">✨ Inspiring & Motivating</option>
-                                                <option value="protecting">🛡️ Protecting & Saving</option>
-                                                <option value="teaching">📖 Teaching & Educating</option>
-                                                <option value="creating">🎨 Creating Beautiful Things</option>
-                                                <option value="solving">🔧 Solving Problems</option>
-                                                <option value="entertaining">🎪 Entertaining & Fun</option>
-                                            </select>
-                                        </div>
+                    <!-- Quiz Start Screen -->
+                    <div id="quiz-start-screen" class="quiz-screen active">
+                        <div class="quiz-container paper-scrap">
+                            <div class="quiz-intro">
+                                <div class="quiz-icon-large">🔮</div>
+                                <h3 class="quiz-title">Ready to Discover Your Dream Job?</h3>
+                                <p class="quiz-description">
+                                    We'll ask you some fun questions about what you like and don't like. 
+                                    Then our AI will match you with exciting careers and create a personalized story about your future!
+                                </p>
+                                <div class="quiz-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-number">8</span>
+                                        <span class="stat-label">Quick Questions</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number">2</span>
+                                        <span class="stat-label">Minutes</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number">1</span>
+                                        <span class="stat-label">Dream Job</span>
                                     </div>
                                 </div>
-                                
-                                <div class="age-selection-compact">
-                                    <label for="dream-story-age" class="compact-label">
-                                        <span>Story Length:</span>
-                                    </label>
-                                    <select id="dream-story-age" class="paper-select">
-                                        <option value="9" selected>🧒 Future Dreamers (9-12 years, ~800 words)</option>
-                                        <option value="12">🧑 Career Explorers (12+ years, ~1200 words)</option>
-                                    </select>
+                            </div>
+                            <button id="start-quiz-btn" class="start-quiz-btn">
+                                <span class="btn-text">🚀 Find My Future Job!</span>
+                                <div class="btn-sparkles">
+                                    <span>✨</span>
+                                    <span>🎯</span>
+                                    <span>✨</span>
                                 </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quiz Questions Screen -->
+                    <div id="quiz-questions-screen" class="quiz-screen hidden">
+                        <div class="quiz-container paper-scrap">
+                            <div class="quiz-progress">
+                                <div class="progress-bar">
+                                    <div id="quiz-progress-fill" class="progress-fill"></div>
+                                </div>
+                                <span id="quiz-progress-text" class="progress-text">Question 1 of 8</span>
                             </div>
                             
-                            <div class="forge-section">
-                                <button type="submit" class="forge-btn-centered">
-                                    <span class="btn-text">🔮 Discover My Dream Job! 🔮</span>
+                            <div id="quiz-question-content" class="question-content">
+                                <!-- Questions will be dynamically loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quiz Results Screen -->
+                    <div id="quiz-results-screen" class="quiz-screen hidden">
+                        <div class="quiz-container paper-scrap">
+                            <div class="results-header">
+                                <div class="results-icon">🎆</div>
+                                <h3 class="results-title">Your Perfect Career Match!</h3>
+                            </div>
+                            
+                            <div id="quiz-results-content" class="results-content">
+                                <!-- Results will be dynamically loaded here -->
+                            </div>
+                            
+                            <div class="results-actions">
+                                <button id="generate-career-story-btn" class="career-story-btn">
+                                    <span class="btn-text">📚 Create My Career Story!</span>
                                     <div class="btn-sparkles">
-                                        <span>💼</span>
                                         <span>✨</span>
-                                        <span>💼</span>
+                                        <span>🌟</span>
+                                        <span>✨</span>
                                     </div>
                                 </button>
+                                <button id="retake-quiz-btn" class="retake-btn">
+                                    <span>🔄 Take Quiz Again</span>
+                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 `;
 
@@ -2116,16 +2092,516 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const setupDreamJobModeListeners = () => {
-        const dreamJobForm = document.getElementById('dream-job-form');
+        console.log('🔮 Setting up Dream Job Detective quiz...');
+        initializeDreamJobQuiz();
+    };
+    
+    // Dream Job Quiz Data and Logic
+    const dreamJobQuizQuestions = [
+        {
+            id: 1,
+            type: 'binary',
+            question: 'Do you prefer working indoors or outdoors?',
+            icon: '🌲',
+            options: [
+                { value: 'indoors', text: 'Indoors & Cozy', emoji: '🏢' },
+                { value: 'outdoors', text: 'Outdoors & Nature', emoji: '🌲' }
+            ]
+        },
+        {
+            id: 2,
+            type: 'binary',
+            question: 'Would you rather solve puzzles or create art?',
+            icon: '🧩',
+            options: [
+                { value: 'puzzles', text: 'Solve Puzzles', emoji: '🧩' },
+                { value: 'create', text: 'Create Art', emoji: '🎨' }
+            ]
+        },
+        {
+            id: 3,
+            type: 'binary',
+            question: 'Do you like working with your hands or your brain more?',
+            icon: '🧠',
+            options: [
+                { value: 'hands', text: 'My Hands', emoji: '🔨' },
+                { value: 'brain', text: 'My Brain', emoji: '🧠' }
+            ]
+        },
+        {
+            id: 4,
+            type: 'multiple',
+            question: 'Which of these sounds most exciting to you?',
+            icon: '✨',
+            options: [
+                { value: 'explore', text: 'Explore New Places', emoji: '🗺️' },
+                { value: 'perform', text: 'Perform on Stage', emoji: '🎭' },
+                { value: 'help', text: 'Help People', emoji: '👩‍⚕️' },
+                { value: 'build', text: 'Build Cool Things', emoji: '🔧' }
+            ]
+        },
+        {
+            id: 5,
+            type: 'binary',
+            question: 'Do you prefer working alone or with a team?',
+            icon: '👥',
+            options: [
+                { value: 'alone', text: 'Work Alone', emoji: '🥱' },
+                { value: 'team', text: 'Work with Teams', emoji: '👥' }
+            ]
+        },
+        {
+            id: 6,
+            type: 'text',
+            question: 'What\'s your name?',
+            icon: '🌟',
+            placeholder: 'Enter your first name...'
+        },
+        {
+            id: 7,
+            type: 'select',
+            question: 'What\'s your favorite school subject?',
+            icon: '📚',
+            options: [
+                { value: 'science', text: 'Science 🔬' },
+                { value: 'art', text: 'Art 🎨' },
+                { value: 'technology', text: 'Technology 💻' },
+                { value: 'nature', text: 'Nature 🌿' },
+                { value: 'music', text: 'Music 🎵' },
+                { value: 'storytelling', text: 'Reading & Writing 📖' },
+                { value: 'math', text: 'Math 🧮' },
+                { value: 'cooking', text: 'Cooking 👨‍🍳' },
+                { value: 'geography', text: 'Geography 🗺️' }
+            ]
+        },
+        {
+            id: 8,
+            type: 'select',
+            question: 'How do you like to help others?',
+            icon: '💝',
+            options: [
+                { value: 'inspiring', text: 'Inspiring & Motivating ✨' },
+                { value: 'protecting', text: 'Protecting & Saving 🛡️' },
+                { value: 'teaching', text: 'Teaching & Educating 📖' },
+                { value: 'creating', text: 'Creating Beautiful Things 🎨' },
+                { value: 'solving', text: 'Solving Problems 🔧' },
+                { value: 'entertaining', text: 'Entertaining & Fun 🎪' }
+            ]
+        }
+    ];
+    
+    let currentQuestionIndex = 0;
+    let quizAnswers = {};
+    
+    const initializeDreamJobQuiz = () => {
+        const startBtn = document.getElementById('start-quiz-btn');
+        const retakeBtn = document.getElementById('retake-quiz-btn');
+        const generateStoryBtn = document.getElementById('generate-career-story-btn');
         
-        console.log('🔮 Setting up Dream Job Detective mode listeners...');
+        if (startBtn) {
+            startBtn.addEventListener('click', startQuiz);
+        }
         
-        // Form submission
-        if (dreamJobForm) {
-            dreamJobForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await generateDreamJob();
+        if (retakeBtn) {
+            retakeBtn.addEventListener('click', resetQuiz);
+        }
+        
+        if (generateStoryBtn) {
+            generateStoryBtn.addEventListener('click', generateCareerStory);
+        }
+    };
+    
+    const startQuiz = () => {
+        currentQuestionIndex = 0;
+        quizAnswers = {};
+        
+        // Hide start screen, show questions screen
+        document.getElementById('quiz-start-screen').classList.remove('active');
+        document.getElementById('quiz-start-screen').classList.add('hidden');
+        document.getElementById('quiz-questions-screen').classList.remove('hidden');
+        
+        displayQuestion(0);
+    };
+    
+    const displayQuestion = (index) => {
+        const question = dreamJobQuizQuestions[index];
+        const questionContent = document.getElementById('quiz-question-content');
+        const progressFill = document.getElementById('quiz-progress-fill');
+        const progressText = document.getElementById('quiz-progress-text');
+        
+        // Update progress
+        const progress = ((index + 1) / dreamJobQuizQuestions.length) * 100;
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `Question ${index + 1} of ${dreamJobQuizQuestions.length}`;
+        
+        // Generate question HTML based on type
+        let questionHTML = `
+            <div class="question-header">
+                <div class="question-icon">${question.icon}</div>
+                <h3 class="question-title">${question.question}</h3>
+            </div>
+            <div class="question-options">
+        `;
+        
+        if (question.type === 'binary') {
+            question.options.forEach(option => {
+                questionHTML += `
+                    <button class="quiz-option" data-value="${option.value}">
+                        <span class="option-emoji">${option.emoji}</span>
+                        <span class="option-text">${option.text}</span>
+                    </button>
+                `;
             });
+        } else if (question.type === 'multiple') {
+            question.options.forEach(option => {
+                questionHTML += `
+                    <button class="quiz-option" data-value="${option.value}">
+                        <span class="option-emoji">${option.emoji}</span>
+                        <span class="option-text">${option.text}</span>
+                    </button>
+                `;
+            });
+        } else if (question.type === 'text') {
+            questionHTML += `
+                <div class="text-input-container">
+                    <input type="text" id="quiz-text-input" class="quiz-text-input" placeholder="${question.placeholder}" required>
+                    <button id="quiz-text-submit" class="quiz-text-submit">Continue →</button>
+                </div>
+            `;
+        } else if (question.type === 'select') {
+            question.options.forEach(option => {
+                questionHTML += `
+                    <button class="quiz-option select-option" data-value="${option.value}">
+                        <span class="option-text">${option.text}</span>
+                    </button>
+                `;
+            });
+        }
+        
+        questionHTML += '</div>';
+        
+        questionContent.innerHTML = questionHTML;
+        
+        // Add event listeners based on question type
+        if (question.type === 'text') {
+            const textInput = document.getElementById('quiz-text-input');
+            const textSubmit = document.getElementById('quiz-text-submit');
+            
+            const handleTextSubmit = () => {
+                const value = textInput.value.trim();
+                if (value) {
+                    answerQuestion(question.id, value);
+                }
+            };
+            
+            textSubmit.addEventListener('click', handleTextSubmit);
+            textInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleTextSubmit();
+                }
+            });
+            
+            // Focus on input
+            setTimeout(() => textInput.focus(), 100);
+        } else {
+            // Add click listeners to option buttons
+            const optionButtons = questionContent.querySelectorAll('.quiz-option');
+            optionButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const value = e.currentTarget.getAttribute('data-value');
+                    answerQuestion(question.id, value);
+                });
+            });
+        }
+    };
+    
+    const answerQuestion = (questionId, answer) => {
+        quizAnswers[questionId] = answer;
+        
+        // Move to next question or show results
+        currentQuestionIndex++;
+        if (currentQuestionIndex < dreamJobQuizQuestions.length) {
+            setTimeout(() => displayQuestion(currentQuestionIndex), 300);
+        } else {
+            setTimeout(() => showQuizResults(), 500);
+        }
+    };
+    
+    const showQuizResults = () => {
+        // Hide questions screen, show results screen
+        document.getElementById('quiz-questions-screen').classList.add('hidden');
+        document.getElementById('quiz-results-screen').classList.remove('hidden');
+        
+        // Calculate career match based on answers
+        const careerMatch = calculateCareerMatch(quizAnswers);
+        
+        // Display results
+        const resultsContent = document.getElementById('quiz-results-content');
+        resultsContent.innerHTML = `
+            <div class="career-match">
+                <div class="career-icon">${careerMatch.icon}</div>
+                <h4 class="career-title">${careerMatch.title}</h4>
+                <p class="career-description">${careerMatch.description}</p>
+                
+                <div class="career-traits">
+                    <h5>Perfect for you because you:</h5>
+                    <ul class="traits-list">
+                        ${careerMatch.traits.map(trait => `<li>✨ ${trait}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="career-examples">
+                    <h5>Example careers:</h5>
+                    <div class="examples-grid">
+                        ${careerMatch.examples.map(example => `
+                            <div class="example-card">
+                                <span class="example-emoji">${example.emoji}</span>
+                                <span class="example-text">${example.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+    
+    const calculateCareerMatch = (answers) => {
+        // Career matching logic based on quiz responses
+        const careers = {
+            scientist: {
+                icon: '🔬',
+                title: 'Amazing Scientist',
+                description: 'You love exploring, solving puzzles, and discovering how the world works!',
+                traits: [
+                    'Love solving complex problems',
+                    'Curious about how things work',
+                    'Enjoy working with your brain',
+                    'Like discovering new things'
+                ],
+                examples: [
+                    { emoji: '🧠', text: 'Neuroscientist' },
+                    { emoji: '🌌', text: 'Marine Biologist' },
+                    { emoji: '⚙️', text: 'Engineer' },
+                    { emoji: '🔭', text: 'Researcher' }
+                ]
+            },
+            artist: {
+                icon: '🎨',
+                title: 'Creative Artist',
+                description: 'You have an amazing imagination and love creating beautiful things for the world to enjoy!',
+                traits: [
+                    'Express yourself through creativity',
+                    'Love making beautiful things',
+                    'Have a vivid imagination',
+                    'Enjoy inspiring others'
+                ],
+                examples: [
+                    { emoji: '🎨', text: 'Painter' },
+                    { emoji: '🎬', text: 'Movie Director' },
+                    { emoji: '🎤', text: 'Musician' },
+                    { emoji: '📝', text: 'Writer' }
+                ]
+            },
+            helper: {
+                icon: '👩‍⚕️',
+                title: 'Super Helper',
+                description: 'You have a big heart and love making other people happy and healthy!',
+                traits: [
+                    'Care deeply about others',
+                    'Want to make a difference',
+                    'Good at understanding people',
+                    'Love helping and teaching'
+                ],
+                examples: [
+                    { emoji: '👩‍⚕️', text: 'Doctor' },
+                    { emoji: '👩‍🏫', text: 'Teacher' },
+                    { emoji: '👮', text: 'Police Officer' },
+                    { emoji: '🚑', text: 'Firefighter' }
+                ]
+            },
+            builder: {
+                icon: '🔨',
+                title: 'Master Builder',
+                description: 'You love working with your hands and building amazing things that last forever!',
+                traits: [
+                    'Great with your hands',
+                    'Love building and creating',
+                    'Practical problem solver',
+                    'See projects through to completion'
+                ],
+                examples: [
+                    { emoji: '🏗️', text: 'Architect' },
+                    { emoji: '🔨', text: 'Carpenter' },
+                    { emoji: '⚙️', text: 'Mechanical Engineer' },
+                    { emoji: '🚀', text: 'Rocket Designer' }
+                ]
+            },
+            explorer: {
+                icon: '🌍',
+                title: 'World Explorer',
+                description: 'You love adventure, discovering new places, and learning about different cultures!',
+                traits: [
+                    'Love adventure and travel',
+                    'Curious about the world',
+                    'Enjoy being outdoors',
+                    'Like meeting new people'
+                ],
+                examples: [
+                    { emoji: '🌍', text: 'Travel Guide' },
+                    { emoji: '📰', text: 'Journalist' },
+                    { emoji: '🕰', text: 'Archaeologist' },
+                    { emoji: '✈️', text: 'Pilot' }
+                ]
+            },
+            performer: {
+                icon: '🎭',
+                title: 'Amazing Performer',
+                description: 'You light up every room and love entertaining people with your incredible talents!',
+                traits: [
+                    'Love being on stage',
+                    'Enjoy making people laugh',
+                    'Have natural charisma',
+                    'Great at expressing emotions'
+                ],
+                examples: [
+                    { emoji: '🎭', text: 'Actor' },
+                    { emoji: '🎵', text: 'Singer' },
+                    { emoji: '🤹', text: 'Comedian' },
+                    { emoji: '🎪', text: 'Circus Performer' }
+                ]
+            }
+        };
+        
+        // Simple scoring system
+        let scores = {
+            scientist: 0,
+            artist: 0,
+            helper: 0,
+            builder: 0,
+            explorer: 0,
+            performer: 0
+        };
+        
+        // Score based on specific answers
+        if (answers[1] === 'indoors') scores.scientist += 2;
+        if (answers[1] === 'outdoors') { scores.explorer += 2; scores.builder += 1; }
+        
+        if (answers[2] === 'puzzles') { scores.scientist += 2; scores.builder += 1; }
+        if (answers[2] === 'create') { scores.artist += 2; scores.performer += 1; }
+        
+        if (answers[3] === 'brain') { scores.scientist += 2; scores.helper += 1; }
+        if (answers[3] === 'hands') { scores.builder += 2; scores.artist += 1; }
+        
+        if (answers[4] === 'explore') scores.explorer += 3;
+        if (answers[4] === 'perform') scores.performer += 3;
+        if (answers[4] === 'help') scores.helper += 3;
+        if (answers[4] === 'build') scores.builder += 3;
+        
+        if (answers[5] === 'team') { scores.helper += 1; scores.performer += 1; }
+        if (answers[5] === 'alone') { scores.scientist += 1; scores.artist += 1; }
+        
+        // Score based on favorite subject
+        const subject = answers[7];
+        if (subject === 'science') scores.scientist += 2;
+        if (subject === 'art') scores.artist += 2;
+        if (subject === 'technology') { scores.scientist += 1; scores.builder += 1; }
+        if (subject === 'nature') { scores.explorer += 1; scores.scientist += 1; }
+        if (subject === 'music') { scores.performer += 2; scores.artist += 1; }
+        if (subject === 'storytelling') { scores.artist += 1; scores.performer += 1; }
+        if (subject === 'math') { scores.scientist += 1; scores.builder += 1; }
+        if (subject === 'cooking') { scores.helper += 1; scores.artist += 1; }
+        if (subject === 'geography') scores.explorer += 2;
+        
+        // Score based on helping style
+        const helpStyle = answers[8];
+        if (helpStyle === 'inspiring') scores.performer += 1;
+        if (helpStyle === 'protecting') scores.helper += 2;
+        if (helpStyle === 'teaching') scores.helper += 2;
+        if (helpStyle === 'creating') scores.artist += 2;
+        if (helpStyle === 'solving') { scores.scientist += 1; scores.builder += 1; }
+        if (helpStyle === 'entertaining') scores.performer += 2;
+        
+        // Find the highest scoring career
+        const topCareer = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+        
+        return careers[topCareer];
+    };
+    
+    const resetQuiz = () => {
+        currentQuestionIndex = 0;
+        quizAnswers = {};
+        
+        // Hide results screen, show start screen
+        document.getElementById('quiz-results-screen').classList.add('hidden');
+        document.getElementById('quiz-start-screen').classList.remove('hidden');
+        document.getElementById('quiz-start-screen').classList.add('active');
+    };
+    
+    const generateCareerStory = async () => {
+        const userName = quizAnswers[6] || 'Young Explorer';
+        const careerMatch = calculateCareerMatch(quizAnswers);
+        
+        // Create story data from quiz answers
+        const storyData = {
+            childName: userName,
+            favoriteSubject: quizAnswers[7] || 'science',
+            dreamActivity: quizAnswers[4] || 'exploring',
+            workEnvironment: quizAnswers[1] === 'outdoors' ? 'outdoors' : 'indoors',
+            helpingStyle: quizAnswers[8] || 'inspiring',
+            careerType: careerMatch.title,
+            age: 12 // Default to longer story
+        };
+        
+        // Generate the story using existing Dream Job logic
+        await generateDreamJobStory(storyData);
+    };
+    
+    const generateDreamJobStory = async (storyData) => {
+        try {
+            console.log('🔮 Generating dream job story with:', storyData);
+            
+            showLoadingWithProgress('Discovering your future career story...');
+            
+            const { childName, favoriteSubject, dreamActivity, workEnvironment, helpingStyle, careerType, age } = storyData;
+            const targetWords = age >= 12 ? 1200 : 800;
+            
+            const prompt = `Create an inspiring and educational career story for ${childName} (age ${age}) about becoming a ${careerType}. 
+            
+            Based on these interests:
+            - Favorite Subject: ${favoriteSubject}
+            - Dream Activity: ${dreamActivity} 
+            - Work Environment: ${workEnvironment}
+            - Helping Style: ${helpingStyle}
+            
+            The story should:
+            - Be exactly ${targetWords} words
+            - Show ${childName} discovering this career path
+            - Include realistic day-in-the-life examples
+            - Mention specific skills they'll develop
+            - Include 2-3 real career examples in this field
+            - End with encouragement about their future
+            - Be age-appropriate and inspiring
+            - Include educational elements about this career
+            
+            Make it engaging, realistic, and motivating for a young person interested in this field.`;
+            
+            const response = await makeOpenAIRequest(prompt);
+            
+            if (response.success) {
+                displayStoryResult(response.story, {
+                    icon: '🔮',
+                    title: `${childName}'s Future Career Adventure`,
+                    subtitle: `Discovering the path to becoming a ${careerType}`,
+                    description: `An inspiring story about ${childName}'s journey into their dream career based on their personality and interests.`
+                });
+            } else {
+                throw new Error(response.error || 'Story generation failed');
+            }
+            
+        } catch (error) {
+            console.error('❌ Dream job story generation error:', error);
+            hideLoading();
+            alert('😢 Oops! Something went wrong creating your career story. Please try again!');
         }
     };
     
