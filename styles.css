@@ -2081,6 +2081,100 @@ body {
     0 0 20px rgba(167, 139, 250, 0.3);
 }
 
+/* Library Quick Button */
+.library-quick-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: visible;
+}
+
+.library-quick-btn:hover {
+  background: var(--bg-secondary);
+  transform: translateY(-2px);
+}
+
+.library-quick-btn:active {
+  transform: translateY(-1px) scale(0.95);
+}
+
+.books-stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+}
+
+.book {
+  position: absolute;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 1px 2px var(--shadow-medium));
+}
+
+.book1 {
+  transform: rotate(-8deg) translate(-2px, 2px);
+  z-index: 1;
+}
+
+.book2 {
+  transform: rotate(2deg) translate(0px, 0px);
+  z-index: 2;
+}
+
+.book3 {
+  transform: rotate(-15deg) translate(3px, -1px);
+  z-index: 3;
+}
+
+.library-quick-btn:hover .book1 {
+  transform: rotate(-12deg) translate(-4px, 4px) scale(1.05);
+}
+
+.library-quick-btn:hover .book2 {
+  transform: rotate(5deg) translate(0px, -2px) scale(1.1);
+}
+
+.library-quick-btn:hover .book3 {
+  transform: rotate(-20deg) translate(5px, -2px) scale(1.03);
+}
+
+/* Add subtle animation to the books */
+@keyframes bookFloat {
+  0%, 100% { transform: rotate(-8deg) translate(-2px, 2px); }
+  50% { transform: rotate(-8deg) translate(-2px, 0px); }
+}
+
+@keyframes bookFloat2 {
+  0%, 100% { transform: rotate(2deg) translate(0px, 0px); }
+  50% { transform: rotate(2deg) translate(0px, -1px); }
+}
+
+@keyframes bookFloat3 {
+  0%, 100% { transform: rotate(-15deg) translate(3px, -1px); }
+  50% { transform: rotate(-15deg) translate(3px, 1px); }
+}
+
+.book1 {
+  animation: bookFloat 3s ease-in-out infinite;
+}
+
+.book2 {
+  animation: bookFloat2 3s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+.book3 {
+  animation: bookFloat3 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
 /* 🏰 HEADER STYLING */
 .main-header {
   text-align: center;

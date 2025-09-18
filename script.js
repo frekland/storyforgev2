@@ -82,11 +82,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeNavigation = () => {
         // Handle navigation dropdown clicks
         const navItems = document.querySelectorAll('.nav-item[data-mode]');
+        console.log('📁 Found nav items:', navItems.length);
         navItems.forEach(item => {
-            item.addEventListener('click', () => {
+            console.log('Adding listener to nav item:', item.dataset.mode);
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const mode = item.dataset.mode;
+                console.log(`📁 Navigation clicked: ${mode}`);
                 showMode(mode);
-                // Hide dropdown after selection (will auto-hide on next mouse move anyway)
+                // Hide dropdown after selection
+                const dropdown = document.getElementById('nav-dropdown');
+                if (dropdown) {
+                    dropdown.style.opacity = '0';
+                    dropdown.style.visibility = 'hidden';
+                    setTimeout(() => {
+                        dropdown.style.opacity = '';
+                        dropdown.style.visibility = '';
+                    }, 300);
+                }
             });
         });
         
@@ -95,6 +109,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsBtn) {
             settingsBtn.addEventListener('click', () => {
                 showAlert('⚙️ Settings panel coming soon! \n\nPlanned features:\n• Voice selection\n• Story length preferences\n• Custom themes\n• Export options');
+            });
+        }
+        
+        // Library quick button
+        const libraryQuickBtn = document.getElementById('library-quick-btn');
+        if (libraryQuickBtn) {
+            libraryQuickBtn.addEventListener('click', () => {
+                console.log('📚 Library quick button clicked!');
+                showMode('library');
             });
         }
     };
@@ -803,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const showMode = (mode) => {
         currentMode = mode;
-        console.log(`Switching to ${mode} mode`);
+        console.log(`🔄 Switching to ${mode} mode`);
         
         // Update current mode display in top bar
         const modeNames = {
@@ -819,23 +842,44 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (currentModeSpan) {
             currentModeSpan.textContent = ` → ${modeNames[mode] || mode}`;
+            console.log('🏷️ Updated mode display');
         }
         
         const modeContentContainer = document.getElementById('mode-content');
         const modeSelectionGrid = document.querySelector('.mode-selection-grid');
         const welcomeSection = document.querySelector('.welcome-section');
         
+        console.log('📎 Found elements:', {
+            modeContentContainer: !!modeContentContainer,
+            modeSelectionGrid: !!modeSelectionGrid,
+            welcomeSection: !!welcomeSection
+        });
+        
         // Hide welcome section and mode grid
-        if (welcomeSection) welcomeSection.classList.add('hidden');
-        if (modeSelectionGrid) modeSelectionGrid.classList.add('hidden');
+        if (welcomeSection) {
+            welcomeSection.classList.add('hidden');
+            console.log('🙈 Hidden welcome section');
+        }
+        if (modeSelectionGrid) {
+            modeSelectionGrid.classList.add('hidden');
+            console.log('🙈 Hidden mode selection grid');
+        }
         
         // Show mode content container
         if (modeContentContainer) {
+            console.log(`📦 Getting content for ${mode} mode...`);
+            const content = getModeContent(mode);
+            console.log(`📜 Generated content length: ${content.length}`);
+            
             modeContentContainer.classList.remove('hidden');
-            modeContentContainer.innerHTML = getModeContent(mode);
+            modeContentContainer.innerHTML = content;
+            console.log('👁️ Showed mode content container');
             
             // Set up mode-specific event listeners
+            console.log(`🎧 Setting up listeners for ${mode}...`);
             setupModeEventListeners(mode);
+        } else {
+            console.error('❌ Mode content container not found!');
         }
     };
     
@@ -2142,28 +2186,286 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Initialize and mount the React Library component
         const libraryRoot = document.getElementById('library-root');
-        if (libraryRoot && window.LibraryMain) {
-            // Clear loading content
-            libraryRoot.innerHTML = '';
-            
-            // Mount React component
-            try {
-                const root = ReactDOM.createRoot(libraryRoot);
-                root.render(React.createElement(LibraryMain));
-                console.log('✅ Library React component mounted successfully');
-            } catch (error) {
-                console.error('❌ Error mounting Library component:', error);
+        console.log('Library root element:', libraryRoot);
+        console.log('LibraryMain component available:', typeof window.LibraryMain);
+        console.log('React available:', typeof React);
+        console.log('ReactDOM available:', typeof ReactDOM);
+        
+        if (libraryRoot) {
+            if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                if (typeof window.LibraryMain !== 'undefined') {
+                    // Clear loading content
+                    libraryRoot.innerHTML = '';
+                    
+                    // Mount React component
+                    try {
+                        const root = ReactDOM.createRoot(libraryRoot);
+                        root.render(React.createElement(LibraryMain));
+                        console.log('✅ Library React component mounted successfully');
+                    } catch (error) {
+                        console.error('❌ Error mounting Library component:', error);
+                        libraryRoot.innerHTML = `
+                            <div class="library-error">
+                                <div class="error-icon">⚠️</div>
+                                <h3>Library Loading Error</h3>
+                                <p>Unable to load the library interface. Error: ${error.message}</p>
+                                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Refresh Page</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    console.warn('⚠️ LibraryMain component not found. Using HTML fallback...');
+                    libraryRoot.innerHTML = `
+                        <div class="library-fallback">
+                            <div class="library-header">
+                                <h3><span>📚</span> My Library <span>🎆</span></h3>
+                                <p>Your creative assets and stories</p>
+                            </div>
+                            
+                            <div class="library-tabs">
+                                <button class="tab-btn active" onclick="showLibraryTab('stories')">📚 Stories</button>
+                                <button class="tab-btn" onclick="showLibraryTab('artwork')">🎨 Artwork</button>
+                                <button class="tab-btn" onclick="showLibraryTab('characters')">👤 Characters</button>
+                                <button class="tab-btn" onclick="showLibraryTab('scenes')">🏞️ Scenes</button>
+                            </div>
+                            
+                            <div class="library-content-area">
+                                <div id="stories-tab" class="tab-content active">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📚</div>
+                                        <h4>No Stories Yet</h4>
+                                        <p>Your created stories will appear here. Start by creating a story in any of the StoryForge modes!</p>
+                                        <button class="create-btn" onclick="backToModeSelection()">✨ Create Story</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="artwork-tab" class="tab-content">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">🎨</div>
+                                        <h4>No Artwork Yet</h4>
+                                        <p>Upload your drawings when creating stories to build your art library!</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="characters-tab" class="tab-content">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">👤</div>
+                                        <h4>No Characters Yet</h4>
+                                        <p>Characters from your stories will be saved here for reuse.</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="scenes-tab" class="tab-content">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">🏞️</div>
+                                        <h4>No Scenes Yet</h4>
+                                        <p>Scene descriptions and images from your stories will appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="library-footer">
+                                <p><em>Full library features coming soon! React components loading: ${typeof window.LibraryMain !== 'undefined' ? 'Ready' : 'Loading...'}</em></p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add CSS for the fallback library
+                    addLibraryFallbackStyles();
+                }
+            } else {
+                console.error('❌ React or ReactDOM not available');
                 libraryRoot.innerHTML = `
                     <div class="library-error">
                         <div class="error-icon">⚠️</div>
-                        <h3>Library Loading Error</h3>
-                        <p>Unable to load the library interface. Please refresh the page and try again.</p>
+                        <h3>Missing Dependencies</h3>
+                        <p>React libraries are not loaded. React: ${typeof React}, ReactDOM: ${typeof ReactDOM}</p>
                     </div>
                 `;
             }
         } else {
-            console.warn('⚠️ Library root element or LibraryMain component not found');
+            console.error('❌ Library root element (#library-root) not found in DOM!');
         }
+    };
+    
+    // Library fallback functions
+    window.showLibraryTab = (tabName) => {
+        console.log(`📌 Switching to ${tabName} tab`);
+        
+        // Update tab buttons
+        const tabButtons = document.querySelectorAll('.library-fallback .tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Update tab content
+        const tabContents = document.querySelectorAll('.library-fallback .tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Show selected tab
+        const selectedTab = document.getElementById(`${tabName}-tab`);
+        if (selectedTab) {
+            selectedTab.classList.add('active');
+        }
+        
+        // Activate selected button
+        const selectedButton = Array.from(tabButtons).find(btn => 
+            btn.textContent.toLowerCase().includes(tabName)
+        );
+        if (selectedButton) {
+            selectedButton.classList.add('active');
+        }
+    };
+    
+    const addLibraryFallbackStyles = () => {
+        const styleId = 'library-fallback-styles';
+        if (document.getElementById(styleId)) return; // Already added
+        
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            .library-fallback {
+                background: var(--bg-paper);
+                border-radius: 15px;
+                border: 2px solid var(--border-color);
+                box-shadow: 0 4px 8px var(--shadow-medium);
+                padding: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            
+            .library-header {
+                text-align: center;
+                margin-bottom: 25px;
+                border-bottom: 2px dashed var(--accent-secondary);
+                padding-bottom: 15px;
+            }
+            
+            .library-header h3 {
+                font-family: var(--font-title);
+                font-size: 1.8em;
+                color: var(--accent-color);
+                margin: 0 0 8px 0;
+            }
+            
+            .library-header p {
+                color: var(--text-secondary);
+                margin: 0;
+                font-style: italic;
+            }
+            
+            .library-tabs {
+                display: flex;
+                gap: 5px;
+                margin-bottom: 20px;
+                border-radius: 10px;
+                background: var(--bg-secondary);
+                padding: 5px;
+            }
+            
+            .tab-btn {
+                flex: 1;
+                background: none;
+                border: none;
+                padding: 12px 8px;
+                cursor: pointer;
+                border-radius: 8px;
+                font-family: var(--font-body);
+                font-size: 0.9em;
+                color: var(--text-secondary);
+                transition: all 0.2s ease;
+            }
+            
+            .tab-btn:hover {
+                background: var(--bg-paper);
+                color: var(--text-primary);
+            }
+            
+            .tab-btn.active {
+                background: var(--accent-color);
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 2px 4px var(--shadow-medium);
+            }
+            
+            .library-content-area {
+                min-height: 300px;
+                position: relative;
+            }
+            
+            .tab-content {
+                display: none;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .tab-content.active {
+                display: block;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .empty-state {
+                text-align: center;
+                padding: 60px 20px;
+                color: var(--text-secondary);
+            }
+            
+            .empty-icon {
+                font-size: 4em;
+                margin-bottom: 15px;
+                opacity: 0.7;
+            }
+            
+            .empty-state h4 {
+                font-family: var(--font-title);
+                font-size: 1.3em;
+                color: var(--text-primary);
+                margin: 0 0 10px 0;
+            }
+            
+            .empty-state p {
+                font-size: 1em;
+                line-height: 1.6;
+                margin: 0 0 20px 0;
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            
+            .create-btn {
+                background: var(--accent-color);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 25px;
+                font-family: var(--font-body);
+                font-size: 1em;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 3px 6px var(--shadow-medium);
+            }
+            
+            .create-btn:hover {
+                background: var(--accent-secondary);
+                transform: translateY(-2px);
+                box-shadow: 0 5px 10px var(--shadow-dark);
+            }
+            
+            .library-footer {
+                text-align: center;
+                margin-top: 25px;
+                padding-top: 15px;
+                border-top: 1px dashed var(--border-color);
+            }
+            
+            .library-footer p {
+                margin: 0;
+                font-size: 0.85em;
+                color: var(--text-accent);
+            }
+        `;
+        document.head.appendChild(style);
     };
     
     // Dream Job Quiz Data and Logic

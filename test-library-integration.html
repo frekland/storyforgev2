@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .pending { color: orange; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #test-output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: white;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 StoryForge Library Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: React Components Loading</h2>
+        <p id="react-test" class="pending">Testing React and component availability...</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Navigation Integration</h2>
+        <p id="nav-test" class="pending">Testing if library mode navigation works...</p>
+        <button onclick="testNavigation()">Test Library Navigation</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Supabase Configuration</h2>
+        <p id="supabase-test" class="pending">Testing Supabase connection and configuration...</p>
+        <button onclick="testSupabaseConfig()">Test Supabase Config</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 4: Library Component Mounting</h2>
+        <p id="mount-test" class="pending">Testing if LibraryMain can be mounted...</p>
+        <button onclick="testComponentMount()">Mount Library Component</button>
+        <div id="test-mount-area" style="margin-top: 10px; border: 1px solid #ccc; padding: 10px; min-height: 100px;"></div>
+    </div>
+    
+    <div id="test-output">
+        <h3>Test Output:</h3>
+        <div id="output-content"></div>
+    </div>
+
+    <!-- Load React and Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Load our components -->
+    <script type="text/babel" src="components/library/LibraryMain.jsx"></script>
+    <script type="text/babel" src="components/library/LibraryGrid.jsx"></script>
+    <script type="text/babel" src="components/library/SearchBar.jsx"></script>
+    <script type="text/babel" src="components/library/ImportFromLibrary.jsx"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Load Supabase configuration -->
+    <script>
+        // Supabase configuration
+        window.SUPABASE_URL = 'https://jnvxhpeuuzhxunqptrin.supabase.co';
+        window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudnhocGV1dXpoeHVucXB0cmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjExNjYsImV4cCI6MjA1MzMzNzE2Nn0.MrmSfqpYrGQI0OBn8JKXowUaG2J5xhNDY2FXOLZGfPw';
+    </script>
+    
+    <script>
+        let testResults = [];
+        
+        function log(message) {
+            const output = document.getElementById('output-content');
+            output.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            console.log(message);
+        }
+        
+        function updateTestStatus(testId, status, message) {
+            const element = document.getElementById(testId);
+            element.className = status;
+            element.textContent = message;
+        }
+        
+        // Test 1: React Components Loading
+        function testReactComponents() {
+            try {
+                if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                    log('✅ React and ReactDOM loaded successfully');
+                    
+                    if (typeof supabase !== 'undefined') {
+                        log('✅ Supabase client loaded successfully');
+                        updateTestStatus('react-test', 'pass', 'React, ReactDOM, and Supabase loaded successfully');
+                        return true;
+                    } else {
+                        log('❌ Supabase client not loaded');
+                        updateTestStatus('react-test', 'fail', 'Supabase client not loaded');
+                        return false;
+                    }
+                } else {
+                    log('❌ React or ReactDOM not loaded');
+                    updateTestStatus('react-test', 'fail', 'React or ReactDOM not loaded');
+                    return false;
+                }
+            } catch (error) {
+                log('❌ Error testing React components: ' + error.message);
+                updateTestStatus('react-test', 'fail', 'Error: ' + error.message);
+                return false;
+            }
+        }
+        
+        // Test 2: Navigation Integration
+        function testNavigation() {
+            try {
+                // Simulate what happens when library nav is clicked
+                const navItems = document.querySelectorAll('.nav-item[data-mode="library"]');
+                if (navItems.length > 0) {
+                    log('✅ Library navigation item found in DOM');
+                    updateTestStatus('nav-test', 'pass', 'Library navigation is properly integrated');
+                } else {
+                    log('❌ Library navigation item not found');
+                    updateTestStatus('nav-test', 'fail', 'Library navigation item not found in DOM');
+                }
+            } catch (error) {
+                log('❌ Navigation test error: ' + error.message);
+                updateTestStatus('nav-test', 'fail', 'Error: ' + error.message);
+            }
+        }
+        
+        // Test 3: Supabase Configuration
+        function testSupabaseConfig() {
+            try {
+                if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+                    log('✅ Supabase configuration variables available');
+                    
+                    // Test Supabase client creation
+                    const supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    if (supabaseClient) {
+                        log('✅ Supabase client created successfully');
+                        updateTestStatus('supabase-test', 'pass', 'Supabase configuration and client working');
+                    } else {
+                        log('❌ Failed to create Supabase client');
+                        updateTestStatus('supabase-test', 'fail', 'Failed to create Supabase client');
+                    }
+                } else {
+                    log('❌ Supabase configuration missing');
+                    updateTestStatus('supabase-test', 'fail', 'Supabase URL or key missing');
+                }
+            } catch (error) {
+                log('❌ Supabase test error: ' + error.message);
+                updateTestStatus('supabase-test', 'fail', 'Error: ' + error.message);
+            }
+        }
+        
+        // Test 4: Component Mounting
+        function testComponentMount() {
+            try {
+                const mountArea = document.getElementById('test-mount-area');
+                
+                if (typeof window.LibraryMain !== 'undefined') {
+                    log('✅ LibraryMain component available');
+                    
+                    // Try to mount the component
+                    const root = ReactDOM.createRoot(mountArea);
+                    root.render(React.createElement(LibraryMain));
+                    
+                    log('✅ LibraryMain component mounted successfully');
+                    updateTestStatus('mount-test', 'pass', 'LibraryMain component mounted successfully');
+                } else {
+                    log('❌ LibraryMain component not available');
+                    mountArea.innerHTML = '<p style="color: red;">LibraryMain component not loaded</p>';
+                    updateTestStatus('mount-test', 'fail', 'LibraryMain component not available');
+                }
+            } catch (error) {
+                log('❌ Component mounting error: ' + error.message);
+                updateTestStatus('mount-test', 'fail', 'Error: ' + error.message);
+            }
+        }
+        
+        // Run initial tests when page loads
+        window.onload = function() {
+            log('🚀 Starting Library Integration Tests...');
+            
+            // Wait a bit for all scripts to load
+            setTimeout(() => {
+                testReactComponents();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
