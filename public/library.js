@@ -112,6 +112,9 @@ const StoryForgeLibrary = () => {
   const [error, setError] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState('stories');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [artwork, setArtwork] = React.useState([]);
+  const [characters, setCharacters] = React.useState([]);
+  const [scenes, setScenes] = React.useState([]);
 
   const libraryService = React.useMemo(() => new LibraryService(), []);
 
@@ -130,6 +133,32 @@ const StoryForgeLibrary = () => {
       if (currentUser) {
         const userStories = await libraryService.getStories(currentUser.id);
         setStories(userStories);
+        
+        // Extract artwork, characters, and scenes from stories
+        const allArtwork = [];
+        const allCharacters = [];
+        const allScenes = [];
+        
+        userStories.forEach(story => {
+          if (story.characters) {
+            allCharacters.push(...story.characters.map(char => ({
+              ...char,
+              story_id: story.id,
+              story_title: story.title
+            })));
+          }
+          if (story.scenes) {
+            allScenes.push(...story.scenes.map(scene => ({
+              ...scene,
+              story_id: story.id,
+              story_title: story.title
+            })));
+          }
+        });
+        
+        setArtwork(allArtwork);
+        setCharacters(allCharacters);
+        setScenes(allScenes);
       }
     } catch (err) {
       setError('Failed to load library');
@@ -139,15 +168,43 @@ const StoryForgeLibrary = () => {
     }
   };
 
-  const filteredStories = React.useMemo(() => {
-    if (!searchQuery.trim()) return stories;
+  // Get current tab content with search filtering
+  const getCurrentContent = React.useMemo(() => {
+    let content = [];
+    switch (activeTab) {
+      case 'stories':
+        content = stories;
+        break;
+      case 'artwork':
+        content = artwork;
+        break;
+      case 'characters':
+        content = characters;
+        break;
+      case 'scenes':
+        content = scenes;
+        break;
+      default:
+        content = stories;
+    }
+    
+    if (!searchQuery.trim()) return content;
     const query = searchQuery.toLowerCase();
-    return stories.filter(story => 
-      story.title?.toLowerCase().includes(query) ||
-      story.description?.toLowerCase().includes(query) ||
-      story.genre?.toLowerCase().includes(query)
-    );
-  }, [stories, searchQuery]);
+    return content.filter(item => {
+      const searchFields = [
+        item.title,
+        item.name,
+        item.description,
+        item.genre,
+        item.personality,
+        item.story_title
+      ].filter(Boolean);
+      
+      return searchFields.some(field => 
+        field && field.toLowerCase().includes(query)
+      );
+    });
+  }, [activeTab, stories, artwork, characters, scenes, searchQuery]);
 
   const handlePlayStory = (story) => {
     if (story.audio_files && story.audio_files.length > 0) {
@@ -159,6 +216,39 @@ const StoryForgeLibrary = () => {
         audioPlayer.play();
       }
     }
+  };
+  
+  // Helper functions for empty states
+  const getEmptyStateTitle = () => {
+    if (searchQuery) return `No ${activeTab} match your search`;
+    const titles = {
+      stories: 'No Stories Yet',
+      artwork: 'No Artwork Yet', 
+      characters: 'No Characters Yet',
+      scenes: 'No Scenes Yet'
+    };
+    return titles[activeTab] || 'No Content Yet';
+  };
+  
+  const getEmptyStateDescription = () => {
+    if (searchQuery) return 'Try searching for something else, or create your first story!';
+    const descriptions = {
+      stories: 'Your magical stories will appear here as you create them with StoryForge!',
+      artwork: 'Upload artwork when creating stories to build your art collection!',
+      characters: 'Characters from your stories will be saved here for reuse.',
+      scenes: 'Scene descriptions from your stories will appear here.'
+    };
+    return descriptions[activeTab] || 'Create stories to see content here!';
+  };
+  
+  const getEmptyStateIcon = () => {
+    const icons = {
+      stories: '📚',
+      artwork: '🎨',
+      characters: '👤', 
+      scenes: '🏞️'
+    };
+    return icons[activeTab] || '📚';
   };
 
   if (loading) {
@@ -293,12 +383,79 @@ const StoryForgeLibrary = () => {
       })
     ]),
 
+    // Tab Navigation
+    React.createElement('div', {
+      key: 'tabs',
+      className: 'library-tabs',
+      style: {
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        background: 'var(--bg-secondary)',
+        padding: '0.75rem',
+        borderRadius: '15px',
+        border: '1px solid var(--border-color)'
+      }
+    }, [
+      { id: 'stories', label: 'Stories', icon: '📚', count: stories.length },
+      { id: 'artwork', label: 'Artwork', icon: '🎨', count: artwork.length },
+      { id: 'characters', label: 'Characters', icon: '👤', count: characters.length },
+      { id: 'scenes', label: 'Scenes', icon: '🏞️', count: scenes.length }
+    ].map(tab => 
+      React.createElement('button', {
+        key: tab.id,
+        onClick: () => setActiveTab(tab.id),
+        style: {
+          background: activeTab === tab.id ? 'var(--accent-color)' : 'var(--bg-primary)',
+          color: activeTab === tab.id ? 'white' : 'var(--text-primary)',
+          border: '2px solid ' + (activeTab === tab.id ? 'var(--accent-color)' : 'var(--border-color)'),
+          borderRadius: '12px',
+          padding: '0.75rem 1.5rem',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          fontSize: '0.95rem',
+          transition: 'all 0.3s ease'
+        },
+        onMouseEnter: (e) => {
+          if (activeTab !== tab.id) {
+            e.target.style.background = 'var(--bg-paper)';
+            e.target.style.borderColor = 'var(--accent-color)';
+            e.target.style.transform = 'translateY(-2px)';
+          }
+        },
+        onMouseLeave: (e) => {
+          if (activeTab !== tab.id) {
+            e.target.style.background = 'var(--bg-primary)';
+            e.target.style.borderColor = 'var(--border-color)';
+            e.target.style.transform = 'translateY(0)';
+          }
+        }
+      }, [
+        React.createElement('span', { key: 'icon', style: { fontSize: '1.1rem' } }, tab.icon),
+        React.createElement('span', { key: 'label' }, tab.label),
+        React.createElement('span', {
+          key: 'count',
+          style: {
+            background: 'rgba(255, 255, 255, 0.2)',
+            padding: '0.15rem 0.5rem',
+            borderRadius: '10px',
+            fontSize: '0.8rem',
+            fontWeight: 'bold',
+            minWidth: '1.5rem',
+            textAlign: 'center'
+          }
+        }, tab.count)
+      ])
+    )),
+    
     // Content
     React.createElement('div', {
       key: 'content',
       className: 'library-content'
     }, [
-      filteredStories.length === 0 ? (
+      getCurrentContent.length === 0 ? (
         // Empty State
         React.createElement('div', {
           key: 'empty',
@@ -313,7 +470,7 @@ const StoryForgeLibrary = () => {
           React.createElement('div', {
             key: 'icon',
             style: { fontSize: '4rem', marginBottom: '1rem' }
-          }, '📚'),
+          }, getEmptyStateIcon()),
           React.createElement('h3', {
             key: 'title',
             style: {
@@ -322,7 +479,7 @@ const StoryForgeLibrary = () => {
               color: 'var(--text-primary)',
               margin: '0 0 1rem 0'
             }
-          }, searchQuery ? 'No stories match your search' : 'No Stories Yet'),
+          }, getEmptyStateTitle()),
           React.createElement('p', {
             key: 'description',
             style: {
@@ -330,10 +487,7 @@ const StoryForgeLibrary = () => {
               fontSize: '1.1rem',
               marginBottom: '2rem'
             }
-          }, searchQuery 
-            ? `Try searching for something else, or create your first story!`
-            : 'Your magical stories will appear here as you create them with StoryForge!'
-          ),
+          }, getEmptyStateDescription()),
           React.createElement('button', {
             key: 'create',
             onClick: () => window.backToModeSelection && window.backToModeSelection(),
@@ -358,19 +512,44 @@ const StoryForgeLibrary = () => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
             gap: '1.5rem'
           }
-        }, filteredStories.map((story, index) => 
-          React.createElement('div', {
-            key: story.id || index,
-            className: 'story-card',
-            style: {
-              background: 'var(--bg-paper)',
-              border: '2px solid var(--border-color)',
-              borderRadius: '15px',
-              padding: '1.5rem',
-              boxShadow: '0 4px 8px var(--shadow-medium)',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer'
-            },
+        }, getCurrentContent.map((item, index) => 
+          renderContentCard(item, index)
+        })
+      )
+    ])
+  ]);
+  
+  // Render different content types
+  const renderContentCard = (item, index) => {
+    const cardKey = item.id || `${activeTab}-${index}`;
+    
+    if (activeTab === 'stories') {
+      return renderStoryCard(item, cardKey);
+    } else if (activeTab === 'artwork') {
+      return renderArtworkCard(item, cardKey);
+    } else if (activeTab === 'characters') {
+      return renderCharacterCard(item, cardKey);
+    } else if (activeTab === 'scenes') {
+      return renderSceneCard(item, cardKey);
+    }
+    
+    // Fallback
+    return React.createElement('div', { key: cardKey }, 'Unknown content type');
+  };
+  
+  const renderStoryCard = (story, cardKey) => {
+    return React.createElement('div', {
+      key: cardKey,
+      className: 'story-card',
+      style: {
+        background: 'var(--bg-paper)',
+        border: '2px solid var(--border-color)',
+        borderRadius: '15px',
+        padding: '1.5rem',
+        boxShadow: '0 4px 8px var(--shadow-medium)',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer'
+      },
             onMouseEnter: (e) => {
               e.currentTarget.style.transform = 'translateY(-5px)';
               e.currentTarget.style.boxShadow = '0 8px 25px var(--shadow-dark)';

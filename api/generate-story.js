@@ -4,12 +4,12 @@ require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-// Use gemini-1.5-flash-8b for faster responses (smaller model)
+// Use standard gemini-1.5-flash for reliability (keep speed optimizations)
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash-8b",
+  model: "gemini-1.5-flash",
   generationConfig: {
-    temperature: 0.8,
-    maxOutputTokens: 2048, // Reduced for faster generation
+    temperature: 0.7, // Slightly lower for consistency
+    maxOutputTokens: 4096, // Restore higher limit
   }
 });
 
@@ -689,7 +689,7 @@ async function handleClassicMode(requestBody) {
     // Start story generation immediately without waiting for image analysis
     console.log('⚡ Starting parallel processing: story generation + image analysis');
     
-    const storyPromise = generateOptimizedStoryAndAudio({
+    const storyPromise = generateStoryAndAudio({
       heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
     });
     
