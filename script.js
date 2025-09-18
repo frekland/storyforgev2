@@ -4251,6 +4251,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Complete audio processing stage
             updateProgressStage(4, 'completed', '', numChapters, numChapters);
             
+            // Save story to library using existing displayStoryResults function
+            displayStoryResults(data, 'classic');
+            
             // Auto-upload to Yoto immediately if user is authenticated
             if (accessToken) {
                 console.log('🚀 Auto-uploading to Yoto immediately...');
