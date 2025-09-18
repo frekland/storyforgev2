@@ -506,28 +506,19 @@
     <!-- Supabase for Library Data -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Babel for JSX Transform (development only) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Library Components -->
-    <script type="text/babel" src="components/library/LibraryMain.jsx"></script>
-    <script type="text/babel" src="components/library/LibraryGrid.jsx"></script>
-    <script type="text/babel" src="components/library/SearchBar.jsx"></script>
-    <script type="text/babel" src="components/library/ImportFromLibrary.jsx"></script>
-    <script type="text/babel" src="components/library/StoryCard.jsx"></script>
-    <script type="text/babel" src="components/library/ArtworkGallery.jsx"></script>
-    <script type="text/babel" src="components/library/PlaylistCreator.jsx"></script>
-    
+    <!-- StoryForge Library - Production Ready -->
+    <script src="library.js"></script>
     <!-- Supabase Configuration -->
     <script>
-        // Supabase configuration for library
-        window.SUPABASE_URL = 'https://jnvxhpeuuzhxunqptrin.supabase.co';
-        window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudnhocGV1dXpoeHVucXB0cmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjExNjYsImV4cCI6MjA1MzMzNzE2Nn0.MrmSfqpYrGQI0OBn8JKXowUaG2J5xhNDY2FXOLZGfPw';
-        
         // Initialize Supabase client
-        if (typeof supabase !== 'undefined') {
-            window.supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-        }
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof supabase !== 'undefined') {
+                window.supabase = supabase.createClient(
+                    'https://jnvxhpeuuzhxunqptrin.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudnhocGV1dXpoeHVucXB0cmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NjExNjYsImV4cCI6MjA1MzMzNzE2Nn0.MrmSfqpYrGQI0OBn8JKXowUaG2J5xhNDY2FXOLZGfPw'
+                );
+            }
+        });
     </script>
     
     <script type="module" src="script.js?v=20250916-1054"></script>

@@ -2182,22 +2182,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Initialize and mount the React Library component
         const libraryRoot = document.getElementById('library-root');
-        console.log('Library root element:', libraryRoot);
-        console.log('LibraryMain component available:', typeof window.LibraryMain);
-        console.log('React available:', typeof React);
-        console.log('ReactDOM available:', typeof ReactDOM);
         
         if (libraryRoot) {
             if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
-                if (typeof window.LibraryMain !== 'undefined') {
+                if (typeof window.StoryForgeLibrary !== 'undefined') {
                     // Clear loading content
                     libraryRoot.innerHTML = '';
                     
                     // Mount React component
                     try {
                         const root = ReactDOM.createRoot(libraryRoot);
-                        root.render(React.createElement(LibraryMain));
-                        console.log('✅ Library React component mounted successfully');
+                        root.render(React.createElement(window.StoryForgeLibrary));
+                        console.log('✅ StoryForge Library mounted successfully');
                     } catch (error) {
                         console.error('❌ Error mounting Library component:', error);
                         libraryRoot.innerHTML = `
@@ -2210,7 +2206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     }
                 } else {
-                    console.warn('⚠️ LibraryMain component not found. Using HTML fallback...');
+                    console.warn('⚠️ StoryForge Library component not found. Using simple fallback...');
                     libraryRoot.innerHTML = `
                         <div class="library-fallback">
                             <div class="library-header">
@@ -3650,6 +3646,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        // Save story to library
+        if (data.story) {
+            saveStoryToLibrary(data, mode)
+                .then(() => {
+                    console.log('✅ Story saved to library successfully!');
+                })
+                .catch((saveError) => {
+                    console.error('❌ Failed to save story to library:', saveError);
+                    // Don't show error to user, just log it
+                });
+        }
+        
         // Auto-upload to Yoto if authenticated
         if (accessToken) {
             console.log('🚀 Auto-uploading', mode, 'to Yoto...');
@@ -3683,6 +3691,79 @@ document.addEventListener('DOMContentLoaded', () => {
                     showAlert(`${getModeDisplayName(mode)} created successfully! Yoto upload failed - you can retry manually.`);
                 });
         }
+    };
+    
+    // Helper function to save story to library
+    const saveStoryToLibrary = async (data, mode) => {
+        if (!window.LibraryService) {
+            console.warn('LibraryService not available');
+            return;
+        }
+        
+        try {
+            const libraryService = new window.LibraryService();
+            const user = await libraryService.getCurrentUser();
+            
+            if (!user) {
+                console.log('No user logged in, skipping story save');
+                return;
+            }
+            
+            // Extract story title from the first few words
+            const storyTitle = extractStoryTitle(data.story, mode);
+            
+            // Prepare story data for saving
+            const storyData = {
+                title: storyTitle,
+                description: `A ${getModeDisplayName(mode).toLowerCase()} created with StoryForge`,
+                content: data.story,
+                genre: getGenreFromMode(mode),
+                audioUrl: null, // We'll handle audio separately if needed
+                duration: 0
+            };
+            
+            // If audio is available, we could save it too (for now just log)
+            if (data.audio) {
+                console.log('Audio available for story, length:', data.audio.length);
+                // TODO: In a full implementation, upload audio to storage and get URL
+            }
+            
+            const savedStory = await libraryService.saveStory(storyData, user.id);
+            console.log('Story saved with ID:', savedStory.id);
+            
+            return savedStory;
+        } catch (error) {
+            console.error('Error saving story to library:', error);
+            throw error;
+        }
+    };
+    
+    // Helper function to extract story title from content
+    const extractStoryTitle = (storyText, mode) => {
+        if (!storyText) return `My ${getModeDisplayName(mode)}`;
+        
+        // Try to find a title-like sentence (first sentence or up to 50 chars)
+        const firstSentence = storyText.split('.')[0].trim();
+        if (firstSentence.length > 0 && firstSentence.length <= 60) {
+            return firstSentence;
+        }
+        
+        // Fallback to first 50 characters + ellipsis
+        const firstPart = storyText.substring(0, 50).trim();
+        return firstPart + (storyText.length > 50 ? '...' : '');
+    };
+    
+    // Helper function to get genre from mode
+    const getGenreFromMode = (mode) => {
+        const genres = {
+            'wanted-poster': 'western',
+            'homework-forge': 'educational',
+            'sleep-forge': 'bedtime',
+            'monster-maker': 'fantasy',
+            'adventure-me': 'adventure',
+            'dream-job': 'inspirational'
+        };
+        return genres[mode] || 'adventure';
     };
     
     // Helper function to get display name for mode
