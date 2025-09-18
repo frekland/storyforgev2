@@ -3785,6 +3785,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper function to get genre from mode
     const getGenreFromMode = (mode) => {
         const genres = {
+            'classic': 'adventure',
             'wanted-poster': 'western',
             'homework-forge': 'educational',
             'sleep-forge': 'bedtime',
@@ -3798,6 +3799,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper function to get display name for mode
     const getModeDisplayName = (mode) => {
         const names = {
+            'classic': 'Classic Story',
             'wanted-poster': 'Wanted Poster',
             'homework-forge': 'Learning Summary',
             'sleep-forge': 'Bedtime Story',

@@ -47,8 +47,32 @@ class LibraryService {
 
   async saveStory(storyData, userId) {
     if (!this.supabase) {
-      console.log('Would save story:', storyData);
-      return { id: 'mock-' + Date.now() };
+      console.log('Saving story to local storage:', storyData.title);
+      // Save to localStorage as a fallback
+      const savedStories = JSON.parse(localStorage.getItem('storyforge-stories') || '[]');
+      const newStory = {
+        id: 'story-' + Date.now(),
+        title: storyData.title,
+        description: storyData.description,
+        content: storyData.content,
+        genre: storyData.genre,
+        created_at: new Date().toISOString(),
+        user_id: userId,
+        audio_files: storyData.audioUrl ? [{
+          id: 'audio-' + Date.now(),
+          file_path: storyData.audioUrl,
+          duration: storyData.duration || 0
+        }] : [],
+        characters: [],
+        scenes: []
+      };
+      savedStories.unshift(newStory); // Add to beginning
+      localStorage.setItem('storyforge-stories', JSON.stringify(savedStories));
+      
+      // Trigger library refresh
+      window.dispatchEvent(new CustomEvent('storyAdded', { detail: newStory }));
+      
+      return newStory;
     }
 
     try {
@@ -85,22 +109,31 @@ class LibraryService {
   }
 
   getMockStories() {
-    return [
-      {
-        id: 'story-1',
-        title: 'The Magical Garden Adventure',
-        description: 'A young explorer discovers a secret garden filled with talking flowers and friendly creatures.',
-        genre: 'fantasy',
-        created_at: new Date().toISOString(),
-        audio_files: [{
-          id: 'audio-1',
-          duration: 780
-        }],
-        characters: [
-          { id: 'char-1', name: 'Luna the Explorer' }
-        ]
-      }
-    ];
+    // Get stories from localStorage
+    const savedStories = JSON.parse(localStorage.getItem('storyforge-stories') || '[]');
+    
+    // Add default story if no saved stories
+    if (savedStories.length === 0) {
+      return [
+        {
+          id: 'story-1',
+          title: 'The Magical Garden Adventure',
+          description: 'A young explorer discovers a secret garden filled with talking flowers and friendly creatures.',
+          genre: 'fantasy',
+          created_at: new Date().toISOString(),
+          audio_files: [{
+            id: 'audio-1',
+            duration: 780
+          }],
+          characters: [
+            { id: 'char-1', name: 'Luna the Explorer' }
+          ],
+          scenes: []
+        }
+      ];
+    }
+    
+    return savedStories;
   }
 }
 
@@ -120,6 +153,18 @@ const StoryForgeLibrary = () => {
 
   React.useEffect(() => {
     initializeLibrary();
+    
+    // Listen for new stories being added
+    const handleStoryAdded = (event) => {
+      console.log('📚 New story added, refreshing library...', event.detail.title);
+      initializeLibrary(); // Refresh the entire library
+    };
+    
+    window.addEventListener('storyAdded', handleStoryAdded);
+    
+    return () => {
+      window.removeEventListener('storyAdded', handleStoryAdded);
+    };
   }, []);
 
   const initializeLibrary = async () => {
