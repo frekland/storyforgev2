@@ -914,6 +914,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <option value="12">🧑 Epic Readers (13+ years, ~2000 words)</option>
                             </select>
                         </div>
+                        
+                        <!-- Chapter Selection -->
+                        <div class="chapter-selection-compact">
+                            <label for="classic-chapters" class="compact-label">
+                                <span>📚 Number of Chapters:</span>
+                            </label>
+                            <select id="classic-chapters" class="paper-select" required>
+                                <option value="1" selected>📖 Single Chapter (Quick Story)</option>
+                                <option value="2">📚 Two Chapters (Extended Adventure)</option>
+                                <option value="3">📜 Three Chapters (Epic Tale)</option>
+                            </select>
+                            <div class="chapter-hint">
+                                <span class="hint-icon">💡</span>
+                                <span>Multi-chapter stories create richer adventures and their own playlist!</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="story-form-container">
@@ -3513,13 +3529,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    const updateProgressStage = (stageNum, status, text = '') => {
+    const updateProgressStage = (stageNum, status, text = '', currentChapter = 1, totalChapters = 1) => {
         const stage = document.getElementById(`stage-${stageNum}`);
         if (!stage) return;
         
         const spinner = stage.querySelector('.stage-spinner');
         const check = stage.querySelector('.stage-check');
         const progressText = document.getElementById('progress-text');
+        
+        // Update chapter indicators
+        const currentChapterSpan = document.getElementById('current-chapter');
+        const totalChaptersSpan = document.getElementById('total-chapters');
+        if (currentChapterSpan) currentChapterSpan.textContent = currentChapter;
+        if (totalChaptersSpan) totalChaptersSpan.textContent = totalChapters;
+        
+        // Show/hide chapter progress info
+        const chapterProgressInfo = document.getElementById('chapter-progress-info');
+        if (chapterProgressInfo) {
+            chapterProgressInfo.style.display = totalChapters > 1 ? 'block' : 'none';
+        }
         
         // Update state for footer sync
         progressModalState.currentStage = stageNum;
@@ -3533,16 +3561,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (status === 'active') {
             stage.classList.add('active');
             spinner?.classList.remove('hidden');
-            if (progressText && text) progressText.textContent = text;
+            if (progressText && text) {
+                const chapterText = totalChapters > 1 ? ` (Chapter ${currentChapter}/${totalChapters})` : '';
+                progressText.textContent = text + chapterText;
+            }
         } else if (status === 'completed') {
             stage.classList.add('completed');
             check?.classList.remove('hidden');
         }
         
-        // Update progress bar and footer
-        const progress = (stageNum / 5) * 100;
-        progressModalState.progress = progress;
-        updateProgressBar(progress);
+        // Update progress bar and footer - account for multi-chapter progress
+        const baseProgress = (stageNum / 5) * 100;
+        const chapterProgress = totalChapters > 1 ? 
+            ((currentChapter - 1) / totalChapters * 100) + (baseProgress / totalChapters) : 
+            baseProgress;
+        
+        progressModalState.progress = chapterProgress;
+        updateProgressBar(chapterProgress);
         
         // Update footer if minimized
         if (progressModalState.isMinimized) {
@@ -3561,9 +3596,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateClassicStory = async (isSurpriseMode) => {
         console.log(`Generating classic story, surprise mode: ${isSurpriseMode}`);
         
+        // Get number of chapters
+        const numChapters = parseInt(document.getElementById('classic-chapters')?.value || '1');
+        
         // Show progress modal instead of old loading spinner
         showProgressModal();
-        updateProgressStage(1, 'active', 'Gathering magical ingredients...');
+        updateProgressStage(1, 'active', 'Gathering magical ingredients...', 1, numChapters);
         
         // Hide story output initially
         const storyOutput = document.getElementById('story-output');
@@ -3580,11 +3618,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let sceneDescription = null;
             
             // Complete stage 1
-            updateProgressStage(1, 'completed');
+            updateProgressStage(1, 'completed', '', 1, numChapters);
             
             if (heroImageBase64 || sceneImageBase64) {
                 // Move to image analysis stage
-                updateProgressStage(2, 'active', 'Teaching our dragons to see your artwork...');
+                updateProgressStage(2, 'active', 'Teaching our dragons to see your artwork...', 1, numChapters);
                 
                 console.log('🖼️ Starting image analysis...');
                 
@@ -3627,14 +3665,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Complete image analysis stage
-                updateProgressStage(2, 'completed');
+                updateProgressStage(2, 'completed', '', 1, numChapters);
             } else {
                 // Skip image analysis if no images
-                updateProgressStage(2, 'completed');
+                updateProgressStage(2, 'completed', '', 1, numChapters);
             }
             
             // Move to story creation stage
-            updateProgressStage(3, 'active', 'Our storytelling wizards are weaving your tale...');
+            updateProgressStage(3, 'active', 'Our storytelling wizards are weaving your tale...', 1, numChapters);
             
             // Get form data in the format expected by the API (without large image data)
             const formData = {
@@ -3643,6 +3681,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 promptRising: document.getElementById('classic-promptRising')?.value.trim() || '',
                 promptClimax: document.getElementById('classic-promptClimax')?.value.trim() || '',
                 age: document.getElementById('classic-story-age')?.value || '6',
+                chapters: document.getElementById('classic-chapters')?.value || '1',
                 characterDescription: characterDescription,
                 sceneDescription: sceneDescription,
                 surpriseMode: isSurpriseMode
@@ -3678,16 +3717,36 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
+            // Complete story creation stage
+            updateProgressStage(3, 'completed', '', numChapters, numChapters);
+            
+            // Move to audio processing stage
+            updateProgressStage(4, 'active', 'Bringing words to life...', numChapters, numChapters);
+            
             // Basic debug info for troubleshooting if needed
             if (data.debug && data.debug.punctuationAnalysis.storyContainsDot > 0) {
                 console.log('⚠️ Story contains', data.debug.punctuationAnalysis.storyContainsDot, 'dot words - may need cleaning');
             }
             
+            // Handle multi-chapter vs single chapter response
+            const isMultiChapter = data.chapters && data.chapters.length > 1;
+            console.log(`📚 Story generated:`, {
+                chapters: data.chapters?.length || 1,
+                isMultiChapter,
+                totalDuration: data.duration
+            });
+            
             // Handle the response
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
             
+            // Display story content
             if (data.story && storyText) {
                 storyText.textContent = data.story;
+            }
+            
+            // For multi-chapter stories, also display chapter breakdown
+            if (isMultiChapter) {
+                displayChapterBreakdown(data.chapters, storyText);
             }
             
             // Handle audio if available
@@ -3724,32 +3783,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            // Complete audio processing stage
+            updateProgressStage(4, 'completed', '', numChapters, numChapters);
+            
             // Auto-upload to Yoto immediately if user is authenticated
             if (accessToken) {
                 console.log('🚀 Auto-uploading to Yoto immediately...');
+                updateProgressStage(5, 'active', 'Uploading to Yoto Kingdom...', numChapters, numChapters);
+                
                 try {
-                    // Prepare complete story data with the perfect audio
-                    const completeStoryData = {
-                        ...formData,
-                        story: data.story,
-                        audio: data.audio, // The perfect base64 audio
-                        duration: data.duration,
-                        fileSize: data.fileSize
-                    };
-                    
-                    // Start Yoto upload immediately
-                    createOrUpdateStoryForgePlaylist(completeStoryData, accessToken)
-                        .then(() => {
-                            console.log('✅ Auto-uploaded to Yoto successfully!');
-                            showAlert('Story created and automatically uploaded to Yoto! 🎧');
-                        })
-                        .catch((yotoError) => {
-                            console.error('❌ Auto-upload to Yoto failed:', yotoError);
-                            showAlert('Story created successfully! Yoto upload failed - you can retry manually.');
-                        });
-                } catch (autoUploadError) {
-                    console.error('❌ Error in auto-upload setup:', autoUploadError);
+                    // For multi-chapter stories, create new playlist with all chapters
+                    if (isMultiChapter) {
+                        await createMultiChapterYotoPlaylist(data, formData, accessToken);
+                        updateProgressStage(5, 'completed', '', numChapters, numChapters);
+                        hideProgressModal();
+                        showAlert(`🎉 ${numChapters}-chapter story created and uploaded to Yoto as a complete playlist! 🎧`);
+                    } else {
+                        // Single chapter - use existing logic
+                        const completeStoryData = {
+                            ...formData,
+                            story: data.story,
+                            audio: data.audio,
+                            duration: data.duration,
+                            fileSize: data.fileSize
+                        };
+                        
+                        await createOrUpdateStoryForgePlaylist(completeStoryData, accessToken);
+                        updateProgressStage(5, 'completed', '', numChapters, numChapters);
+                        hideProgressModal();
+                        showAlert('Story created and automatically uploaded to Yoto! 🎧');
+                    }
+                } catch (yotoError) {
+                    console.error('❌ Auto-upload to Yoto failed:', yotoError);
+                    updateProgressStage(5, 'completed', '', numChapters, numChapters);
+                    hideProgressModal();
+                    showAlert('Story created successfully! Yoto upload failed - you can retry manually.');
                 }
+            } else {
+                // Complete progress and hide modal
+                updateProgressStage(5, 'completed', '', numChapters, numChapters);
+                hideProgressModal();
+            }
+            
+            // Show story output
+            if (storyOutput) {
+                storyOutput.classList.remove('hidden');
             }
             
         } catch (error) {
@@ -3759,6 +3837,255 @@ document.addEventListener('DOMContentLoaded', () => {
                 storyText.textContent = `Oh no! The storyforge has run out of magic. Error: ${error.message}`;
             }
             showAlert(error.message);
+        }
+    };
+    
+    // Helper function to display chapter breakdown in the story output
+    const displayChapterBreakdown = (chapters, storyTextElement) => {
+        if (!chapters || chapters.length <= 1) return;
+        
+        console.log('📚 Displaying chapter breakdown for', chapters.length, 'chapters');
+        
+        // Create chapter navigation and display
+        const chapterNavigation = document.createElement('div');
+        chapterNavigation.className = 'chapter-navigation paper-scrap';
+        chapterNavigation.innerHTML = `
+            <h3 class="chapter-nav-title">
+                <span class="chapter-nav-icon">📚</span>
+                <span>Your Epic ${chapters.length}-Chapter Tale!</span>
+            </h3>
+            <div class="chapter-buttons"></div>
+        `;
+        
+        const buttonContainer = chapterNavigation.querySelector('.chapter-buttons');
+        
+        // Add chapter buttons
+        chapters.forEach((chapter, index) => {
+            const button = document.createElement('button');
+            button.className = `chapter-btn ${index === 0 ? 'active' : ''}`;
+            button.innerHTML = `
+                <span class="chapter-number">Chapter ${index + 1}</span>
+                <span class="chapter-title">${chapter.title}</span>
+                <span class="chapter-duration">${Math.floor(chapter.duration / 60)}:${(chapter.duration % 60).toString().padStart(2, '0')}</span>
+            `;
+            
+            button.addEventListener('click', () => {
+                // Update active state
+                buttonContainer.querySelectorAll('.chapter-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update story display
+                storyTextElement.textContent = chapter.text;
+                
+                // Update audio player if available
+                const audioPlayer = document.getElementById('story-audio-player');
+                if (audioPlayer && chapter.audio) {
+                    const audioBlob = b64toBlob(chapter.audio, 'audio/mpeg');
+                    audioPlayer.src = URL.createObjectURL(audioBlob);
+                }
+            });
+            
+            buttonContainer.appendChild(button);
+        });
+        
+        // Insert chapter navigation before the story content
+        const storyContent = storyTextElement.closest('.story-content');
+        if (storyContent) {
+            storyContent.parentNode.insertBefore(chapterNavigation, storyContent);
+        }
+    };
+    
+    // Helper function to create multi-chapter Yoto playlist
+    const createMultiChapterYotoPlaylist = async (storyData, formData, accessToken) => {
+        console.log('🎵 Creating multi-chapter Yoto playlist with', storyData.chapters.length, 'chapters');
+        
+        const playlistTitle = `${formData.heroName || 'Epic Tale'} - Multi-Chapter Adventure`;
+        
+        // Create playlist structure following Yoto API format
+        const playlist = {
+            title: playlistTitle,
+            content: {
+                chapters: []
+            },
+            metadata: {
+                description: `A ${storyData.chapters.length}-chapter adventure story created with StoryForge`,
+                media: {
+                    duration: storyData.duration,
+                    fileSize: storyData.fileSize
+                }
+            }
+        };
+        
+        // Add cover image if available
+        if (heroImageBase64) {
+            try {
+                const coverImageUrl = await uploadCoverImageToYoto(heroImageBase64, accessToken);
+                if (coverImageUrl) {
+                    playlist.metadata.cover = { imageL: coverImageUrl };
+                }
+            } catch (imageError) {
+                console.warn('⚠️ Cover image upload failed:', imageError.message);
+            }
+        }
+        
+        // Process each chapter and upload audio
+        for (let i = 0; i < storyData.chapters.length; i++) {
+            const chapter = storyData.chapters[i];
+            console.log(`🎵 Processing chapter ${i + 1}: "${chapter.title}"`);
+            
+            // Upload chapter audio to Yoto
+            const trackUrl = await uploadChapterAudioToYoto(chapter.audio, accessToken);
+            
+            // Create chapter structure
+            const yotoChapter = {
+                key: String(i + 1).padStart(2, '0'),
+                title: chapter.title,
+                tracks: [{
+                    key: "01",
+                    title: "Chapter Audio",
+                    trackUrl: trackUrl,
+                    type: "audio",
+                    format: "mp3",
+                    duration: chapter.duration,
+                    fileSize: chapter.fileSize
+                }],
+                display: {
+                    icon16x16: "yoto:#ZuVmuvnoFiI4el6pBPvq0ofcgQ18HjrCmdPEE7GCnP8" // Default chapter icon
+                }
+            };
+            
+            playlist.content.chapters.push(yotoChapter);
+        }
+        
+        // Create the playlist on Yoto
+        console.log('🚀 Creating playlist on Yoto with', playlist.content.chapters.length, 'chapters');
+        const response = await fetch('https://api.yotoplay.com/content', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(playlist)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Yoto playlist creation failed: ${response.status} - ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Multi-chapter playlist created successfully:', result.cardId);
+        return result;
+    };
+    
+    // Helper function to upload chapter audio to Yoto and get permanent URL
+    const uploadChapterAudioToYoto = async (audioBase64, accessToken) => {
+        try {
+            // Convert base64 to blob
+            const audioBlob = b64toBlob(audioBase64, 'audio/mpeg');
+            
+            // Step 1: Get upload URL
+            const uploadUrlResponse = await fetch('https://api.yotoplay.com/media/transcode/audio/uploadUrl', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!uploadUrlResponse.ok) {
+                throw new Error(`Failed to get upload URL: ${uploadUrlResponse.status}`);
+            }
+            
+            const { upload: { uploadUrl, uploadId } } = await uploadUrlResponse.json();
+            
+            // Step 2: Upload the audio
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: audioBlob,
+                headers: {
+                    'Content-Type': 'audio/mpeg'
+                }
+            });
+            
+            if (!uploadResponse.ok) {
+                throw new Error(`Audio upload failed: ${uploadResponse.status}`);
+            }
+            
+            // Step 3: Wait for transcoding and get permanent URL
+            let attempts = 0;
+            const maxAttempts = 30;
+            
+            while (attempts < maxAttempts) {
+                const transcodeResponse = await fetch(
+                    `https://api.yotoplay.com/media/upload/${uploadId}/transcoded?loudnorm=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+                
+                if (transcodeResponse.ok) {
+                    const data = await transcodeResponse.json();
+                    if (data.transcode && data.transcode.transcodedSha256) {
+                        return `yoto:#${data.transcode.transcodedSha256}`;
+                    }
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                attempts++;
+            }
+            
+            throw new Error('Transcoding timeout');
+            
+        } catch (error) {
+            console.error('❌ Chapter audio upload failed:', error);
+            throw error;
+        }
+    };
+    
+    // Helper function to upload cover image to Yoto
+    const uploadCoverImageToYoto = async (imageBase64, accessToken) => {
+        try {
+            if (imageBase64.includes('image/svg+xml')) {
+                console.log('📄 Skipping SVG image upload (not supported by Yoto)');
+                return null;
+            }
+            
+            const mimeType = imageBase64.substring(
+                imageBase64.indexOf(":") + 1, 
+                imageBase64.indexOf(";")
+            );
+            const imageBytes = atob(imageBase64.split(',')[1]);
+            const imageArray = new Uint8Array(imageBytes.length);
+            for (let i = 0; i < imageBytes.length; i++) {
+                imageArray[i] = imageBytes.charCodeAt(i);
+            }
+            const imageFile = new Blob([imageArray], { type: mimeType });
+            
+            const uploadUrl = new URL("https://api.yotoplay.com/media/coverImage/user/me/upload");
+            uploadUrl.searchParams.set("autoconvert", "true");
+            
+            const uploadResponse = await fetch(uploadUrl, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': mimeType,
+                },
+                body: imageFile,
+            });
+            
+            if (uploadResponse.ok) {
+                const uploadResult = await uploadResponse.json();
+                return uploadResult.coverImage.mediaUrl;
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('⚠️ Cover image upload failed:', error);
+            return null;
         }
     };
     

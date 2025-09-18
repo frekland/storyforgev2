@@ -246,6 +246,206 @@ function processStoryForTTS(storyText) {
   return cleanText; // OpenAI TTS doesn't support SSML or pause markers
 }
 
+// Helper function to generate chapter title
+async function generateChapterTitle(chapterText, chapterIndex, totalChapters, heroName) {
+  const titlePrompt = `Create a short, engaging chapter title (maximum 4-6 words) for this part of a children's story. 
+
+Chapter ${chapterIndex} of ${totalChapters}:
+"${chapterText.substring(0, 300)}..."
+
+The title should:
+- Be exciting and kid-friendly
+- Capture the main event or theme of this chapter
+- Not spoil the story
+- Be suitable for children
+
+Respond with ONLY the title, no quotes or extra text.`;
+
+  try {
+    const result = await model.generateContent(titlePrompt);
+    const title = (await result.response).text().trim();
+    // Clean up any quotes or extra formatting
+    return title.replace(/["']/g, '').trim();
+  } catch (error) {
+    console.warn('⚠️ Chapter title generation failed, using default:', error.message);
+    return `Chapter ${chapterIndex}: ${heroName}'s Adventure`;
+  }
+}
+
+// Multi-chapter story generation function
+async function generateMultiChapterStory({ heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode, numChapters }) {
+  console.log(`📚 Generating ${numChapters}-chapter story...`);
+  
+  // If surprise mode, generate random elements first
+  let storyElements = { heroName, promptSetup, promptRising, promptClimax };
+  if (surpriseMode) {
+    storyElements = generateRandomStoryElements(age);
+  }
+  
+  const chapters = [];
+  let previousChapterSummary = '';
+  let totalDuration = 0;
+  let totalFileSize = 0;
+  let generatedImage = null;
+  
+  // Add extended timeout for multi-chapter stories
+  const timeoutPromise = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Multi-chapter story generation timeout - please try again')), 180000) // 3 minutes
+  );
+  
+  try {
+    for (let chapterIndex = 1; chapterIndex <= numChapters; chapterIndex++) {
+      console.log(`📖 Generating Chapter ${chapterIndex}/${numChapters}...`);
+      
+      // Build chapter-specific prompt based on story progression
+      const chapterPrompt = buildChapterPrompt(storyElements, chapterIndex, numChapters, previousChapterSummary);
+      
+      // Generate chapter story and audio
+      const chapterResult = await Promise.race([
+        generateStoryAndAudio({
+          heroName: storyElements.heroName,
+          promptSetup: chapterPrompt.setup,
+          promptRising: chapterPrompt.rising,
+          promptClimax: chapterPrompt.climax,
+          heroImage: chapterIndex === 1 ? heroImage : null, // Only use image for first chapter
+          sceneImage: chapterIndex === 1 ? sceneImage : null,
+          characterDescription,
+          sceneDescription: chapterIndex === 1 ? sceneDescription : null,
+          age,
+          surpriseMode: false // Don't re-randomize for subsequent chapters
+        }),
+        timeoutPromise
+      ]);
+      
+      // Store generated image from first chapter (for surprise mode)
+      if (chapterIndex === 1 && chapterResult.generatedImage) {
+        generatedImage = chapterResult.generatedImage;
+      }
+      
+      // Generate chapter title
+      const chapterTitle = await generateChapterTitle(
+        chapterResult.storyText, 
+        chapterIndex, 
+        numChapters, 
+        storyElements.heroName || 'Hero'
+      );
+      
+      // Create chapter object
+      const chapter = {
+        title: chapterTitle,
+        text: chapterResult.storyText,
+        audio: chapterResult.audioContent.toString('base64'),
+        duration: Math.ceil(chapterResult.storyText.split(' ').length / 2.5),
+        fileSize: chapterResult.audioContent.length
+      };
+      
+      chapters.push(chapter);
+      totalDuration += chapter.duration;
+      totalFileSize += chapter.fileSize;
+      
+      // Prepare summary for next chapter
+      if (chapterIndex < numChapters) {
+        previousChapterSummary = await generateChapterSummary(chapterResult.storyText, chapterIndex);
+      }
+      
+      console.log(`✅ Chapter ${chapterIndex} complete: "${chapterTitle}" (${chapter.duration}s)`);
+    }
+    
+    // Combine all chapter texts for backward compatibility
+    const fullStoryText = chapters.map((chapter, index) => 
+      `Chapter ${index + 1}: ${chapter.title}\n\n${chapter.text}`
+    ).join('\n\n---\n\n');
+    
+    const response = {
+      story: fullStoryText,
+      audio: chapters[0].audio, // First chapter audio for backward compatibility
+      duration: totalDuration,
+      fileSize: totalFileSize,
+      chapters: chapters,
+      numChapters: numChapters,
+      debug: {
+        storyLength: fullStoryText.length,
+        audioSize: totalFileSize,
+        heroName: storyElements.heroName || '',
+        chapters: numChapters,
+        chapterTitles: chapters.map(c => c.title),
+        punctuationAnalysis: {
+          storyContainsDot: (fullStoryText.match(/\bdot\b/gi) || []).length,
+          storyContainsPeriod: (fullStoryText.match(/\bperiod\b/gi) || []).length,
+          actualPeriods: (fullStoryText.match(/\./g) || []).length
+        }
+      }
+    };
+    
+    // Include generated image for surprise mode
+    if (generatedImage) {
+      response.generatedImage = generatedImage;
+    }
+    
+    console.log(`🎉 Multi-chapter story complete: ${numChapters} chapters, ${totalDuration}s total`);
+    return response;
+    
+  } catch (error) {
+    console.error('❌ Multi-chapter generation failed:', error);
+    throw new Error(`Failed to generate ${numChapters}-chapter story: ${error.message}`);
+  }
+}
+
+// Helper function to build chapter-specific prompts
+function buildChapterPrompt(storyElements, chapterIndex, totalChapters, previousSummary) {
+  const { heroName, promptSetup, promptRising, promptClimax } = storyElements;
+  
+  if (totalChapters === 1) {
+    return {
+      setup: promptSetup,
+      rising: promptRising,
+      climax: promptClimax
+    };
+  }
+  
+  // Multi-chapter story progression
+  if (chapterIndex === 1) {
+    // First chapter: Introduction and setup
+    return {
+      setup: promptSetup,
+      rising: `${heroName} begins their adventure and encounters the first signs of ${promptRising}`,
+      climax: `the chapter ends with ${heroName} discovering something important that leads to bigger challenges ahead`
+    };
+  } else if (chapterIndex === totalChapters) {
+    // Final chapter: Resolution
+    return {
+      setup: `continuing from the previous adventure, ${previousSummary}`,
+      rising: `${heroName} faces the ultimate challenge involving ${promptRising}`,
+      climax: promptClimax
+    };
+  } else {
+    // Middle chapter: Development
+    return {
+      setup: `continuing the adventure, ${previousSummary}`,
+      rising: `${heroName} encounters new obstacles and allies while dealing with ${promptRising}`,
+      climax: `the adventure grows more intense, setting up an even greater challenge for ${heroName}`
+    };
+  }
+}
+
+// Helper function to generate chapter summary for continuity
+async function generateChapterSummary(chapterText, chapterIndex) {
+  const summaryPrompt = `Summarize this chapter of a children's story in 1-2 sentences to provide context for the next chapter. Focus on what happened and where the story is headed:
+
+"${chapterText.substring(0, 500)}..."
+
+Summary:`;
+  
+  try {
+    const result = await model.generateContent(summaryPrompt);
+    const summary = (await result.response).text().trim();
+    return summary;
+  } catch (error) {
+    console.warn(`⚠️ Chapter ${chapterIndex} summary generation failed:`, error.message);
+    return `the hero's adventure continues with new challenges ahead`;
+  }
+}
+
 // Helper function to generate random story elements for surprise mode
 function generateRandomStoryElements(age) {
   const heroes = {
@@ -288,7 +488,7 @@ function generateRandomStoryElements(age) {
 
 // Mode handler functions
 async function handleClassicMode(requestBody) {
-  const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode } = requestBody;
+  const { heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode, chapters = 1 } = requestBody;
   
   // Validate input (skip validation for surprise mode)
   if (!surpriseMode) {
@@ -303,48 +503,66 @@ async function handleClassicMode(requestBody) {
     }
   }
 
-  console.log(surpriseMode ? "Generating surprise story for client..." : "Generating custom story for client...");
+  const numChapters = Math.min(Math.max(parseInt(chapters) || 1, 1), 3); // Limit to 1-3 chapters
+  console.log(`${surpriseMode ? 'Generating surprise story' : 'Generating custom story'} with ${numChapters} chapter(s) for client...`);
   
-  // Add timeout protection (110 seconds - just under Vercel's 120s limit)
-  const timeoutPromise = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
-  );
-  
-  const storyPromise = generateStoryAndAudio({
-    heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
-  });
-  
-  const { storyText, audioContent, generatedImage } = await Promise.race([
-    storyPromise,
-    timeoutPromise
-  ]);
+  // For single chapter, use original logic
+  if (numChapters === 1) {
+    // Add timeout protection (110 seconds - just under Vercel's 120s limit)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Story generation timeout - please try again')), 110000)
+    );
+    
+    const storyPromise = generateStoryAndAudio({
+      heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, characterDescription, sceneDescription, age, surpriseMode
+    });
+    
+    const { storyText, audioContent, generatedImage } = await Promise.race([
+      storyPromise,
+      timeoutPromise
+    ]);
 
-  // Return story text, Base64 audio, and generated image (if any) for the client to handle
-  const response = {
-    story: storyText,
-    audio: audioContent.toString('base64'),
-    // Calculate estimated duration (rough approximation: ~150 words per minute)
-    duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
-    fileSize: audioContent.length,
-    // Add basic debugging information for client-side troubleshooting
-    debug: {
-      storyLength: storyText.length,
-      audioSize: audioContent.length,
-      heroName: heroName || '',
-      punctuationAnalysis: {
-        storyContainsDot: (storyText.match(/\bdot\b/gi) || []).length,
-        storyContainsPeriod: (storyText.match(/\bperiod\b/gi) || []).length,
-        actualPeriods: (storyText.match(/\./g) || []).length
+    // Return story text, Base64 audio, and generated image (if any) for the client to handle
+    const response = {
+      story: storyText,
+      audio: audioContent.toString('base64'),
+      // Calculate estimated duration (rough approximation: ~150 words per minute)
+      duration: Math.ceil(storyText.split(' ').length / 2.5), // seconds
+      fileSize: audioContent.length,
+      chapters: [{
+        title: await generateChapterTitle(storyText, 1, 1, heroName || 'Hero'),
+        text: storyText,
+        audio: audioContent.toString('base64'),
+        duration: Math.ceil(storyText.split(' ').length / 2.5),
+        fileSize: audioContent.length
+      }],
+      // Add basic debugging information for client-side troubleshooting
+      debug: {
+        storyLength: storyText.length,
+        audioSize: audioContent.length,
+        heroName: heroName || '',
+        chapters: numChapters,
+        punctuationAnalysis: {
+          storyContainsDot: (storyText.match(/\bdot\b/gi) || []).length,
+          storyContainsPeriod: (storyText.match(/\bperiod\b/gi) || []).length,
+          actualPeriods: (storyText.match(/\./g) || []).length
+        }
       }
+    };
+    
+    // Include generated image for surprise mode
+    if (generatedImage) {
+      response.generatedImage = generatedImage;
     }
-  };
-  
-  // Include generated image for surprise mode
-  if (generatedImage) {
-    response.generatedImage = generatedImage;
+    
+    return response;
   }
   
-  return response;
+  // Multi-chapter generation
+  return await generateMultiChapterStory({
+    heroName, promptSetup, promptRising, promptClimax, heroImage, sceneImage, 
+    characterDescription, sceneDescription, age, surpriseMode, numChapters
+  });
 }
 
 async function handleWantedPosterMode(requestBody) {

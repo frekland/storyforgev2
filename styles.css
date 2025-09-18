@@ -1560,6 +1560,144 @@ body {
   flex-wrap: wrap;
 }
 
+.chapter-selection-compact {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 15px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 2px dashed var(--accent-secondary);
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.chapter-selection-compact label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.chapter-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 5px;
+}
+
+.hint-icon {
+  font-size: 1.1em;
+  color: var(--accent-color);
+}
+
+/* Chapter Navigation Styles */
+.chapter-navigation {
+  margin-bottom: 20px;
+  transform: rotate(-0.3deg);
+}
+
+.chapter-nav-title {
+  font-family: var(--font-title);
+  color: var(--accent-color);
+  margin: 0 0 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  justify-content: center;
+}
+
+.chapter-nav-icon {
+  font-size: 1.3em;
+  animation: chapterBounce 2s ease-in-out infinite;
+}
+
+@keyframes chapterBounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+}
+
+.chapter-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.chapter-btn {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px var(--shadow-light);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.chapter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-medium);
+  background: var(--bg-paper);
+}
+
+.chapter-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-secondary);
+  box-shadow: 0 4px 12px var(--shadow-dark);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.chapter-number {
+  font-family: var(--font-title);
+  font-size: 0.9em;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.chapter-title {
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 2px 0;
+}
+
+.chapter-duration {
+  font-size: 0.8em;
+  opacity: 0.7;
+  font-family: var(--font-body);
+}
+
+.chapter-btn.active .chapter-number,
+.chapter-btn.active .chapter-duration {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .chapter-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .chapter-btn {
+    padding: 10px 12px;
+  }
+}
+
 .instructions-section {
   background: var(--bg-secondary);
   border: 2px dashed var(--border-color);
@@ -1836,6 +1974,39 @@ body {
 .progress-footer {
   margin-top: 20px;
   text-align: center;
+}
+
+.chapter-progress-info {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.chapter-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 8px 15px;
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.chapter-text {
+  font-family: var(--font-title);
+  color: var(--text-primary);
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
+.chapter-icon {
+  font-size: 1.2em;
+  animation: chapterPulse 2s ease-in-out infinite;
+}
+
+@keyframes chapterPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .progress-bar-container {
