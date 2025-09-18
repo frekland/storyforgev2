@@ -246,26 +246,45 @@ function processStoryForTTS(storyText) {
   return cleanText; // OpenAI TTS doesn't support SSML or pause markers
 }
 
-// Helper function to generate chapter title
+// Helper function to generate engaging chapter titles
 async function generateChapterTitle(chapterText, chapterIndex, totalChapters, heroName) {
-  const titlePrompt = `Create a short, engaging chapter title (maximum 4-6 words) for this part of a children's story. 
+  // Create context-aware title prompts based on chapter position
+  let titleContext = '';
+  if (chapterIndex === 1) {
+    titleContext = 'This is the opening chapter that introduces the hero and sets up the adventure.';
+  } else if (chapterIndex === totalChapters) {
+    titleContext = 'This is the final chapter where everything comes together in an epic conclusion.';
+  } else {
+    titleContext = 'This is a middle chapter that develops the story and reveals new discoveries.';
+  }
+  
+  const titlePrompt = `Create an exciting, kid-friendly chapter title (3-5 words maximum) for this children's story chapter.
 
+Chapter Context: ${titleContext}
 Chapter ${chapterIndex} of ${totalChapters}:
-"${chapterText.substring(0, 300)}..."
+"${chapterText.substring(0, 400)}..."
 
 The title should:
-- Be exciting and kid-friendly
-- Capture the main event or theme of this chapter
-- Not spoil the story
-- Be suitable for children
+- Be exciting and mysterious without spoiling the story
+- Capture the main action, discovery, or emotion of this chapter
+- Use vivid, child-friendly language
+- Be suitable for ages 3-12
+- Sound like it belongs in a fantasy adventure book
 
-Respond with ONLY the title, no quotes or extra text.`;
+Examples of good chapter titles:
+- "The Secret Door"
+- "Dragons and Friendship"
+- "The Magic Forest"
+- "A Brave Discovery"
+- "The Final Quest"
+
+Respond with ONLY the chapter title, no quotes or explanations.`;
 
   try {
     const result = await model.generateContent(titlePrompt);
-    const title = (await result.response).text().trim();
-    // Clean up any quotes or extra formatting
-    return title.replace(/["']/g, '').trim();
+    const title = (await result.response).text().trim().replace(/["']/g, '').trim();
+    console.log(`🎨 Generated chapter title: "${title}"`);
+    return title;
   } catch (error) {
     console.warn('⚠️ Chapter title generation failed, using default:', error.message);
     return `Chapter ${chapterIndex}: ${heroName}'s Adventure`;
@@ -299,6 +318,12 @@ async function generateMultiChapterStory({ heroName, promptSetup, promptRising, 
       
       // Build chapter-specific prompt based on story progression
       const chapterPrompt = buildChapterPrompt(storyElements, chapterIndex, numChapters, previousChapterSummary);
+      
+      // Log the chapter prompt for debugging
+      console.log(`📖 Chapter ${chapterIndex} prompt structure:`);
+      console.log(`  Setup: ${chapterPrompt.setup.substring(0, 100)}...`);
+      console.log(`  Rising: ${chapterPrompt.rising.substring(0, 100)}...`);
+      console.log(`  Climax: ${chapterPrompt.climax.substring(0, 100)}...`);
       
       // Generate chapter story and audio
       const chapterResult = await Promise.race([
@@ -391,7 +416,7 @@ async function generateMultiChapterStory({ heroName, promptSetup, promptRising, 
   }
 }
 
-// Helper function to build chapter-specific prompts
+// Helper function to build chapter-specific prompts with narrative progression
 function buildChapterPrompt(storyElements, chapterIndex, totalChapters, previousSummary) {
   const { heroName, promptSetup, promptRising, promptClimax } = storyElements;
   
@@ -403,46 +428,64 @@ function buildChapterPrompt(storyElements, chapterIndex, totalChapters, previous
     };
   }
   
-  // Multi-chapter story progression
+  // Create connected multi-chapter narrative with escalating complexity
   if (chapterIndex === 1) {
-    // First chapter: Introduction and setup
+    // Chapter 1: Introduction and World-Building
     return {
-      setup: promptSetup,
-      rising: `${heroName} begins their adventure and encounters the first signs of ${promptRising}`,
-      climax: `the chapter ends with ${heroName} discovering something important that leads to bigger challenges ahead`
+      setup: `${promptSetup}. This is where ${heroName}'s journey begins, and we need to establish the world, introduce key characters, and set up the foundation for the adventures ahead.`,
+      rising: `${heroName} first encounters ${promptRising}. This is just the beginning - show how this challenge reveals there's something much bigger at stake. Introduce hints of mysteries, new allies, or discoveries that will become important later.`,
+      climax: `${heroName} makes a significant discovery or achieves a small victory, but realizes this was just the first step. The chapter should end with ${heroName} understanding that their journey is far from over, and new questions or challenges have emerged that demand exploration.`
     };
-  } else if (chapterIndex === totalChapters) {
-    // Final chapter: Resolution
+  } else if (chapterIndex === 2) {
+    // Chapter 2: Development and New Discoveries
     return {
-      setup: `continuing from the previous adventure, ${previousSummary}`,
-      rising: `${heroName} faces the ultimate challenge involving ${promptRising}`,
-      climax: promptClimax
+      setup: `Building directly from the previous chapter: ${previousSummary}. ${heroName} now ventures into unexplored territory or faces entirely new aspects of their world.`,
+      rising: `${heroName} discovers new layers of ${promptRising} that were hidden before. Introduce new locations, characters, or magical elements that expand the world. Show how the challenge from Chapter 1 was connected to something even more significant. ${heroName} should gain new abilities, insights, or allies.`,
+      climax: totalChapters === 2 ? 
+        `${heroName} uses everything they've learned and discovered to face the ultimate challenge. ${promptClimax}. Show how both chapters connected to create this final resolution.` :
+        `${heroName} uncovers a crucial secret or faces a major setback that changes everything. The stakes are raised significantly, leading to the final confrontation ahead.`
     };
-  } else {
-    // Middle chapter: Development
+  } else if (chapterIndex === 3) {
+    // Chapter 3: Epic Conclusion
     return {
-      setup: `continuing the adventure, ${previousSummary}`,
-      rising: `${heroName} encounters new obstacles and allies while dealing with ${promptRising}`,
-      climax: `the adventure grows more intense, setting up an even greater challenge for ${heroName}`
+      setup: `The grand finale: ${previousSummary}. All the discoveries, allies, and growth from the previous chapters now come together as ${heroName} faces their greatest test.`,
+      rising: `${heroName} must use every skill learned, every friend made, and every piece of knowledge gained from Chapters 1 and 2. The final manifestation of ${promptRising} emerges - bigger and more complex than ever imagined. Show how all previous events led to this moment.`,
+      climax: `${promptClimax}. The resolution should feel earned and satisfying, tying together all the threads from previous chapters. Show how ${heroName} has grown from their experiences and how the world is changed by their journey.`
     };
   }
+  
+  // Fallback for unexpected chapter numbers
+  return {
+    setup: `continuing the adventure from ${previousSummary}`,
+    rising: `${heroName} faces new challenges related to ${promptRising}`,
+    climax: `the adventure continues with new discoveries and growth for ${heroName}`
+  };
 }
 
-// Helper function to generate chapter summary for continuity
+// Helper function to generate detailed chapter summary for continuity
 async function generateChapterSummary(chapterText, chapterIndex) {
-  const summaryPrompt = `Summarize this chapter of a children's story in 1-2 sentences to provide context for the next chapter. Focus on what happened and where the story is headed:
+  const summaryPrompt = `Create a detailed summary of this chapter that will help create a connected next chapter. Include:
 
-"${chapterText.substring(0, 500)}..."
+1. What happened in this chapter
+2. What the hero learned or discovered
+3. New characters, locations, or elements introduced
+4. Unresolved mysteries or hints for the future
+5. How the hero has grown or changed
+6. What questions or challenges remain
 
-Summary:`;
+Chapter ${chapterIndex} text:
+"${chapterText.substring(0, 800)}..."
+
+Detailed Summary for Story Continuity:`;
   
   try {
     const result = await model.generateContent(summaryPrompt);
     const summary = (await result.response).text().trim();
+    console.log(`📝 Chapter ${chapterIndex} detailed summary:`, summary.substring(0, 200) + '...');
     return summary;
   } catch (error) {
     console.warn(`⚠️ Chapter ${chapterIndex} summary generation failed:`, error.message);
-    return `the hero's adventure continues with new challenges ahead`;
+    return `In this chapter, the hero made important discoveries and faced challenges that revealed deeper mysteries. New allies and locations were introduced, setting up greater adventures ahead.`;
   }
 }
 

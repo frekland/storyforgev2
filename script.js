@@ -3936,13 +3936,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Upload chapter audio to Yoto
             const trackUrl = await uploadChapterAudioToYoto(chapter.audio, accessToken);
             
-            // Create chapter structure
+            // Create chapter structure with AI-generated chapter title
             const yotoChapter = {
                 key: String(i + 1).padStart(2, '0'),
-                title: chapter.title,
+                title: chapter.title, // Use AI-generated chapter title
                 tracks: [{
                     key: "01",
-                    title: "Chapter Audio",
+                    title: chapter.title, // Use chapter title for track as well
                     trackUrl: trackUrl,
                     type: "audio",
                     format: "mp3",
