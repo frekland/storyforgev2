@@ -82,14 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeNavigation = () => {
         // Handle navigation dropdown clicks
         const navItems = document.querySelectorAll('.nav-item[data-mode]');
-        console.log('📁 Found nav items:', navItems.length);
         navItems.forEach(item => {
-            console.log('Adding listener to nav item:', item.dataset.mode);
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const mode = item.dataset.mode;
-                console.log(`📁 Navigation clicked: ${mode}`);
                 showMode(mode);
                 // Hide dropdown after selection
                 const dropdown = document.getElementById('nav-dropdown');
@@ -116,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const libraryQuickBtn = document.getElementById('library-quick-btn');
         if (libraryQuickBtn) {
             libraryQuickBtn.addEventListener('click', () => {
-                console.log('📚 Library quick button clicked!');
                 showMode('library');
             });
         }

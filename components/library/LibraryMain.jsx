@@ -1,9 +1,11 @@
 // StoryForge Library - Main component with search and navigation
-import React, { useState, useEffect } from 'react'
-import { auth, libraryAPI, subscriptions } from '../../lib/supabase.js'
-import LibraryGrid from './LibraryGrid.jsx'
-import SearchBar from './SearchBar.jsx'
-import ImportFromLibrary from './ImportFromLibrary.jsx'
+// Note: Using React from window/global scope for browser compatibility
+const { useState, useEffect } = window.React || {};
+
+// Check if React is available
+if (!window.React) {
+  console.warn('⚠️ React not available, LibraryMain cannot initialize');
+}
 
 const LibraryMain = () => {
   const [user, setUser] = useState(null)
@@ -19,83 +21,26 @@ const LibraryMain = () => {
   const [characters, setCharacters] = useState([])
   const [scenes, setScenes] = useState([])
 
-  // Authentication check
+  // Initialize with mock data for now
   useEffect(() => {
-    checkUser()
+    setLoading(true);
     
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-        loadLibraryContent(session.user.id)
-      } else {
-        setUser(null)
-        clearLibraryContent()
-      }
-      setLoading(false)
-    })
+    // Simulate loading
+    setTimeout(() => {
+      setUser({ email: 'demo@storyforge.com' });
+      setLoading(false);
+      console.log('📚 Library initialized with demo data');
+    }, 1000);
+  }, []);
 
-    return () => subscription?.unsubscribe()
-  }, [])
-
-  const checkUser = async () => {
-    try {
-      const { data: { user } } = await auth.getCurrentUser()
-      if (user) {
-        setUser(user)
-        await loadLibraryContent(user.id)
-      }
-      setLoading(false)
-    } catch (error) {
-      console.error('Auth check error:', error)
-      setLoading(false)
-    }
-  }
-
-  const loadLibraryContent = async (userId) => {
-    try {
-      console.log('📚 Loading library content for user:', userId)
-      
-      // Load all content types in parallel
-      const [storiesResult, artworkResult, charactersResult, scenesResult] = await Promise.all([
-        libraryAPI.getStories(userId, filters),
-        libraryAPI.getArtwork(userId, filters),
-        libraryAPI.getCharacters(userId),
-        libraryAPI.getScenes(userId)
-      ])
-
-      if (storiesResult.error) {
-        console.error('Stories load error:', storiesResult.error)
-      } else {
-        setStories(storiesResult.stories)
-        console.log('✅ Loaded', storiesResult.stories.length, 'stories')
-      }
-
-      if (artworkResult.error) {
-        console.error('Artwork load error:', artworkResult.error)
-      } else {
-        setArtwork(artworkResult.artwork)
-        console.log('✅ Loaded', artworkResult.artwork.length, 'artwork items')
-      }
-
-      if (charactersResult.error) {
-        console.error('Characters load error:', charactersResult.error)
-      } else {
-        setCharacters(charactersResult.characters)
-        console.log('✅ Loaded', charactersResult.characters.length, 'characters')
-      }
-
-      if (scenesResult.error) {
-        console.error('Scenes load error:', scenesResult.error)
-      } else {
-        setScenes(scenesResult.scenes)
-        console.log('✅ Loaded', scenesResult.scenes.length, 'scenes')
-      }
-
-    } catch (error) {
-      console.error('Library content load error:', error)
-    }
-  }
+  const loadLibraryContent = () => {
+    // For now, initialize with empty arrays
+    // TODO: Connect to Supabase later
+    setStories([]);
+    setArtwork([]);
+    setCharacters([]);
+    setScenes([]);
+  };
 
   const clearLibraryContent = () => {
     setStories([])
@@ -241,20 +186,23 @@ const LibraryMain = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <SearchBar 
-          searchQuery={searchQuery}
-          filters={filters}
-          activeTab={activeTab}
-          onSearch={handleSearch}
-        />
+        {/* Simple Search Bar */}
+        <div className="library-search">
+          <input 
+            type="text"
+            placeholder="Search your library..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
       </div>
 
       {/* Navigation Tabs */}
       <div className="library-nav">
         <div className="nav-tabs">
           {[
-            { id: 'stories', label: 'Stories', icon: '📖', count: stories.length },
+            { id: 'stories', label: 'Stories', icon: '📚', count: stories.length },
             { id: 'artwork', label: 'Artwork', icon: '🎨', count: artwork.length },
             { id: 'characters', label: 'Characters', icon: '👤', count: characters.length },
             { id: 'scenes', label: 'Scenes', icon: '🏞️', count: scenes.length }
@@ -272,31 +220,38 @@ const LibraryMain = () => {
         </div>
       </div>
 
-      {/* Library Content Grid */}
+      {/* Library Content */}
       <div className="library-content">
-        <LibraryGrid
-          contentType={activeTab}
-          items={getCurrentContent()}
-          searchQuery={searchQuery}
-          user={user}
-          onItemUpdate={() => loadLibraryContent(user.id)}
-        />
+        {getCurrentContent().length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              {activeTab === 'stories' && '📚'}
+              {activeTab === 'artwork' && '🎨'}
+              {activeTab === 'characters' && '👤'}
+              {activeTab === 'scenes' && '🏞️'}
+            </div>
+            <h3>No {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Yet</h3>
+            <p>Your {activeTab} will appear here as you create stories with StoryForge!</p>
+            <button className="create-btn" onClick={() => window.location.reload()}>✨ Create Your First Story</button>
+          </div>
+        ) : (
+          <div className="content-grid">
+            {getCurrentContent().map((item, index) => (
+              <div key={index} className="content-card">
+                <h4>{item.title || item.name}</h4>
+                <p>{item.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Import Modal */}
-      {showImportModal && (
-        <ImportFromLibrary
-          user={user}
-          onClose={() => setShowImportModal(false)}
-          onImport={(selectedItems) => {
-            console.log('Import selected:', selectedItems)
-            setShowImportModal(false)
-            // Handle import logic here
-          }}
-        />
-      )}
     </div>
   )
+}
+
+// Make LibraryMain available globally for browser loading
+if (typeof window !== 'undefined') {
+  window.LibraryMain = LibraryMain;
 }
 
 export default LibraryMain
