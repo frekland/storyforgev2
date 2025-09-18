@@ -4,12 +4,14 @@ require('dotenv/config');
 
 // --- Set up Google AI (Gemini) Client ---
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-// Use fastest Gemini model for speed
+// Use fastest Gemini model with performance optimizations
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash-8b", // Fastest model
   generationConfig: {
     temperature: 0.8, // Good creativity
-    maxOutputTokens: 2048, // Shorter stories = faster generation
+    maxOutputTokens: 2048, // Optimal balance of speed vs quality
+    topK: 20, // Reduce search space for faster generation
+    topP: 0.8, // Focus on most likely tokens
   }
 });
 
@@ -27,14 +29,30 @@ const OPENAI_TTS_API_URL = 'https://ttsopenai.com/api/tts';
 const OPENAI_API_KEY = 'tts-c12443d1d4e2e42d385fe3d040ce401e';
 const USE_OPENAI_TTS = false; // Set to false to use Google TTS fallback - temporarily disabled due to API issues
 
+// Image analysis cache to avoid re-analyzing the same images
+const imageAnalysisCache = new Map();
+
 // Helper function for Gemini image processing
 function fileToGenerativePart(base64Data, mimeType) {
   return { inlineData: { data: base64Data.split(',')[1], mimeType } };
 }
 
+// Get cache key for image
+function getImageCacheKey(base64Data) {
+  // Use first 100 chars of base64 data as a simple hash
+  return base64Data.substring(0, 100);
+}
+
 // Enhanced image analysis function for character descriptions
 async function analyzeCharacterImage(heroImage) {
   if (!heroImage) return null;
+  
+  // Check cache first
+  const cacheKey = 'char_' + getImageCacheKey(heroImage);
+  if (imageAnalysisCache.has(cacheKey)) {
+    console.log('⚡ Using cached character description');
+    return imageAnalysisCache.get(cacheKey);
+  }
   
   console.log('🎨 Analyzing character artwork for rich description...');
   
@@ -52,7 +70,11 @@ async function analyzeCharacterImage(heroImage) {
     });
     
     const description = (await result.response).text().trim();
-    console.log('✅ Character description generated:', description);
+    
+    // Cache the result
+    imageAnalysisCache.set(cacheKey, description);
+    
+    console.log('✅ Character description generated and cached:', description);
     return description;
   } catch (error) {
     console.warn('⚠️ Character image analysis failed:', error.message);
@@ -64,7 +86,14 @@ async function analyzeCharacterImage(heroImage) {
 async function analyzeSceneImage(sceneImage) {
   if (!sceneImage) return null;
   
-  console.log('🏞️ Analyzing scene artwork for rich description...');
+  // Check cache first
+  const cacheKey = 'scene_' + getImageCacheKey(sceneImage);
+  if (imageAnalysisCache.has(cacheKey)) {
+    console.log('⚡ Using cached scene description');
+    return imageAnalysisCache.get(cacheKey);
+  }
+  
+  console.log('🌏️ Analyzing scene artwork for rich description...');
   
   const analysisPrompt = `Describe this scene in 1-2 sentences. What type of place is it and what colors/details make it special?`;
   
@@ -80,7 +109,11 @@ async function analyzeSceneImage(sceneImage) {
     });
     
     const description = (await result.response).text().trim();
-    console.log('✅ Scene description generated:', description);
+    
+    // Cache the result
+    imageAnalysisCache.set(cacheKey, description);
+    
+    console.log('✅ Scene description generated and cached:', description);
     return description;
   } catch (error) {
     console.warn('⚠️ Scene image analysis failed:', error.message);
@@ -1502,30 +1535,19 @@ async function generateGoogleTTS(storyTextWithPauses, age, heroName = '') {
     ssmlGender: 'FEMALE'
   };
   
-  console.log('⏸️ Pause markers in text:', {
-    pauseShort: (storyTextWithPauses.match(/\[pause short\]/g) || []).length,
-    pause: (storyTextWithPauses.match(/\[pause\](?![^\]]*\])/g) || []).length,
-    pauseLong: (storyTextWithPauses.match(/\[pause long\]/g) || []).length,
-    totalMarkers: (storyTextWithPauses.match(/\[pause[^\]]*\]/g) || []).length
-  });
-  
   // Quick punctuation check for TTS
-  const punctuationWords = (storyTextWithPauses.match(/\b(dot|period|exclamation mark|question mark)\b/gi) || []).length;
+  const punctuationWords = (storyTextWithPauses.match(/\\b(dot|period|exclamation mark|question mark)\\b/gi) || []).length;
   if (punctuationWords > 0) {
-    console.log('⚠️ TTS input contains', punctuationWords, 'punctuation words - applying cleaning');
+    console.log('⚡ Cleaning', punctuationWords, 'punctuation words for TTS');
   }
   
   // Ultra-aggressive dot cleaning with character inspection
   let cleanedMarkupText = storyTextWithPauses;
   
-  // Log character codes around any 'dot' instances for debugging
-  const dotInstances = cleanedMarkupText.match(/.{0,10}dot.{0,10}/gi) || [];
-  if (dotInstances.length > 0) {
-    console.log('🔍 DOT INSTANCES FOUND:', dotInstances);
-    dotInstances.forEach((instance, i) => {
-      const charCodes = instance.split('').map(c => `${c}(${c.charCodeAt(0)})`).join(' ');
-      console.log(`🔢 Instance ${i + 1} char codes:`, charCodes);
-    });
+  // Quick check for dot instances
+  const dotInstances = (cleanedMarkupText.match(/\\bdot\\b/gi) || []).length;
+  if (dotInstances > 0) {
+    console.log('⚡ Found', dotInstances, 'dot instances to clean');
   }
   
   // ULTRA-CONSERVATIVE cleaning - only fix obvious TTS pronunciation errors
