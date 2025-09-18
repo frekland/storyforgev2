@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryForge Library Debug</title>
+</head>
+<body>
+    <h1>Library Debug Tool</h1>
+    <div id="output"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, data = null) {
+            console.log(message, data);
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${message}</strong>` + (data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : '');
+            output.appendChild(div);
+        }
+        
+        async function debugLibrary() {
+            log('🔍 Starting Library Debug...');
+            
+            try {
+                // 1. Test Supabase connection
+                log('📡 Testing Supabase connection...');
+                const supabase = window.supabase.createClient(
+                    'https://jnvxhpeuuzhxunqptrin.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudnhocGV1dXpoeHVucXB0cmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNDczOTksImV4cCI6MjA3MzcyMzM5OX0.aUTk80US1b6kiadKkzA_TJEMEQ--E9afU9cASB9Rr0Q'
+                );
+                log('✅ Supabase client created');
+                
+                // 2. Test anonymous auth
+                log('🔑 Testing anonymous authentication...');
+                const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+                if (authError) {
+                    log('❌ Anonymous auth failed:', authError);
+                    return;
+                }
+                log('✅ Anonymous auth successful:', { userId: authData.user.id });
+                
+                // 3. Test database connection
+                log('📊 Testing database tables...');
+                const { data: tableTest, error: tableError } = await supabase
+                    .from('stories')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (tableError) {
+                    log('❌ Database test failed:', tableError);
+                    return;
+                }
+                log('✅ Database connection successful');
+                
+                // 4. Test story insertion
+                log('💾 Testing story insertion...');
+                const testStory = {
+                    title: 'Debug Test Story',
+                    description: 'Test story for debugging',
+                    full_text: 'This is a test story to check if database saving works.',
+                    hero_name: 'Test Hero',
+                    story_mode: 'classic',
+                    age_target: '6',
+                    user_id: authData.user.id
+                };
+                
+                const { data: storyData, error: storyError } = await supabase
+                    .from('stories')
+                    .insert(testStory)
+                    .select()
+                    .single();
+                
+                if (storyError) {
+                    log('❌ Story insertion failed:', storyError);
+                    return;
+                }
+                log('✅ Story insertion successful:', storyData);
+                
+                // 5. Test story retrieval
+                log('📋 Testing story retrieval...');
+                const { data: stories, error: retrieveError } = await supabase
+                    .from('stories')
+                    .select('*')
+                    .eq('user_id', authData.user.id);
+                
+                if (retrieveError) {
+                    log('❌ Story retrieval failed:', retrieveError);
+                    return;
+                }
+                log('✅ Story retrieval successful:', { count: stories.length, stories });
+                
+                // 6. Clean up test story
+                await supabase.from('stories').delete().eq('id', storyData.id);
+                log('🧹 Test story cleaned up');
+                
+                log('🎉 All tests passed! Library should be working.');
+                
+            } catch (error) {
+                log('❌ Unexpected error:', error);
+            }
+        }
+        
+        // Run the debug
+        debugLibrary();
+    </script>
+</body>
+</html>
