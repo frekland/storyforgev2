@@ -3728,6 +3728,289 @@ document.addEventListener('DOMContentLoaded', () => {
         expandBtn.addEventListener('click', expandProgressModal);
     }
     
+    // Initialize expandable text inputs
+    initializeExpandableTextInputs();
+    
+    // --- Expandable Text Input System ---
+    let currentExpandableInput = null;
+    
+    function initializeExpandableTextInputs() {
+        console.log('🎨 Initializing expandable text inputs...');
+        
+        // Set up event listeners for existing inputs
+        setupExpandableInputListeners();
+        
+        // Setup modal event listeners
+        setupTextInputModalListeners();
+    }
+    
+    function setupExpandableInputListeners() {
+        // Use event delegation to handle dynamically loaded content
+        document.addEventListener('click', (e) => {
+            const input = e.target;
+            
+            // Check if clicked element is a story prompt input (not character name)
+            if (input.matches('input[type="text"]') || input.matches('textarea')) {
+                const inputId = input.id;
+                
+                // Skip character name inputs
+                if (inputId && (
+                    inputId.includes('heroName') || 
+                    inputId.includes('child-name') ||
+                    (inputId.includes('name') && !inputId.includes('description'))
+                )) {
+                    return; // Don't expand character name inputs
+                }
+                
+                // Skip if it's already the expandable textarea
+                if (inputId === 'expandable-textarea') return;
+                
+                // Only expand story prompt inputs
+                if (inputId && (
+                    inputId.includes('promptSetup') ||
+                    inputId.includes('promptRising') ||
+                    inputId.includes('promptClimax') ||
+                    inputId.includes('special-skill') ||
+                    inputId.includes('description')
+                )) {
+                    e.preventDefault();
+                    openExpandableTextInput(input);
+                }
+            }
+        });
+    }
+    
+    function setupTextInputModalListeners() {
+        const modal = document.getElementById('text-input-modal');
+        const closeBtn = document.getElementById('close-text-input');
+        const cancelBtn = document.getElementById('cancel-text-input');
+        const saveBtn = document.getElementById('save-text-input');
+        const textarea = document.getElementById('expandable-textarea');
+        
+        // Close modal handlers
+        [closeBtn, cancelBtn].forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', closeExpandableTextInput);
+            }
+        });
+        
+        // Save handler
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveExpandableTextInput);
+        }
+        
+        // Close on background click
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeExpandableTextInput();
+                }
+            });
+        }
+        
+        // Auto-resize textarea
+        if (textarea) {
+            textarea.addEventListener('input', autoResizeTextarea);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (modal && !modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') {
+                    closeExpandableTextInput();
+                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    saveExpandableTextInput();
+                }
+            }
+        });
+    }
+    
+    function openExpandableTextInput(originalInput) {
+        console.log('🎨 Opening expandable text input for:', originalInput.id);
+        
+        currentExpandableInput = originalInput;
+        const modal = document.getElementById('text-input-modal');
+        const title = document.getElementById('text-input-modal-title');
+        const label = document.getElementById('text-input-label');
+        const textarea = document.getElementById('expandable-textarea');
+        
+        if (!modal || !title || !label || !textarea) return;
+        
+        // Set modal content based on input type
+        const inputConfig = getInputConfig(originalInput.id);
+        title.textContent = inputConfig.title;
+        label.textContent = inputConfig.label;
+        textarea.placeholder = inputConfig.placeholder;
+        
+        // Pre-populate with existing value
+        textarea.value = originalInput.value || '';
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        
+        // Focus and auto-resize
+        setTimeout(() => {
+            textarea.focus();
+            autoResizeTextarea({ target: textarea });
+        }, 100);
+    }
+    
+    function closeExpandableTextInput() {
+        const modal = document.getElementById('text-input-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        currentExpandableInput = null;
+    }
+    
+    function saveExpandableTextInput() {
+        if (!currentExpandableInput) return;
+        
+        const textarea = document.getElementById('expandable-textarea');
+        if (!textarea) return;
+        
+        const value = textarea.value.trim();
+        
+        // Save to original input
+        currentExpandableInput.value = value;
+        
+        // Add visual feedback for completion
+        if (value) {
+            markInputAsCompleted(currentExpandableInput);
+        } else {
+            markInputAsIncomplete(currentExpandableInput);
+        }
+        
+        // Close modal
+        closeExpandableTextInput();
+        
+        // Show brief success feedback
+        if (value) {
+            showBriefFeedback('✅ Story element saved!');
+        }
+    }
+    
+    function markInputAsCompleted(input) {
+        input.classList.add('input-completed');
+        const inputGroup = input.closest('.input-group');
+        if (inputGroup) {
+            inputGroup.classList.add('completed');
+        }
+    }
+    
+    function markInputAsIncomplete(input) {
+        input.classList.remove('input-completed');
+        const inputGroup = input.closest('.input-group');
+        if (inputGroup) {
+            inputGroup.classList.remove('completed');
+        }
+    }
+    
+    function autoResizeTextarea(e) {
+        const textarea = e.target;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 400) + 'px';
+    }
+    
+    function getInputConfig(inputId) {
+        const configs = {
+            'classic-promptSetup': {
+                title: 'The Beginning 🌅',
+                label: 'Where does your story begin?',
+                placeholder: 'Set the scene for your magical adventure! Describe the world, the setting, or the situation where our hero finds themselves. Is it a mysterious forest? A bustling marketplace? A cozy cottage? Paint the picture! ✨'
+            },
+            'classic-promptRising': {
+                title: 'The Challenge ⚡',
+                label: 'What exciting challenge appears?',
+                placeholder: 'What obstacle, mystery, or adventure challenges our hero? Maybe a dragon appears, a puzzle needs solving, or friends need rescuing! The more creative and exciting, the better! 🎆'
+            },
+            'classic-promptClimax': {
+                title: 'The Resolution 🎆',
+                label: 'How does the story end?',
+                placeholder: 'How does our hero triumph? Do they outsmart the challenge, make new friends, discover something amazing, or save the day? Give your story a satisfying and magical conclusion! ✨'
+            },
+            'adventure-special-skill': {
+                title: 'Your Special Skill ✨',
+                label: 'What makes you special in this adventure?',
+                placeholder: 'Describe your amazing abilities! Can you talk to animals? Do you have super speed? Are you incredibly clever? Can you fly? The more unique and fun, the better your adventure will be! 🚀'
+            },
+            'sleep-promptSetup': {
+                title: 'Peaceful Beginning 🌙',
+                label: 'Where does your calm story begin?',
+                placeholder: 'Describe a gentle, peaceful setting for bedtime. Maybe a quiet meadow under starlight, a cozy bedroom with soft moonbeams, or a calm lake reflecting the evening sky... 🌌'
+            },
+            'sleep-promptRising': {
+                title: 'Gentle Adventure 🌸',
+                label: 'What peaceful journey unfolds?',
+                placeholder: 'Describe a soft, calming adventure. Perhaps helping sleepy forest animals find their beds, floating on gentle clouds, or taking a quiet walk through a magical garden... 😴'
+            },
+            'sleep-promptClimax': {
+                title: 'Peaceful Ending 😴',
+                label: 'How does everyone rest peacefully?',
+                placeholder: 'Describe how everyone settles down for the night. Maybe they all snuggle up under warm blankets, fall asleep to gentle lullabies, or drift off watching shooting stars... 💫'
+            },
+            'monster-description1': {
+                title: 'Your Monster 👹',
+                label: 'What does your monster look like?',
+                placeholder: 'Describe your friendly monster! What color is it? How big? Does it have stripes, spots, or sparkles? Fuzzy fur or smooth skin? Big eyes or tiny ones? The more detailed, the more amazing your monster will be! 🎨'
+            },
+            'monster-description2': {
+                title: 'Monster Powers ⚡',
+                label: 'What special abilities does your monster have?',
+                placeholder: 'What makes your monster special? Can it fly, turn invisible, glow in the dark, or make beautiful music? Does it have magical powers, super strength, or the ability to grant wishes? ✨'
+            },
+            'monster-description3': {
+                title: 'Monster Personality 💖',
+                label: 'What is your monster\'s personality like?',
+                placeholder: 'Is your monster shy or outgoing? Playful or wise? Does it love to dance, tell jokes, help others, or collect shiny things? What makes your monster a great friend? 🤗'
+            }
+        };
+        
+        return configs[inputId] || {
+            title: 'Story Element 🎨',
+            label: 'Describe your story element...',
+            placeholder: 'Let your imagination run wild! The more creative details you add, the more magical your story will become! ✨'
+        };
+    }
+    
+    function showBriefFeedback(message) {
+        // Create temporary feedback element
+        const feedback = document.createElement('div');
+        feedback.textContent = message;
+        feedback.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-family: var(--font-body);
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        
+        document.body.appendChild(feedback);
+        
+        // Animate in
+        setTimeout(() => {
+            feedback.style.transform = 'translateX(0)';
+        }, 10);
+        
+        // Animate out and remove
+        setTimeout(() => {
+            feedback.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 300);
+        }, 2000);
+    }
+    
     // Initial check on page load
     checkAuthentication();
     

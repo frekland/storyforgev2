@@ -426,6 +426,42 @@
         </div>
     </div>
     
+    <!-- Expandable Text Input Modal -->
+    <div id="text-input-modal" class="modal hidden">
+        <div class="modal-content paper-scrap text-input-modal">
+            <div class="modal-header">
+                <span class="modal-icon">🎨</span>
+                <h3 class="modal-title" id="text-input-modal-title">Story Element</h3>
+                <button id="close-text-input" class="modal-close-btn" title="Cancel">
+                    <span>×</span>
+                </button>
+            </div>
+            <div class="text-input-content">
+                <label class="text-input-label" id="text-input-label">Describe your story element...</label>
+                <textarea 
+                    id="expandable-textarea" 
+                    class="expandable-textarea" 
+                    placeholder="Let your imagination run wild! Describe your story element in as much detail as you'd like. The more creative details you add, the more magical your story will become! ✨"
+                    rows="6"
+                ></textarea>
+                <div class="text-input-tips">
+                    <div class="tip">
+                        <span class="tip-icon">💡</span>
+                        <span>Pro tip: Use vivid descriptions and sensory details to make your story come alive!</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-input-actions">
+                <button id="cancel-text-input" class="btn-secondary">
+                    <span>❌ Cancel</span>
+                </button>
+                <button id="save-text-input" class="btn-primary">
+                    <span>✨ Save & Continue</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Minimized Progress Footer -->
     <div id="progress-footer" class="progress-footer hidden">
         <div class="progress-footer-content">
