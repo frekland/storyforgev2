@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Supabase Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { border-left: 4px solid #28a745; background: #d4edda; }
+        .error { border-left: 4px solid #dc3545; background: #f8d7da; }
+        .warning { border-left: 4px solid #ffc107; background: #fff3cd; }
+        .info { border-left: 4px solid #17a2b8; background: #d1ecf1; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Quick Supabase Connection Fix</h1>
+    
+    <div class="card info">
+        <h2>📋 Common Issues & Solutions</h2>
+        <ol>
+            <li><strong>Project Paused:</strong> Free Supabase projects pause after inactivity</li>
+            <li><strong>Network/Firewall:</strong> Corporate firewall blocking connections</li>
+            <li><strong>Invalid Credentials:</strong> Wrong API keys or project URL</li>
+            <li><strong>Regional Issues:</strong> Supabase service issues in your region</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Quick Tests</h2>
+        <button onclick="testProjectStatus()">Check Project Status</button>
+        <button onclick="testCredentials()">Validate Credentials</button>
+        <button onclick="testNetworking()">Test Networking</button>
+        <button onclick="tryAlternativeConnection()">Try Alternative Connection</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `card ${type}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div>${content}</div>
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+
+        window.testProjectStatus = async function() {
+            addResult('🔍 Testing Project Status', 'Checking if your Supabase project is active...', 'info');
+            
+            try {
+                // Test if we can reach the project at all
+                const response = await fetch(SUPABASE_URL + '/health', {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(10000) // 10 second timeout
+                });
+                
+                if (response.ok) {
+                    addResult('✅ Project is Active', `
+                        <p>Your Supabase project is running and reachable!</p>
+                        <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>URL:</strong> ${SUPABASE_URL}</p>
+                    `, 'success');
+                } else {
+                    addResult('⚠️ Project Response Issue', `
+                        <p>Project responded but with status: ${response.status}</p>
+                        <p>This might indicate the project is paused or has issues.</p>
+                        <p><strong>Solution:</strong> Check your Supabase dashboard for project status.</p>
+                    `, 'warning');
+                }
+            } catch (error) {
+                if (error.name === 'TimeoutError') {
+                    addResult('❌ Connection Timeout', `
+                        <p>The connection timed out after 10 seconds.</p>
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>Project is paused (common for free tier)</li>
+                            <li>Network connectivity issues</li>
+                            <li>Firewall blocking the connection</li>
+                        </ul>
+                        <p><strong>Solution:</strong> Visit your Supabase dashboard to wake up the project.</p>
+                    `, 'error');
+                } else {
+                    addResult('❌ Connection Failed', `
+                        <p>Failed to connect: ${error.message}</p>
+                        <p><strong>This usually means:</strong></p>
+                        <ul>
+                            <li>Project is paused/inactive</li>
+                            <li>Network/DNS issues</li>
+                            <li>Incorrect project URL</li>
+                        </ul>
+                    `, 'error');
+                }
+            }
+        };
+
+        window.testCredentials = function() {
+            addResult('🔑 Validating Credentials', 'Checking your API keys and project URL...', 'info');
+            
+            let issues = [];
+            let successes = [];
+            
+            // Check URL format
+            try {
+                const url = new URL(SUPABASE_URL);
+                if (url.hostname.includes('supabase.co')) {
+                    successes.push('✅ Project URL format is valid');
+                } else {
+                    issues.push('❌ URL does not appear to be a Supabase URL');
+                }
+            } catch {
+                issues.push('❌ Invalid URL format');
+            }
+            
+            // Check JWT format
+            if (SUPABASE_KEY) {
+                const parts = SUPABASE_KEY.split('.');
+                if (parts.length === 3) {
+                    successes.push('✅ JWT key format is valid');
+                    
+                    try {
+                        const payload = JSON.parse(atob(parts[1]));
+                        if (payload.role === 'anon') {
+                            successes.push('✅ JWT role is correct (anon)');
+                        } else {
+                            issues.push(`❌ JWT role is '${payload.role}', expected 'anon'`);
+                        }
+                        
+                        const exp = payload.exp * 1000; // Convert to milliseconds
+                        if (exp > Date.now()) {
+                            successes.push('✅ JWT is not expired');
+                        } else {
+                            issues.push('❌ JWT is expired');
+                        }
+                        
+                        if (payload.iss === 'supabase') {
+                            successes.push('✅ JWT issuer is correct');
+                        } else {
+                            issues.push(`❌ JWT issuer is '${payload.iss}', expected 'supabase'`);
+                        }
+                        
+                    } catch {
+                        issues.push('❌ Could not decode JWT payload');
+                    }
+                } else {
+                    issues.push('❌ JWT should have 3 parts separated by dots');
+                }
+            } else {
+                issues.push('❌ No JWT key found');
+            }
+            
+            const resultContent = `
+                ${successes.map(s => `<p>${s}</p>`).join('')}
+                ${issues.map(i => `<p>${i}</p>`).join('')}
+                ${issues.length === 0 ? '<p><strong>All credentials look valid!</strong></p>' : ''}
+            `;
+            
+            addResult('🔑 Credential Validation Results', resultContent, issues.length === 0 ? 'success' : 'warning');
+        };
+
+        window.testNetworking = async function() {
+            addResult('🌐 Testing Network Connectivity', 'Running network diagnostics...', 'info');
+            
+            const tests = [
+                { name: 'DNS Resolution', test: () => fetch('https://8.8.8.8', { method: 'HEAD', mode: 'no-cors' }) },
+                { name: 'HTTPS Support', test: () => fetch('https://httpbin.org/get', { method: 'HEAD' }) },
+                { name: 'Supabase Domain', test: () => fetch('https://supabase.com', { method: 'HEAD', mode: 'no-cors' }) }
+            ];
+            
+            const results = [];
+            
+            for (const { name, test } of tests) {
+                try {
+                    await Promise.race([
+                        test(),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                    ]);
+                    results.push(`✅ ${name}: OK`);
+                } catch (error) {
+                    results.push(`❌ ${name}: ${error.message}`);
+                }
+            }
+            
+            addResult('🌐 Network Test Results', results.map(r => `<p>${r}</p>`).join(''), 'info');
+        };
+
+        window.tryAlternativeConnection = async function() {
+            addResult('🔄 Trying Alternative Connection Methods', 'Testing different connection approaches...', 'info');
+            
+            // Try direct REST API call
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'HEAD',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'User-Agent': 'StoryForge-LibraryTest/1.0'
+                    },
+                    signal: AbortSignal.timeout(15000)
+                });
+                
+                addResult('✅ Direct REST API Success', `
+                    <p>Successfully connected to the REST API!</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Headers:</strong> ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}</p>
+                    <p>This means your credentials are working and the project is active.</p>
+                `, 'success');
+                
+                // If this works, the issue might be with the Supabase client
+                addResult('💡 Recommendation', `
+                    <p>Since the direct API call worked, try:</p>
+                    <ol>
+                        <li>Refresh your browser page</li>
+                        <li>Clear browser cache</li>
+                        <li>Check browser developer console for errors</li>
+                        <li>Try the original test again</li>
+                    </ol>
+                `, 'info');
+                
+            } catch (error) {
+                if (error.name === 'TimeoutError') {
+                    addResult('⚠️ Connection Timeout', `
+                        <p><strong>Your Supabase project is likely paused.</strong></p>
+                        <p>Free Supabase projects pause after ~1 week of inactivity.</p>
+                        <h4>How to fix:</h4>
+                        <ol>
+                            <li>Go to <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a></li>
+                            <li>Select your project: <code>rjunzh1jahh7smdh7dt9ia</code></li>
+                            <li>The project should automatically resume when you visit it</li>
+                            <li>Wait 2-3 minutes for full activation</li>
+                            <li>Try the tests again</li>
+                        </ol>
+                    `, 'warning');
+                } else {
+                    addResult('❌ Alternative Connection Failed', `
+                        <p>Error: ${error.message}</p>
+                        <p><strong>Next steps:</strong></p>
+                        <ol>
+                            <li>Check your Supabase dashboard</li>
+                            <li>Verify project is not paused</li>
+                            <li>Check network connectivity</li>
+                            <li>Try from a different network if possible</li>
+                        </ol>
+                    `, 'error');
+                }
+            }
+        };
+
+        // Auto-run project status test
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testProjectStatus();
+                testCredentials();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

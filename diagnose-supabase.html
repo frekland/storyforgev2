@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Supabase Diagnostics</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: #fff; 
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { background: #2a2a2a; padding: 20px; border-radius: 8px; }
+        .result { padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 14px; }
+        .success { background: #0f5132; border-left: 4px solid #28a745; }
+        .error { background: #721c24; border-left: 4px solid #dc3545; }
+        .warning { background: #664d03; border-left: 4px solid #ffc107; }
+        .info { background: #055160; border-left: 4px solid #17a2b8; }
+        button { 
+            padding: 8px 16px; 
+            margin: 5px; 
+            background: #0d6efd; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px;
+        }
+        button:hover { background: #0b5ed7; }
+        .test-section { margin-bottom: 20px; }
+        h2 { color: #ffc107; margin-bottom: 15px; }
+        h3 { color: #17a2b8; margin-bottom: 10px; }
+        .url-test { background: #2a2a2a; padding: 10px; border-radius: 4px; margin: 5px 0; }
+        pre { background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Advanced Supabase Diagnostics</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>🌐 Network Tests</h2>
+            <div class="test-section">
+                <button onclick="testBasicConnectivity()">Test Basic Connectivity</button>
+                <button onclick="testSupabaseEndpoints()">Test All Endpoints</button>
+                <button onclick="testCORS()">Test CORS</button>
+            </div>
+            
+            <h3>Network Results:</h3>
+            <div id="network-results"></div>
+        </div>
+
+        <div class="panel">
+            <h2>🔑 Authentication Tests</h2>
+            <div class="test-section">
+                <button onclick="testAuthEndpoint()">Test Auth Endpoint</button>
+                <button onclick="testJWTValidity()">Test JWT Validity</button>
+                <button onclick="testSignup()">Test Signup</button>
+            </div>
+            
+            <h3>Auth Results:</h3>
+            <div id="auth-results"></div>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <h2>📊 Database Tests</h2>
+        <button onclick="testDatabaseEndpoint()">Test Database Endpoint</button>
+        <button onclick="testRLS()">Test Row Level Security</button>
+        <button onclick="testTables()">Check Tables</button>
+        <button onclick="testRawQuery()">Test Raw Query</button>
+        
+        <h3>Database Results:</h3>
+        <div id="database-results"></div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <h2>📁 Storage Tests</h2>
+        <button onclick="testStorageEndpoint()">Test Storage Endpoint</button>
+        <button onclick="testBuckets()">List Buckets</button>
+        
+        <h3>Storage Results:</h3>
+        <div id="storage-results"></div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        function log(message, type = 'info', target = 'network-results') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById(target).appendChild(div);
+        }
+
+        // Network Tests
+        window.testBasicConnectivity = async function() {
+            log('🔌 Testing basic network connectivity...', 'info', 'network-results');
+            
+            // Test if we can reach the base URL
+            try {
+                const response = await fetch(SUPABASE_URL, { method: 'HEAD', mode: 'no-cors' });
+                log('✅ Base URL is reachable', 'success', 'network-results');
+            } catch (error) {
+                log(`❌ Cannot reach base URL: ${error.message}`, 'error', 'network-results');
+            }
+            
+            // Test DNS resolution
+            try {
+                const hostname = new URL(SUPABASE_URL).hostname;
+                log(`🔍 Testing DNS for: ${hostname}`, 'info', 'network-results');
+                
+                // Simple ping test using fetch
+                const pingStart = Date.now();
+                await fetch(`${SUPABASE_URL}/health`, { method: 'HEAD' });
+                const pingTime = Date.now() - pingStart;
+                log(`✅ DNS resolved, ping time: ${pingTime}ms`, 'success', 'network-results');
+            } catch (error) {
+                log(`❌ DNS/Network issue: ${error.message}`, 'error', 'network-results');
+            }
+        };
+
+        window.testSupabaseEndpoints = async function() {
+            log('🌐 Testing Supabase endpoints...', 'info', 'network-results');
+            
+            const endpoints = [
+                { name: 'Health Check', url: `${SUPABASE_URL}/health`, method: 'GET' },
+                { name: 'REST API', url: `${SUPABASE_URL}/rest/v1/`, method: 'GET' },
+                { name: 'Auth', url: `${SUPABASE_URL}/auth/v1/settings`, method: 'GET' },
+                { name: 'Storage', url: `${SUPABASE_URL}/storage/v1/bucket`, method: 'GET' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: endpoint.method,
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        log(`✅ ${endpoint.name}: ${response.status}`, 'success', 'network-results');
+                    } else {
+                        log(`⚠️ ${endpoint.name}: ${response.status} ${response.statusText}`, 'warning', 'network-results');
+                    }
+                } catch (error) {
+                    log(`❌ ${endpoint.name}: ${error.message}`, 'error', 'network-results');
+                }
+            }
+        };
+
+        window.testCORS = async function() {
+            log('🔒 Testing CORS configuration...', 'info', 'network-results');
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'apikey, authorization'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                log(`CORS Headers: ${JSON.stringify(corsHeaders, null, 2)}`, 'info', 'network-results');
+                
+                if (corsHeaders['Access-Control-Allow-Origin']) {
+                    log('✅ CORS is properly configured', 'success', 'network-results');
+                } else {
+                    log('❌ CORS may not be properly configured', 'error', 'network-results');
+                }
+                
+            } catch (error) {
+                log(`❌ CORS test failed: ${error.message}`, 'error', 'network-results');
+            }
+        };
+
+        // Auth Tests
+        window.testAuthEndpoint = async function() {
+            log('🔐 Testing auth endpoint...', 'info', 'auth-results');
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+                    headers: { 'apikey': SUPABASE_KEY }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Auth endpoint is working', 'success', 'auth-results');
+                    log(`Auth settings: ${JSON.stringify(data, null, 2)}`, 'info', 'auth-results');
+                } else {
+                    log(`❌ Auth endpoint error: ${response.status}`, 'error', 'auth-results');
+                }
+            } catch (error) {
+                log(`❌ Auth endpoint failed: ${error.message}`, 'error', 'auth-results');
+            }
+        };
+
+        window.testJWTValidity = function() {
+            log('🔑 Testing JWT validity...', 'info', 'auth-results');
+            
+            try {
+                const parts = SUPABASE_KEY.split('.');
+                if (parts.length !== 3) {
+                    log('❌ JWT format invalid - should have 3 parts', 'error', 'auth-results');
+                    return;
+                }
+                
+                const header = JSON.parse(atob(parts[0]));
+                const payload = JSON.parse(atob(parts[1]));
+                
+                log(`JWT Header: ${JSON.stringify(header, null, 2)}`, 'info', 'auth-results');
+                log(`JWT Payload: ${JSON.stringify(payload, null, 2)}`, 'info', 'auth-results');
+                
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp && payload.exp < now) {
+                    log('❌ JWT is expired', 'error', 'auth-results');
+                } else {
+                    log('✅ JWT is valid and not expired', 'success', 'auth-results');
+                }
+                
+                if (payload.role === 'anon') {
+                    log('✅ JWT role is correct (anon)', 'success', 'auth-results');
+                } else {
+                    log(`⚠️ JWT role is: ${payload.role}`, 'warning', 'auth-results');
+                }
+                
+            } catch (error) {
+                log(`❌ JWT parsing failed: ${error.message}`, 'error', 'auth-results');
+            }
+        };
+
+        // Database Tests
+        window.testDatabaseEndpoint = async function() {
+            log('🗄️ Testing database endpoint...', 'info', 'database-results');
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Database endpoint is reachable', 'success', 'database-results');
+                    log(`API Info: ${JSON.stringify(data, null, 2)}`, 'info', 'database-results');
+                } else {
+                    log(`❌ Database endpoint error: ${response.status} ${response.statusText}`, 'error', 'database-results');
+                }
+            } catch (error) {
+                log(`❌ Database endpoint failed: ${error.message}`, 'error', 'database-results');
+            }
+        };
+
+        window.testRawQuery = async function() {
+            log('📊 Testing raw database query...', 'info', 'database-results');
+            
+            try {
+                // Test a simple query that should work even without tables
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/version`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Raw query successful', 'success', 'database-results');
+                    log(`Result: ${JSON.stringify(data, null, 2)}`, 'info', 'database-results');
+                } else {
+                    log(`❌ Raw query failed: ${response.status}`, 'error', 'database-results');
+                    const errorText = await response.text();
+                    log(`Error details: ${errorText}`, 'error', 'database-results');
+                }
+            } catch (error) {
+                log(`❌ Raw query error: ${error.message}`, 'error', 'database-results');
+            }
+        };
+
+        window.testTables = async function() {
+            log('📋 Testing table access...', 'info', 'database-results');
+            
+            const tables = ['profiles', 'stories', 'artwork'];
+            
+            for (const table of tables) {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=count&limit=1`, {
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        log(`✅ Table '${table}' accessible`, 'success', 'database-results');
+                    } else if (response.status === 404) {
+                        log(`❌ Table '${table}' not found`, 'error', 'database-results');
+                    } else if (response.status === 403) {
+                        log(`⚠️ Table '${table}' access denied (RLS working)`, 'warning', 'database-results');
+                    } else {
+                        log(`❌ Table '${table}' error: ${response.status}`, 'error', 'database-results');
+                    }
+                } catch (error) {
+                    log(`❌ Table '${table}' test failed: ${error.message}`, 'error', 'database-results');
+                }
+            }
+        };
+
+        // Storage Tests
+        window.testStorageEndpoint = async function() {
+            log('📁 Testing storage endpoint...', 'info', 'storage-results');
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (response.ok) {
+                    log('✅ Storage endpoint is working', 'success', 'storage-results');
+                } else {
+                    log(`❌ Storage endpoint error: ${response.status}`, 'error', 'storage-results');
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error', 'storage-results');
+                }
+            } catch (error) {
+                log(`❌ Storage endpoint failed: ${error.message}`, 'error', 'storage-results');
+            }
+        };
+
+        // Initial load
+        log('🚀 Advanced diagnostics loaded. Run tests to identify issues.', 'info', 'network-results');
+        log(`🔗 Testing project: ${SUPABASE_URL}`, 'info', 'network-results');
+    </script>
+</body>
+</html>

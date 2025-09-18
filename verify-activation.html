@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Project Activation Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { border-left: 4px solid #28a745; background: #d4edda; }
+        .error { border-left: 4px solid #dc3545; background: #f8d7da; }
+        .warning { border-left: 4px solid #ffc107; background: #fff3cd; }
+        .info { border-left: 4px solid #17a2b8; background: #d1ecf1; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #218838; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-active { background: #28a745; }
+        .status-inactive { background: #dc3545; }
+        .status-loading { background: #ffc107; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .progress { background: #e9ecef; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { background: #28a745; height: 20px; transition: width 0.3s; }
+        .next-steps { background: #e7f3ff; border: 1px solid #b8daff; padding: 15px; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Supabase Project Activation Verification</h1>
+    
+    <div class="card info">
+        <h2>📋 Current Status</h2>
+        <p>
+            <span id="status-indicator" class="status-indicator status-loading"></span>
+            <span id="status-text">Waiting to test activation...</span>
+        </p>
+        <div class="progress">
+            <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <p><small>Project: <code>https://rjunzh1jahh7smdh7dt9ia.supabase.co</code></small></p>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Activation Tests</h2>
+        <button onclick="runActivationTest()" id="test-btn">Test Project Activation</button>
+        <button onclick="runFullLibraryTest()" id="library-test-btn" disabled>Run Full Library Test</button>
+        <button onclick="continueToLibrarySetup()" id="continue-btn" disabled>Continue to Library Setup</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+        const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        let testProgress = 0;
+        const totalTests = 6;
+
+        function updateStatus(text, type = 'loading') {
+            document.getElementById('status-text').textContent = text;
+            document.getElementById('status-indicator').className = `status-indicator status-${type}`;
+        }
+
+        function updateProgress(current, total) {
+            const percentage = (current / total) * 100;
+            document.getElementById('progress-bar').style.width = percentage + '%';
+        }
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `card ${type}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div>${content}</div>
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function runActivationTest() {
+            updateStatus('Testing project activation...', 'loading');
+            testProgress = 0;
+            updateProgress(0, totalTests);
+            
+            document.getElementById('test-btn').disabled = true;
+            document.getElementById('results').innerHTML = '';
+
+            const tests = [
+                { name: 'Health Check', test: testHealth },
+                { name: 'REST API', test: testRestAPI },
+                { name: 'Authentication', test: testAuth },
+                { name: 'Database Schema', test: testSchema },
+                { name: 'Storage Buckets', test: testStorage },
+                { name: 'Library Functions', test: testLibraryFunctions }
+            ];
+
+            let allPassed = true;
+
+            for (const { name, test } of tests) {
+                try {
+                    addResult(`🔄 Running: ${name}`, 'Testing...', 'info');
+                    const result = await test();
+                    
+                    if (result.success) {
+                        addResult(`✅ ${name} - Success`, result.message, 'success');
+                    } else {
+                        addResult(`❌ ${name} - Failed`, result.message, 'error');
+                        allPassed = false;
+                    }
+                } catch (error) {
+                    addResult(`❌ ${name} - Error`, error.message, 'error');
+                    allPassed = false;
+                }
+                
+                testProgress++;
+                updateProgress(testProgress, totalTests);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause between tests
+            }
+
+            if (allPassed) {
+                updateStatus('Project is fully active and ready!', 'active');
+                document.getElementById('library-test-btn').disabled = false;
+                document.getElementById('continue-btn').disabled = false;
+                
+                addResult('🎉 All Tests Passed!', `
+                    <p>Your Supabase project is fully activated and ready for the StoryForge Library!</p>
+                    <ul>
+                        <li>✅ Project is online and responsive</li>
+                        <li>✅ Database schema is loaded</li>
+                        <li>✅ Authentication is working</li>
+                        <li>✅ Storage buckets are configured</li>
+                        <li>✅ Library functions are operational</li>
+                    </ul>
+                `, 'success');
+            } else {
+                updateStatus('Some tests failed - needs attention', 'inactive');
+                addResult('⚠️ Partial Activation', `
+                    <p>Some components are not fully ready yet. This could mean:</p>
+                    <ul>
+                        <li>Project is still waking up (try again in 1-2 minutes)</li>
+                        <li>Database schema needs to be run</li>
+                        <li>Storage buckets need to be created</li>
+                    </ul>
+                `, 'warning');
+            }
+
+            document.getElementById('test-btn').disabled = false;
+        }
+
+        async function testHealth() {
+            const response = await fetch(`${SUPABASE_URL}/health`, {
+                signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok) {
+                return { success: true, message: 'Project health endpoint is responding' };
+            } else {
+                return { success: false, message: `Health check returned status ${response.status}` };
+            }
+        }
+
+        async function testRestAPI() {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
+                signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok) {
+                return { success: true, message: 'REST API is accessible' };
+            } else {
+                return { success: false, message: `REST API returned status ${response.status}` };
+            }
+        }
+
+        async function testAuth() {
+            const response = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+                headers: { 'apikey': SUPABASE_KEY },
+                signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok) {
+                return { success: true, message: 'Authentication service is working' };
+            } else {
+                return { success: false, message: `Auth service returned status ${response.status}` };
+            }
+        }
+
+        async function testSchema() {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=count&limit=1`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
+                signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok || response.status === 403) {
+                return { success: true, message: 'Database schema is loaded (profiles table exists)' };
+            } else if (response.status === 404) {
+                return { success: false, message: 'Database schema not found - need to run schema.sql' };
+            } else {
+                return { success: false, message: `Database test returned status ${response.status}` };
+            }
+        }
+
+        async function testStorage() {
+            const response = await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
+                signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok) {
+                const buckets = await response.json();
+                const requiredBuckets = ['artwork', 'audio', 'avatars'];
+                const existingBuckets = buckets.map(b => b.name);
+                const missingBuckets = requiredBuckets.filter(b => !existingBuckets.includes(b));
+                
+                if (missingBuckets.length === 0) {
+                    return { success: true, message: `All storage buckets exist: ${existingBuckets.join(', ')}` };
+                } else {
+                    return { success: false, message: `Missing buckets: ${missingBuckets.join(', ')}. Found: ${existingBuckets.join(', ')}` };
+                }
+            } else {
+                return { success: false, message: `Storage service returned status ${response.status}` };
+            }
+        }
+
+        async function testLibraryFunctions() {
+            // Import and test the Supabase client
+            try {
+                const { supabase } = await import('./lib/supabase.js');
+                const { data: { session } } = await supabase.auth.getSession();
+                return { success: true, message: 'Supabase client library is working correctly' };
+            } catch (error) {
+                return { success: false, message: `Library functions error: ${error.message}` };
+            }
+        }
+
+        window.runActivationTest = runActivationTest;
+
+        window.runFullLibraryTest = function() {
+            window.open('./test-setup.html', '_blank');
+        };
+
+        window.continueToLibrarySetup = function() {
+            addResult('🚀 Ready for Library Setup!', `
+                <p>Your Supabase project is fully operational. Next steps:</p>
+                <ol>
+                    <li><strong>Run Full Test Suite:</strong> <a href="./test-setup.html" target="_blank">Open test-setup.html</a></li>
+                    <li><strong>Test User Signup:</strong> Create a test account</li>
+                    <li><strong>Test Story Creation:</strong> Generate and save a story</li>
+                    <li><strong>Test Library Features:</strong> Browse, search, and organize</li>
+                    <li><strong>Add Library UI:</strong> Integrate into your main app</li>
+                </ol>
+                <p>Your free-tier StoryForge Library is ready to use! 🎉</p>
+            `, 'success');
+        };
+
+        // Auto-run test after a brief delay
+        setTimeout(() => {
+            addResult('🔄 Auto-Testing Project Status', 'Running initial activation test...', 'info');
+            runActivationTest();
+        }, 1000);
+    </script>
+</body>
+</html>

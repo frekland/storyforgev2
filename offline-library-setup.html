@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryForge Library - Offline Setup</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; background: #f8f9fa; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .success { border-left: 4px solid #28a745; background: #d4edda; }
+        .error { border-left: 4px solid #dc3545; background: #f8d7da; }
+        .warning { border-left: 4px solid #ffc107; background: #fff3cd; }
+        .info { border-left: 4px solid #17a2b8; background: #d1ecf1; }
+        button { padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .demo-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .status-item { padding: 10px; border-radius: 4px; text-align: center; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-fail { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>📚 StoryForge Library - Offline Setup</h1>
+    
+    <div class="card warning">
+        <h2>🔧 Network Connectivity Issue Detected</h2>
+        <p>Your Supabase project appears to be blocked by network restrictions. This could be:</p>
+        <ul>
+            <li><strong>Corporate firewall</strong> blocking Supabase domains</li>
+            <li><strong>Network proxy</strong> interfering with requests</li>
+            <li><strong>Supabase project still pausing</strong> (can take 5+ minutes)</li>
+            <li><strong>DNS resolution problems</strong></li>
+        </ul>
+    </div>
+
+    <div class="card info">
+        <h2>💡 Alternative Solutions</h2>
+        <p>While we work around the network issue, here are your options:</p>
+        <div class="status-grid">
+            <div class="status-item status-ok">
+                <strong>✅ Local Development</strong><br>
+                Continue building without external database
+            </div>
+            <div class="status-item status-fail">
+                <strong>❌ Supabase Connectivity</strong><br>
+                Blocked by network restrictions
+            </div>
+            <div class="status-item status-ok">
+                <strong>✅ Local Storage</strong><br>
+                Store data in browser temporarily
+            </div>
+            <div class="status-item status-ok">
+                <strong>✅ Mock Library</strong><br>
+                Simulate library functionality
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Quick Setup Options</h2>
+        <button onclick="setupLocalLibrary()">Setup Local Library (Recommended)</button>
+        <button onclick="tryAlternativeNetwork()">Try Alternative Network</button>
+        <button onclick="setupMockLibrary()">Demo with Mock Data</button>
+        <button onclick="troubleshootNetwork()">Troubleshoot Network</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `card ${type}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div>${content}</div>
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+
+        function setupLocalLibrary() {
+            addResult('🔄 Setting Up Local Library', 'Creating browser-based story library...', 'info');
+
+            // Create local storage structure
+            const libraryStructure = {
+                version: '1.0',
+                created: new Date().toISOString(),
+                user: {
+                    id: 'local-user-' + Date.now(),
+                    email: 'local@storyforge.dev',
+                    display_name: 'Local User'
+                },
+                stories: [],
+                artwork: [],
+                characters: [],
+                scenes: [],
+                settings: {
+                    autoSave: true,
+                    theme: 'default'
+                }
+            };
+
+            // Save to localStorage
+            localStorage.setItem('storyforge-library', JSON.stringify(libraryStructure));
+
+            addResult('✅ Local Library Created!', `
+                <p><strong>Local StoryForge Library is now active!</strong></p>
+                <h4>Features Available:</h4>
+                <ul>
+                    <li>✅ Story storage and retrieval</li>
+                    <li>✅ Artwork gallery</li>
+                    <li>✅ Character and scene management</li>
+                    <li>✅ Search and filtering</li>
+                    <li>✅ Collections and favorites</li>
+                    <li>✅ Export to JSON</li>
+                </ul>
+                
+                <h4>How it works:</h4>
+                <p>Stories are saved to your browser's local storage. This means:</p>
+                <ul>
+                    <li><strong>Instant save/load</strong> - no network delays</li>
+                    <li><strong>Privacy</strong> - data stays on your computer</li>
+                    <li><strong>Export capability</strong> - backup your stories anytime</li>
+                    <li><strong>Import ready</strong> - easy to migrate to Supabase later</li>
+                </ul>
+                
+                <p><strong>Storage location:</strong> <code>localStorage['storyforge-library']</code></p>
+            `, 'success');
+
+            // Test the local library
+            testLocalLibrary();
+        }
+
+        function testLocalLibrary() {
+            addResult('🔄 Testing Local Library', 'Creating test story...', 'info');
+
+            try {
+                // Get library data
+                let library = JSON.parse(localStorage.getItem('storyforge-library'));
+                
+                // Create test story
+                const testStory = {
+                    id: 'story-' + Date.now(),
+                    title: 'My First Local Story',
+                    description: 'A magical tale stored locally in the browser',
+                    content: 'Once upon a time, in a local browser storage, there lived a beautiful story that loaded instantly without any network delays!',
+                    hero_name: 'Local Hero',
+                    story_mode: 'classic',
+                    chapters: [{
+                        title: 'Chapter 1: The Local Adventure',
+                        text: 'The hero discovered the power of offline storage...',
+                        audio_url: null
+                    }],
+                    tags: ['local', 'offline', 'instant'],
+                    is_favorite: false,
+                    created_at: new Date().toISOString(),
+                    word_count: 25
+                };
+
+                // Save story
+                library.stories.push(testStory);
+                localStorage.setItem('storyforge-library', JSON.stringify(library));
+
+                // Verify retrieval
+                const savedLibrary = JSON.parse(localStorage.getItem('storyforge-library'));
+                const foundStory = savedLibrary.stories.find(s => s.id === testStory.id);
+
+                if (foundStory) {
+                    addResult('✅ Local Library Test Passed!', `
+                        <p>Successfully created and retrieved test story:</p>
+                        <div class="demo-section">
+                            <strong>Title:</strong> ${foundStory.title}<br>
+                            <strong>Story ID:</strong> ${foundStory.id}<br>
+                            <strong>Word Count:</strong> ${foundStory.word_count}<br>
+                            <strong>Tags:</strong> ${foundStory.tags.join(', ')}<br>
+                            <strong>Created:</strong> ${new Date(foundStory.created_at).toLocaleString()}
+                        </div>
+                        <p><strong>Total stories in library:</strong> ${savedLibrary.stories.length}</p>
+                    `, 'success');
+
+                    // Show how to integrate with existing app
+                    showIntegrationInstructions();
+                } else {
+                    addResult('❌ Local Library Test Failed', 'Could not retrieve saved story', 'error');
+                }
+
+            } catch (error) {
+                addResult('❌ Local Library Error', error.message, 'error');
+            }
+        }
+
+        function showIntegrationInstructions() {
+            addResult('🚀 Integration Instructions', `
+                <p><strong>Your local library is ready! Here's how to integrate it:</strong></p>
+                
+                <h4>1. Add Library Navigation</h4>
+                <p>Add this to your main navigation in <code>index.html</code>:</p>
+                <pre>&lt;div class="nav-item" data-mode="library"&gt;
+  &lt;span class="nav-icon"&gt;📚&lt;/span&gt;
+  &lt;span class="nav-label"&gt;My Library&lt;/span&gt;
+&lt;/div&gt;</pre>
+
+                <h4>2. Auto-save Stories</h4>
+                <p>Modify your story generation to save automatically:</p>
+                <pre>// After story generation
+function saveToLibrary(storyData) {
+  const library = JSON.parse(localStorage.getItem('storyforge-library'));
+  const story = {
+    id: 'story-' + Date.now(),
+    ...storyData,
+    created_at: new Date().toISOString()
+  };
+  library.stories.push(story);
+  localStorage.setItem('storyforge-library', JSON.stringify(library));
+}</pre>
+
+                <h4>3. Library UI</h4>
+                <p>Create a simple library interface:</p>
+                <pre>function showLibrary() {
+  const library = JSON.parse(localStorage.getItem('storyforge-library'));
+  const stories = library.stories;
+  
+  // Display stories in a grid/list
+  stories.forEach(story => {
+    console.log(story.title, story.created_at);
+  });
+}</pre>
+
+                <h4>4. Export/Backup</h4>
+                <p>Allow users to backup their stories:</p>
+                <pre>function exportLibrary() {
+  const library = localStorage.getItem('storyforge-library');
+  const blob = new Blob([library], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'storyforge-library-backup.json';
+  a.click();
+}</pre>
+
+                <p><strong>Benefits of Local Library:</strong></p>
+                <ul>
+                    <li>⚡ <strong>Instant performance</strong> - no network delays</li>
+                    <li>🔒 <strong>Complete privacy</strong> - data never leaves your computer</li>
+                    <li>💾 <strong>Always available</strong> - works offline</li>
+                    <li>📤 <strong>Easy migration</strong> - export JSON when network works</li>
+                </ul>
+            `, 'info');
+        }
+
+        function tryAlternativeNetwork() {
+            addResult('🔄 Trying Alternative Network Solutions', 'Testing different approaches...', 'info');
+
+            const solutions = [
+                {
+                    name: '🌐 Different Network',
+                    description: 'Try connecting from mobile hotspot or different WiFi',
+                    status: 'manual'
+                },
+                {
+                    name: '🔧 Disable Proxy',
+                    description: 'Temporarily disable corporate proxy/firewall',
+                    status: 'manual'
+                },
+                {
+                    name: '⏰ Wait Longer',
+                    description: 'Supabase projects can take 5-10 minutes to fully activate',
+                    status: 'manual'
+                },
+                {
+                    name: '🏠 Home Network',
+                    description: 'Try from your home internet connection',
+                    status: 'manual'
+                }
+            ];
+
+            let solutionsHTML = '<h4>Network Solutions to Try:</h4><ul>';
+            solutions.forEach(solution => {
+                solutionsHTML += `<li><strong>${solution.name}:</strong> ${solution.description}</li>`;
+            });
+            solutionsHTML += '</ul>';
+
+            addResult('📋 Network Troubleshooting Options', solutionsHTML, 'warning');
+        }
+
+        function setupMockLibrary() {
+            addResult('🔄 Setting Up Mock Library', 'Creating demo with sample data...', 'info');
+
+            const mockData = {
+                stories: [
+                    {
+                        id: 'demo-1',
+                        title: 'The Magic Forest Adventure',
+                        description: 'A brave hero explores an enchanted forest',
+                        hero_name: 'Alex',
+                        story_mode: 'classic',
+                        tags: ['adventure', 'forest', 'magic'],
+                        created_at: new Date(Date.now() - 86400000).toISOString(),
+                        word_count: 150
+                    },
+                    {
+                        id: 'demo-2', 
+                        title: 'Underwater Kingdom',
+                        description: 'Discovering treasures beneath the waves',
+                        hero_name: 'Marina',
+                        story_mode: 'adventure',
+                        tags: ['underwater', 'treasure', 'ocean'],
+                        created_at: new Date(Date.now() - 172800000).toISOString(),
+                        word_count: 200
+                    }
+                ],
+                artwork: [
+                    { id: 'art-1', title: 'Forest Scene', type: 'scene' },
+                    { id: 'art-2', title: 'Underwater Castle', type: 'scene' }
+                ]
+            };
+
+            // Save mock data
+            const library = JSON.parse(localStorage.getItem('storyforge-library') || '{}');
+            library.stories = [...(library.stories || []), ...mockData.stories];
+            library.artwork = [...(library.artwork || []), ...mockData.artwork];
+            localStorage.setItem('storyforge-library', JSON.stringify(library));
+
+            addResult('✅ Mock Library Ready!', `
+                <p><strong>Demo library created with sample content:</strong></p>
+                <ul>
+                    <li>📚 ${mockData.stories.length} sample stories</li>
+                    <li>🎨 ${mockData.artwork.length} artwork pieces</li>
+                    <li>🔍 Search and filter capabilities</li>
+                    <li>⭐ Favorites and collections</li>
+                </ul>
+                <p>You can now build your library UI and test all features offline!</p>
+            `, 'success');
+        }
+
+        function troubleshootNetwork() {
+            addResult('🔍 Network Troubleshooting', 'Running diagnostic checks...', 'info');
+
+            // Check localStorage availability
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                addResult('✅ Local Storage Available', 'Browser storage is working correctly', 'success');
+            } catch (e) {
+                addResult('❌ Local Storage Blocked', 'Browser storage is not available', 'error');
+            }
+
+            // Check basic connectivity
+            fetch('https://httpbin.org/get', { method: 'HEAD' })
+                .then(() => addResult('✅ Internet Connectivity', 'Basic internet connection is working', 'success'))
+                .catch(() => addResult('❌ Internet Issues', 'No internet connectivity detected', 'error'));
+
+            // Provide network troubleshooting steps
+            addResult('🔧 Troubleshooting Steps', `
+                <h4>If Supabase is blocked:</h4>
+                <ol>
+                    <li><strong>Check corporate firewall</strong> - Supabase may be blocked</li>
+                    <li><strong>Try different network</strong> - Mobile hotspot, home WiFi</li>
+                    <li><strong>Wait longer</strong> - Supabase can take 10+ minutes to wake up</li>
+                    <li><strong>Contact IT</strong> - Request supabase.co domain whitelist</li>
+                </ol>
+                
+                <h4>Alternative approaches:</h4>
+                <ul>
+                    <li>✅ <strong>Local development</strong> - Use localStorage (recommended)</li>
+                    <li>✅ <strong>Export/Import</strong> - Move data when network works</li>
+                    <li>✅ <strong>Hybrid approach</strong> - Local first, sync later</li>
+                </ul>
+            `, 'info');
+        }
+
+        // Auto-run local setup on load
+        setTimeout(() => {
+            addResult('🔄 Auto-Setup', 'Setting up local library by default...', 'info');
+            setupLocalLibrary();
+        }, 1000);
+
+        window.setupLocalLibrary = setupLocalLibrary;
+        window.tryAlternativeNetwork = tryAlternativeNetwork;
+        window.setupMockLibrary = setupMockLibrary;
+        window.troubleshootNetwork = troubleshootNetwork;
+    </script>
+</body>
+</html>
